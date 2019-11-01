@@ -1,0 +1,20 @@
+__meta__: {}
+connections: {}
+endpoints: {}
+entities:
+  mtcars:
+    am: Integer()
+    car: String(str_len=19)
+    carb: Integer()
+    cyl: Integer()
+    disp: Float()
+    drat: Float()
+    gear: Integer()
+    hp: Integer()
+    mpg: Float()
+    qsec: Float()
+    vs: Integer()
+    wt: Float()
+queries: {}
+relations: {}
+transforms: {}
