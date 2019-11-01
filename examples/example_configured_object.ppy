@@ -1,0 +1,12 @@
+import sys
+sys.path.insert(0, "..")
+
+from dkit import base
+
+class MixedObject(base.ArgumentsMixin, base.LoggingMixin, base.ConfiguredObject):
+    pass
+
+mixed = MixedObject()
+
+# test logging functionality
+mixed.logger.info("lets see")

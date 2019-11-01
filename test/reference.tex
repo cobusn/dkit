@@ -1,0 +1,181 @@
+\section{heading with \textbf{bold}}
+This is a first paragraph testing the \emph{viability} of
+the md to latex conversion.
+\subsection{Heading L2}
+text 2 
+\subsubsection{Heading L3}
+text 3
+\section{Verbatim}
+\subsection{inline}
+This is \lstinline!inline! verbatim text
+\subsection{simple}
+
+\begin{verbatim}
+line 1 of verbatim text
+line 2 of verbatim texta
+\end{verbatim}
+\subsection{code}
+The following represent verbatim code in python:
+
+
+\begin{lstlisting}[language=python]
+import string
+print(string.punctiuation)
+\end{lstlisting}
+\subsection{latex}
+This is how to include verbatim latex:
+
+\emph{verbatim text}
+\subsection{jsoninclude}
+This is how to add json directly to the ast:
+
+This is the included data
+\subsection{verbatim}
+
+\begin{verbatim}
+verbatim
+\end{verbatim}
+\section{Lists}
+\subsection{Unorderedlists}
+text in the \emph{sub} heading:
+
+\begin{itemize}
+\item \item \textbf{one}
+
+\item \item two
+
+\end{itemize}
+
+Final
+\subsection{Ordered lists}
+
+\begin{enumerate}
+\item \item One
+
+\item \item Two
+
+\end{enumerate}
+
+\section{Image}
+Here is an image 
+\begin{center}
+\includegraphics{test}
+\end{center}
+.
+\section{Math}
+Simple $m$ symbol
+\section{Table}
+A simple table:
+\section{An h1 header}
+==============
+Paragraphs are separated by a blank line.
+2nd paragraph. \emph{Italic}, \textbf{bold}, \lstinline!monospace!. Itemized lists
+look like:
+
+\begin{itemize}
+\item \item this one
+
+\item \item that one
+
+\item \item the other one
+
+\end{itemize}
+
+Note that --- not considering the asterisk --- the actual text
+content starts at 4-columns in.
+
+\begin{displayquote}
+Block quotes are
+written like so.
+They can span multiple paragraphs,
+if you like.
+
+\end{displayquote}
+
+Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex. "it's all in
+chapters 12--14"). Three dots ... will be converted to an ellipsis.
+\subsection{An h2 header}
+Here's a numbered list:
+
+\begin{enumerate}
+\item \item first item
+
+\item \item second item
+
+\item \item third item
+
+\end{enumerate}
+
+Note again how the actual text starts at 4 columns in (4 characters
+from the left side). Here's a code sample:
+
+\begin{verbatim}
+# Let me re-iterate ...
+for i in 1 .. 10 { do-something(i) }
+\end{verbatim}
+As you probably guessed, indented 4 spaces. By the way, instead of
+indenting the block, you can use delimited blocks, if you like:
+
+\begin{verbatim}
+define foobar() {
+    print "Welcome to flavor country!";
+}
+\end{verbatim}
+(which makes copying & pasting easier). You can optionally mark the
+delimited block for Pandoc to syntax highlight it:
+
+
+\begin{lstlisting}[language=python]
+import time
+# Quick, count to ten!
+for i in range(10):
+    # (but not *too* quick)
+    time.sleep(0.5)
+    print i
+\end{lstlisting}
+\subsubsection{An h3 header}
+Now a nested list:
+
+\begin{enumerate}
+\item \item First, get these ingredients:
+\linebreak[1]
+
+\begin{itemize}
+\item \item carrots
+
+\item \item celery
+
+\item \item lentils
+
+\end{itemize}
+
+
+
+\item \item Boil some water.
+
+
+\item \item Dump everything in the pot and follow
+this algorithm:
+\linebreak[1]
+
+\begin{verbatim}
+find wooden spoon
+uncover pot
+stir
+cover pot
+balance wooden spoon precariously on pot handle
+wait 10 minutes
+goto first step (or shut off burner when done)
+\end{verbatim}
+Do not bump wooden spoon or it will fall.
+
+
+\end{enumerate}
+
+Notice again how text always lines up on 4-space indents (including
+that last line which continues item 3 above). Here's a link to \href{http://foo.bar}{a
+website}. Here's a link to a \href{local-doc.html}{local doc}. 
+Inline math equations go in like so: $\omega = d\phi / dt$. Display
+math should get its own line and be put in in double-dollarsigns:
+$$I = \int \rho R^{2} dV$$
+Done.
