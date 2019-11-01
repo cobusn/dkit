@@ -1,0 +1,38 @@
+schemas:
+    user:
+        ACCOUNT_NAME: String(10)
+        AGE:          Int(32)
+        COST:         Float(64)
+relations:
+    acct_age: OneToOne("ACCOUNT_NAME", "AGE", False)
+#
+# Filters
+#
+filters:
+    active_filter:
+        type: "filter"
+        function: is_equal($name, "cobus") & ($value > 100)
+#
+# Transforms
+#
+transforms:
+    cd_template:
+        type: xml_transform
+        name: "cd records"
+        namespace: ""
+        boundary: "CD"
+        fields:
+            id: int(xpath("./@id"))
+            title: xpath("./TITLE/text()")
+            artist: xpath("./ARTIST/text()")
+            coutry: upper(xpath("./COUNTRY/text()"))
+            price: float(xpath("./PRICE/text()"))
+    bs_template:
+        type: xml_transform
+        name: "broadsoft"
+        namespace: ""
+        boundary: "row"
+        fields:
+            id: xpath("./col[1]/text()")
+            name: xpath("./col[2]/text()")
+            is_enterprise: xpath("./col[3]/text()")

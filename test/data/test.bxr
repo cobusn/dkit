@@ -1,0 +1,140 @@
+@{
+	last_name = "Benson"
+	job = "Designer, fashion/clothing"
+	birthday = 1994-09-09 18:06:49
+	first_name = "Aaron"
+	gender = "male"
+	int = 3980224
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Parsons"
+	job = "IT consultant"
+	birthday = 1961-01-04 00:10:31
+	first_name = "Jasmine"
+	gender = "female"
+	int = 3957960
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Mendoza"
+	job = "Agricultural consultant"
+	birthday = 1996-02-11 12:03:04
+	first_name = "Sara"
+	gender = "female"
+	int = 8413251
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Powers"
+	job = "Company secretary"
+	birthday = 1981-07-01 23:34:06
+	first_name = "Emma"
+	gender = "female"
+	int = 2816336
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Chang"
+	job = "Radiation protection practitioner"
+	birthday = 1988-11-19 04:44:36
+	first_name = "Diane"
+	gender = "female"
+	int = 7731569
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Wise"
+	job = "Chief Technology Officer"
+	birthday = 1980-07-16 18:13:49
+	first_name = "Kevin"
+	gender = "male"
+	int = 3584036
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Anderson"
+	job = "Education officer, museum"
+	birthday = 1995-10-18 17:22:37
+	first_name = "Veronica"
+	gender = "female"
+	int = 4521297
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Wolfe"
+	job = "Outdoor activities/education manager"
+	birthday = 1993-08-10 20:37:00
+	first_name = "Deanna"
+	gender = "female"
+	int = 8719015
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Williams"
+	job = "Warden/ranger"
+	birthday = 1966-07-10 00:30:53
+	first_name = "Kenneth"
+	gender = "male"
+	int = 789749
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
+@{
+	last_name = "Gilbert"
+	job = "Sound technician, broadcasting/film/video"
+	birthday = 1978-09-10 15:44:08
+	first_name = "John"
+	gender = "male"
+	int = 5313756
+	neg_int = -100
+	float = -11.00001
+	true = true
+	false = false
+	time = 00:10:10
+	date = 2019-11-01
+}
