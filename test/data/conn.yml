@@ -1,0 +1,12 @@
+__meta__:
+  version: '0.2'
+connections:
+  test:
+    database: test.db
+    dialect: sqlite
+    driver: sqlite
+endpoints: {}
+entities: {}
+queries: {}
+relations: {}
+transforms: {}

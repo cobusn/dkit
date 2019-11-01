@@ -1,0 +1,32 @@
+__meta__: {}
+connections: {}
+endpoints: {}
+entities:
+  left:
+    _id: Integer(primary_key=True)
+    age: Integer()
+    name: String(str_len=20)
+    parent: Integer(index=True)
+    surname: String()
+  right:
+    _id: Integer(primary_key=True)
+    age: Integer()
+    name: String(str_len=20)
+    parent: Integer(index=True)
+    surname: String()
+  test:
+    _id: Integer(primary_key=True)
+    age: Integer()
+    name: String(str_len=20)
+    parent: Integer(index=True)
+    surname: String()
+queries: {}
+relations:
+  left_right:
+    constrained_columns:
+    - parent
+    constrained_entity: left
+    referred_columns:
+    - _id
+    referred_entity: right
+transforms: {}
