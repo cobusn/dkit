@@ -1,0 +1,115 @@
+# Copyright (c) 2019 Cobus Nel
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+from .table import Table
+
+
+class XlsxReport(object):
+
+    def __init__(self, initial_sheet_name="Sheet 1"):
+        self.cr = 1   # Current Row
+        self.cc = 1   # Curent Column
+        self.openpyxl = __import__('openpyxl')
+        self.wb = self.openpyxl.Workbook()
+        self.sheet = self.wb.active
+        self.sheet.title = initial_sheet_name
+        self.style_map = {
+            "bold": self._set_bold,
+            "format": self._set_format,
+            "dedup": self._apply_dedup,
+        }
+
+    def _apply_dedup(self, cell, value, field):
+        if value is True and self.last_row:
+            if cell.value == self.last_row[field]:
+                cell.value = ""
+
+    def _set_format(self, cell, value, field):
+        format_map = {
+            "currency": "[$R-1C09] #,##0;[$R-1C09]-#,##0",
+            "integer": "0",
+        }
+        cell.number_format = format_map[value]
+
+    def _set_bold(self, cell, value, field):
+        """set bold true for cell"""
+        cell.font = cell.font.copy(bold=True)
+
+    def new_sheet(self, title):
+        self.sheet = self.wb.create_sheet(title)
+        self.cr = 1
+        self.cc = 1
+
+    def add_rows(self, n=1):
+        self.cr += n
+
+    def add_title(self, title, before=1, after=1, style={"bold": True}):
+        self.cr += before
+        cell = self.sheet.cell(self.cr, self.cc, title)
+        self.apply_cell_style(cell, style)
+        self.cr += after + 1
+
+    def apply_cell_style(self, cell, style, field=None):
+        for name, value in style.items():
+            if name not in ["title", "total"]:
+                self.style_map[name](cell, value, field)
+
+    def add_table(self, table: Table, col: int = None, row: int = None):
+        cr = self.cr if row is None else row
+        cc = self.cc if col is None else col
+        data = table.data
+        self.last_row = {}
+
+        # write headings
+        if table.write_headings:
+            r1 = data[0]
+            for i, k in enumerate(r1):
+                if k in table.style_map:
+                    title = table.style_map[k].get("title", k)
+                else:
+                    title = k
+                cell = self.sheet.cell(cr, cc + i, title)
+                self.apply_cell_style(cell, table.headings_style)
+            cr += 1
+
+        # write data
+        for row in data:
+            for colno, k in enumerate(row.keys()):
+                value = row[k]
+                cell = self.sheet.cell(cr, cc + colno, value)
+                style = table.style_map.get(k, {})
+                self.apply_cell_style(cell, style, k)
+            cr += 1
+            self.last_row = row
+
+        # write summary
+        if table.has_totals():
+            totals = table.totals
+            for i, col in enumerate(table.fields):
+                if col in totals:
+                    style = dict(table.style_map.get(col, {}))
+                    style.update(table.summary_style)
+                    cell = self.sheet.cell(cr, cc + i, totals[col])
+                    self.apply_cell_style(cell, style)
+            cr += 1
+
+        self.cr = cr
+
+    def save(self, filename: str):
+        self.wb.save(filename)
