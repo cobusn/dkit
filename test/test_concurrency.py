@@ -32,6 +32,7 @@ class TestSharedMemoryManager(unittest.TestCase):
         shm_data = loader.get("data")
         self.assertTrue(np.alltrue(shm_data == data))
         saver.close()
+        saver.unlink()
 
     def test_shared_csr_matrix(self):
         """Test shared csr_matrix"""
@@ -48,7 +49,7 @@ class TestSharedMemoryManager(unittest.TestCase):
             hash_array(shm_data)
         )
         saver.close()
-
+        saver.unlink()
 
 if __name__ == '__main__':
     unittest.main()
