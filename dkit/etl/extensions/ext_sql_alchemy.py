@@ -569,7 +569,7 @@ class SQLServices(model.ETLServices):
         if conn_name not in self.__accessor:
             conn_map = self.model.get_connection(conn_name)
             self.__accessor[conn_name] = SQLAlchemyAccessor(
-                as_sqla_url(conn_map)
+                as_sqla_url(conn_map.as_dict())
             )
         return self.__accessor[conn_name]
 

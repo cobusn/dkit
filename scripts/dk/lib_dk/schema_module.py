@@ -282,7 +282,7 @@ class SchemaModule(module.CRUDModule):
         options.add_option_alternate_model(parser_import)
         options.add_arg_entities(parser_import)
 
-        # sql-tables
+        # sql-ls
         parser_sql_ls = self.sub_parser.add_parser(
             "sql-ls",
             help=self.do_sql_ls.__doc__
@@ -290,7 +290,7 @@ class SchemaModule(module.CRUDModule):
         options.add_option_defaults(parser_sql_ls)
         options.add_option_connection_name(parser_sql_ls)
         options.add_option_long_format(parser_sql_ls)
-        options.add_option_connection_uri(parser_sql_ls)
+        # options.add_option_connection_uri(parser_sql_ls)
 
         # sql-reflect
         parser_sql_reflect = self.sub_parser.add_parser("sql-reflect",
