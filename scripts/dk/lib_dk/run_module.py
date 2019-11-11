@@ -58,7 +58,7 @@ class RunModule(module.MultiCommandModule):
         else:
             str_query = self.args.query_string
 
-        if self.args.table is not None:
+        if self.args.table:
             # only retrieve first 100 rows
             data = []
             i = srv.run_query(
