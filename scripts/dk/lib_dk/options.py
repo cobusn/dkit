@@ -362,7 +362,7 @@ def add_option_transform_name(parser):
 
 
 def add_option_tabulate(parser):
-    """display in table format"""
+    """display in table format (limited to 100 rows)"""
     parser.add_argument('--table', action="store_true", default=False,
                         help=add_option_tabulate.__doc__)
 
