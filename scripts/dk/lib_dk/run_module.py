@@ -58,14 +58,28 @@ class RunModule(module.MultiCommandModule):
         else:
             str_query = self.args.query_string
 
-        self.push_to_uri(
-            self.args.output,
-            srv.run_query(
-                connection,
-                str_query,
-                logger=self.logger
+        if self.args.table is not None:
+            # only retrieve first 100 rows
+            data = []
+            i = srv.run_query(
+                    connection,
+                    str_query,
+                    logger=self.logger
+                )
+            for i, row in enumerate(i):
+                data.append(row)
+                if i > 100:
+                    break
+            self.tabulate(data)
+        else:
+            self.push_to_uri(
+                self.args.output,
+                srv.run_query(
+                    connection,
+                    str_query,
+                    logger=self.logger
+                )
             )
-        )
 
     def do_template(self):
         """
@@ -123,6 +137,7 @@ class RunModule(module.MultiCommandModule):
         group_query = parser_query.add_argument_group("sql source")
         options.add_query_group(group_query)
         options.add_option_output_uri(parser_query)
+        options.add_option_tabulate(parser_query)
 
         # template
         parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
