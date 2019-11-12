@@ -100,7 +100,7 @@ class RunModule(module.MultiCommandModule):
         right = self.input_stream([self.args.right])
 
         if self.args.backend:
-            backend = containers.FlexShelf(self.args.backend)
+            backend = containers.FlexShelve(self.args.backend)
         else:
             backend = None
 

@@ -25,7 +25,8 @@ DATA      =     AttrDict.svg Pivot.svg ReducePivot.svg Proxy.svg XmlTransformer.
 				ObjectMap.svg ObjectMapDB.svg FileObjectMapDB.svg FileLoaderMixin.svg\
 				DictionaryEmulator.svg Accumulator.svg FieldSpec.svg DictMatcher.svg\
 				Object.svg SortedCollection.svg Histogram.svg Bin.svg classes_aggregation.svg \
-				Aggregate.svg GroupBy.svg Count.svg
+				Aggregate.svg GroupBy.svg Count.svg _Shelve.svg FlexBSDDBShelve.svg \
+				FlexShelve.svg FastFlexShelve.svg
 ETLSOURCE =     AbstractSource.svg FileListingSource.svg AbstractMultiReaderSource.svg PickleSource.svg\
 				JsonlSource.svg CsvDictSource.svg XmlRpcSource.svg EntityValidator.svg\
 				Entity.svg Transform.svg ModelManager.svg ExpressionFilter.svg Connection.svg\
@@ -115,6 +116,18 @@ DictionaryEmulator.svg: $(CLASSROOT)/data/containers.py
 
 SortedCollection.svg: $(CLASSROOT)/data/containers.py 
 		$(PYREVERSE) $(OPTSINGLE) -c SortedCollection $(CLASSROOT)/data/containers.py
+
+_Shelve.svg: $(CLASSROOT)/data/containers.py 
+		$(PYREVERSE) $(OPTSINGLE) -c _Shelve $(CLASSROOT)/data/containers.py
+
+FastFlexShelve.svg: $(CLASSROOT)/data/containers.py 
+		$(PYREVERSE) $(OPTSINGLE) -c FastFlexShelve $(CLASSROOT)/data/containers.py
+
+FlexShelve.svg: $(CLASSROOT)/data/containers.py 
+		$(PYREVERSE) $(OPTSINGLE) -c FlexShelve $(CLASSROOT)/data/containers.py
+
+FlexBSDDBShelve.svg: $(CLASSROOT)/data/containers.py 
+		$(PYREVERSE) $(OPTSINGLE) -c FlexBSDDBShelve $(CLASSROOT)/data/containers.py
 
 ## filter.Proxy
 Proxy.svg: $(CLASSROOT)/data/filters.py 

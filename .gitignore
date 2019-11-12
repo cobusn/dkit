@@ -108,6 +108,8 @@ examples/example_heatmap.pdf
 examples/hosts.csv
 examples/test.json
 examples/test.pickle
+examples/test.json.bak
+examples/test.pickle.bak
 html/doctrees/
 html/html/
 test/data/*
