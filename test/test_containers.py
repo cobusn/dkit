@@ -24,7 +24,7 @@ sys.path.insert(0, "..")  # noqa
 from dkit.data.containers import (
     ReusableStack,
     SortedCollection,
-    FlexShelf,
+    FlexShelve,
 )
 from random import shuffle
 from pathlib import Path
@@ -102,7 +102,7 @@ class TestFlexShelf(unittest.TestCase):
 
     def test_reusable(self):
         path = Path.cwd() / "data" / "flexible_shelve.db"
-        s = FlexShelf(str(path))
+        s = FlexShelve(str(path))
         for i in range(1000):
             s[(i, "a")] = i
         self.assertEqual(len(list(s.items())), 1000)

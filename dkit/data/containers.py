@@ -343,7 +343,7 @@ class _ClosedDict(collections.abc.MutableMapping):
         return '<Closed Dictionary>'
 
 
-class _Shelf(collections.abc.MutableMapping):
+class _Shelve(collections.abc.MutableMapping):
     """Base class for shelf implementations.
 
     This is initialized with a dictionary-like object.
@@ -417,7 +417,7 @@ class _Shelf(collections.abc.MutableMapping):
             # because CPython is in interpreter shutdown.
             try:
                 self.dict = _ClosedDict()
-            except:
+            except Exception:
                 self.dict = None
 
     def __del__(self):
@@ -438,7 +438,7 @@ class _Shelf(collections.abc.MutableMapping):
             self.dict.sync()
 
 
-class FlexBsdDbShelf(_Shelf):
+class FlexBSDDBShelve(_Shelve):
     """Shelf implementation using the "BSD" db interface.
 
     This adds methods first(), next(), previous(), last() and
@@ -452,7 +452,7 @@ class FlexBsdDbShelf(_Shelf):
     """
 
     def __init__(self, dict, protocol=None, writeback=False):
-        _Shelf.__init__(self, dict, protocol, writeback)
+        _Shelve.__init__(self, dict, protocol, writeback)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
@@ -480,7 +480,7 @@ class FlexBsdDbShelf(_Shelf):
         return (loads(key), Unpickler(f).load())
 
 
-class FlexShelf(_Shelf):
+class FlexShelve(_Shelve):
     """Shelf implementation using the "dbm" generic dbm interface.
 
     This is initialized with the filename for the dbm database.
@@ -492,9 +492,9 @@ class FlexShelf(_Shelf):
         super().__init__(dbm.open(filename, flag), protocol, writeback)
 
 
-class _FlexibleShelve(collections.MutableMapping):
+class FastFlexShelve(collections.MutableMapping):
     """
-    Shelve version that work with any opbject that can pickle as key
+    lightweight shelve version that work with any opbject that can pickle as key
 
     adapted from
     https://stackoverflow.com/questions/31565921/object-storage-in-python-that-allow-tuples-as-keys
@@ -515,7 +515,6 @@ class _FlexibleShelve(collections.MutableMapping):
         return (pickle.loads(key) for key in self.udict.keys())
 
     def __iter__(self):
-        # return self.iterator(self)
         return (pickle.loads(k) for k in self.udict.kesy())
 
     def __len__(self):

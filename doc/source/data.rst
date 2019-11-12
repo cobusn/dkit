@@ -146,6 +146,65 @@ SortedCollection
    :undoc-members:
    :inherited-members:
    
+_Shelve
+-------
+
+.. image:: ../images/_Shelve.svg
+   :align: center
+
+.. autoclass:: dkit.data.containers._Shelve
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+FlexShelve
+----------
+
+.. image:: ../images/FlexShelve.svg
+   :align: center
+
+.. autoclass:: dkit.data.containers.FlexShelve
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+FastFlexShelve
+--------------
+
+.. image:: ../images/FlexShelve.svg
+   :align: center
+
+.. autoclass:: dkit.data.containers.FlexShelve
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+
+
+FlexBSDDBShelve
+---------------
+
+.. image:: ../images/FlexBSDDBShelve.svg
+   :align: center
+
+.. autoclass:: dkit.data.containers.FlexBSDDBShelve
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+
+FastFlexShelve
+--------------
+
+.. image:: ../images/FastFlexShelve.svg
+   :align: center
+
+.. autoclass:: dkit.data.containers.FastFlexShelve
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+
 
 fake
 ====

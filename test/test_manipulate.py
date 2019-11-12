@@ -45,7 +45,7 @@ from dkit.data.manipulate import (
 )
 from dkit.etl.reader import FileReader
 from dkit.etl.source import CsvDictSource
-from dkit.data.containers import FlexShelf
+from dkit.data.containers import FlexShelve
 
 
 class TestAggregate(unittest.TestCase):
@@ -290,7 +290,7 @@ class TestShelveMerge(TestMerge):
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = FlexShelf("data/merge_shelve.db")
+        cls.backend = FlexShelve("data/merge_shelve.db")
         cls.create_data(cls)
 
     @classmethod
