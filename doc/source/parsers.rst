@@ -62,6 +62,23 @@ InfixParser
    :undoc-members:
    :inherited-members:
 
+ExpressionParser
+================
+
+.. autoclass:: dkit.parsers.infix_parser.ExpressionParser
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+Example usage:
+
+.. include:: ../../examples/example_expression_parser.py
+    :literal:
+
+The above will produce the following output:
+
+.. include:: ../../examples/example_expression_parser.out
+    :literal:
 
 uri_parser
 ==========

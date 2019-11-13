@@ -20,24 +20,24 @@
 
 """
 Data manipulation routines.
-
-=========== =============== =================================================
-May 2015    Cobus Nel       Created
-10 Nov 2016 Cobus Nel       Updated
-12 Nov 2016 Cobus Nel       Added ReducePivot
-27 Nov 2016 Cobus Nel       Added AttrDict
-01 Dec 2016 Cobus Nel       Added merge
-09 Dec 2016 Cobus Nel       Updated documentation
-30 Jan 2017 Cobus Nel       Added iter_sample
-30 Jan 2017 Cobus Nel       Added infer_type
-31 Jan 2017 Cobus Nel       Added infer_types
-06 May 2017 Coubs Nel       Added iter_add_id
-27 Jun 2017 Cobus Nel       Cleanup + reduce_aggregate
-24 Oct 2017 Cobus Nel       Added aggregates
-19 Jun 2018 Cobus Nel       Moved AttrDict to containers
-11 Sep 2019 Cobus Nel       Added iter_rename, iter_drop
-=========== =============== =================================================
 """
+
+# =========== =============== =================================================
+# May 2015    Cobus Nel       Created
+# 10 Nov 2016 Cobus Nel       Updated
+# 12 Nov 2016 Cobus Nel       Added ReducePivot
+# 27 Nov 2016 Cobus Nel       Added AttrDict
+# 01 Dec 2016 Cobus Nel       Added merge
+# 09 Dec 2016 Cobus Nel       Updated documentation
+# 30 Jan 2017 Cobus Nel       Added iter_sample
+# 30 Jan 2017 Cobus Nel       Added infer_type
+# 31 Jan 2017 Cobus Nel       Added infer_types
+# 06 May 2017 Coubs Nel       Added iter_add_id
+# 27 Jun 2017 Cobus Nel       Cleanup + reduce_aggregate
+# 24 Oct 2017 Cobus Nel       Added aggregates
+# 19 Jun 2018 Cobus Nel       Moved AttrDict to containers
+# 11 Sep 2019 Cobus Nel       Added iter_rename, iter_drop
+# =========== =============== =================================================
 from .. import _missing_value_
 from ..decorators import deprecated
 from ..utilities.introspection import is_list

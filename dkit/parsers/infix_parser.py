@@ -75,6 +75,14 @@ from .. import _missing_value_
 #    """
 #    return (a > b) - (a < b)
 
+def replace_na(value, replacement):
+    """replace None values with replacement"""
+    if value is None:
+        return replacement
+    else:
+        return value
+
+
 def f1_closure(fn):
     def validate_fn(parser, strg, tokens):
         fname = tokens[0]
@@ -179,7 +187,8 @@ class InfixParser(object):
 
         self._f2_map = {
             "randint": lambda x, y: float(randint(x, y)),
-            "uniform": uniform
+            "uniform": uniform,
+            "replace_na": replace_na,
         }
 
         # add 1 parameter and 2 parameter functions
