@@ -166,7 +166,7 @@ class Module(object):
         """class docstring"""
         return textwrap.dedent(self.__doc__)
 
-    def input_stream_raw(self, uri_list: List[str]) -> Iterable[dict]:
+    def input_stream_raw(self, uri_list: List[str], fields=None) -> Iterable[dict]:
         """
         raw input stream without schema or transform applied
         """
@@ -175,7 +175,16 @@ class Module(object):
             self.args.config_uri
         )
         delimiter = codecs.decode(self.args.delimiter, "unicode_escape")
-        field_list = self.args.fields if hasattr(self.args, "fields") else None
+
+        # determine field list
+        if fields is not None:
+            field_list = fields
+        elif hasattr(self.args, "fields"):
+            field_list = self.args.fields
+        else:
+            field_list = None
+
+        # where clause
         where_clause = self.args.where if hasattr(self.args, "where") else None
         for the_uri in uri_list:
             with utilities.source_factory(
@@ -188,13 +197,13 @@ class Module(object):
             ) as in_data:
                 yield from in_data
 
-    def input_stream(self, uri_list: List[str]) -> Iterable[dict]:
+    def input_stream(self, uri_list: List[str], fields=None) -> Iterable[dict]:
         """
         open and return an input stream.abs
 
         Optionally apply entity schemas, filter or transform
         """
-        _iter_in = self.input_stream_raw(uri_list)
+        _iter_in = self.input_stream_raw(uri_list, fields)
         services = self.load_services()
         # apply schema
         if hasattr(self.args, "entity") and self.args.entity is not None:

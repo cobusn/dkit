@@ -28,10 +28,6 @@ class AggModule(module.UniCommandModule):
         """build dkit.data.aggregator.Aggregate object from options"""
         aggregator = agg.Aggregate()
 
-        # Check that group by keys are specified
-        # if len(self.args.group_by) == 0:
-        #     raise exceptions.CkitApplicationException("No group by key specified")
-
         # Check that at least one operation has been specified
         if not hasattr(self.args, "group_by_operations"):
             raise exceptions.CkitApplicationException("No group by operation specified")
@@ -49,11 +45,17 @@ class AggModule(module.UniCommandModule):
         field_list = aggr.groupby_keys + [i.target for i in aggr.aggregations]
         self.args.fields = field_list
         if self.args.table is True:
-            self.tabulate(aggr(self.input_stream(self.args.input)))
+            a = list(aggr(self.input_stream(
+                    self.args.input, fields=aggr.required_fields)
+                ))
+            self.tabulate(a)
         else:
             self.push_to_uri(
                 self.args.output,
-                aggr(self.input_stream(self.args.input))
+                aggr(self.input_stream(
+                    self.args.input,
+                    fields=aggr.required_fields
+                ))
             )
 
     def init_parser(self):

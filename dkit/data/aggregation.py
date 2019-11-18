@@ -63,6 +63,11 @@ class Aggregate(object):
                 accumulator[key].push(row[target])
 
     @property
+    def required_fields(self):
+        """List of fields required by aggregator"""
+        return self.groupby_keys + list(self.accumulators.keys())
+
+    @property
     def key_tuples(self):
         """list if key tuples"""
         first_aggregator = next(iter(self.accumulators.values()))
