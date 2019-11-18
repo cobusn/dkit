@@ -1,0 +1,117 @@
+{"class": "compact", "cty": 18, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "p", "hwy": 29, "index": 1, "manufacturer": "audi", "model": "a4", "trans": "auto(l5)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "p", "hwy": 29, "index": 2, "manufacturer": "audi", "model": "a4", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 16, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "p", "hwy": 26, "index": 5, "manufacturer": "audi", "model": "a4", "trans": "auto(l5)", "year": 1999}
+{"class": "compact", "cty": 18, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "p", "hwy": 26, "index": 6, "manufacturer": "audi", "model": "a4", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 18, "cyl": 4.0, "displ": 1.8, "drv": "4", "fl": "p", "hwy": 26, "index": 8, "manufacturer": "audi", "model": "a4 quattro", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 16, "cyl": 4.0, "displ": 1.8, "drv": "4", "fl": "p", "hwy": 25, "index": 9, "manufacturer": "audi", "model": "a4 quattro", "trans": "auto(l5)", "year": 1999}
+{"class": "compact", "cty": 15, "cyl": 6.0, "displ": 2.8, "drv": "4", "fl": "p", "hwy": 25, "index": 12, "manufacturer": "audi", "model": "a4 quattro", "trans": "auto(l5)", "year": 1999}
+{"class": "compact", "cty": 17, "cyl": 6.0, "displ": 2.8, "drv": "4", "fl": "p", "hwy": 25, "index": 13, "manufacturer": "audi", "model": "a4 quattro", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 15, "cyl": 6.0, "displ": 2.8, "drv": "4", "fl": "p", "hwy": 24, "index": 16, "manufacturer": "audi", "model": "a6 quattro", "trans": "auto(l5)", "year": 1999}
+{"class": "suv", "cty": 13, "cyl": 8.0, "displ": 5.7, "drv": "r", "fl": "r", "hwy": 17, "index": 22, "manufacturer": "chevrolet", "model": "c1500 suburban 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "2seater", "cty": 16, "cyl": 8.0, "displ": 5.7, "drv": "r", "fl": "p", "hwy": 26, "index": 24, "manufacturer": "chevrolet", "model": "corvette", "trans": "manual(m6)", "year": 1999}
+{"class": "2seater", "cty": 15, "cyl": 8.0, "displ": 5.7, "drv": "r", "fl": "p", "hwy": 23, "index": 25, "manufacturer": "chevrolet", "model": "corvette", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.7, "drv": "4", "fl": "r", "hwy": 15, "index": 31, "manufacturer": "chevrolet", "model": "k1500 tahoe 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 8.0, "displ": 6.5, "drv": "4", "fl": "d", "hwy": 17, "index": 32, "manufacturer": "chevrolet", "model": "k1500 tahoe 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 19, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 27, "index": 33, "manufacturer": "chevrolet", "model": "malibu", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 3.1, "drv": "f", "fl": "r", "hwy": 26, "index": 35, "manufacturer": "chevrolet", "model": "malibu", "trans": "auto(l4)", "year": 1999}
+{"class": "minivan", "cty": 18, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 24, "index": 38, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l3)", "year": 1999}
+{"class": "minivan", "cty": 17, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 24, "index": 39, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "minivan", "cty": 16, "cyl": 6.0, "displ": 3.3, "drv": "f", "fl": "r", "hwy": 22, "index": 40, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "minivan", "cty": 16, "cyl": 6.0, "displ": 3.3, "drv": "f", "fl": "r", "hwy": 22, "index": 41, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "minivan", "cty": 15, "cyl": 6.0, "displ": 3.8, "drv": "f", "fl": "r", "hwy": 22, "index": 45, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "minivan", "cty": 15, "cyl": 6.0, "displ": 3.8, "drv": "f", "fl": "r", "hwy": 21, "index": 46, "manufacturer": "dodge", "model": "caravan 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 13, "cyl": 6.0, "displ": 3.9, "drv": "4", "fl": "r", "hwy": 17, "index": 51, "manufacturer": "dodge", "model": "dakota pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 14, "cyl": 6.0, "displ": 3.9, "drv": "4", "fl": "r", "hwy": 17, "index": 52, "manufacturer": "dodge", "model": "dakota pickup 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.2, "drv": "4", "fl": "r", "hwy": 17, "index": 56, "manufacturer": "dodge", "model": "dakota pickup 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.2, "drv": "4", "fl": "r", "hwy": 15, "index": 57, "manufacturer": "dodge", "model": "dakota pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 13, "cyl": 6.0, "displ": 3.9, "drv": "4", "fl": "r", "hwy": 17, "index": 58, "manufacturer": "dodge", "model": "durango 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.2, "drv": "4", "fl": "r", "hwy": 16, "index": 62, "manufacturer": "dodge", "model": "durango 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.9, "drv": "4", "fl": "r", "hwy": 15, "index": 64, "manufacturer": "dodge", "model": "durango 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.2, "drv": "4", "fl": "r", "hwy": 15, "index": 71, "manufacturer": "dodge", "model": "ram 1500 pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.2, "drv": "4", "fl": "r", "hwy": 16, "index": 72, "manufacturer": "dodge", "model": "ram 1500 pickup 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.9, "drv": "4", "fl": "r", "hwy": 15, "index": 74, "manufacturer": "dodge", "model": "ram 1500 pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 4.6, "drv": "r", "fl": "r", "hwy": 17, "index": 75, "manufacturer": "ford", "model": "expedition 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.4, "drv": "r", "fl": "r", "hwy": 17, "index": 76, "manufacturer": "ford", "model": "expedition 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 6.0, "displ": 4.0, "drv": "4", "fl": "r", "hwy": 17, "index": 78, "manufacturer": "ford", "model": "explorer 4wd", "trans": "auto(l5)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 6.0, "displ": 4.0, "drv": "4", "fl": "r", "hwy": 19, "index": 79, "manufacturer": "ford", "model": "explorer 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 6.0, "displ": 4.0, "drv": "4", "fl": "r", "hwy": 17, "index": 80, "manufacturer": "ford", "model": "explorer 4wd", "trans": "auto(l5)", "year": 1999}
+{"class": "suv", "cty": 13, "cyl": 8.0, "displ": 5.0, "drv": "4", "fl": "r", "hwy": 17, "index": 83, "manufacturer": "ford", "model": "explorer 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 14, "cyl": 6.0, "displ": 4.2, "drv": "4", "fl": "r", "hwy": 17, "index": 84, "manufacturer": "ford", "model": "f150 pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 14, "cyl": 6.0, "displ": 4.2, "drv": "4", "fl": "r", "hwy": 17, "index": 85, "manufacturer": "ford", "model": "f150 pickup 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 13, "cyl": 8.0, "displ": 4.6, "drv": "4", "fl": "r", "hwy": 16, "index": 86, "manufacturer": "ford", "model": "f150 pickup 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 13, "cyl": 8.0, "displ": 4.6, "drv": "4", "fl": "r", "hwy": 16, "index": 87, "manufacturer": "ford", "model": "f150 pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 11, "cyl": 8.0, "displ": 5.4, "drv": "4", "fl": "r", "hwy": 15, "index": 89, "manufacturer": "ford", "model": "f150 pickup 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 18, "cyl": 6.0, "displ": 3.8, "drv": "r", "fl": "r", "hwy": 26, "index": 91, "manufacturer": "ford", "model": "mustang", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 18, "cyl": 6.0, "displ": 3.8, "drv": "r", "fl": "r", "hwy": 25, "index": 92, "manufacturer": "ford", "model": "mustang", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 15, "cyl": 8.0, "displ": 4.6, "drv": "r", "fl": "r", "hwy": 21, "index": 95, "manufacturer": "ford", "model": "mustang", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 15, "cyl": 8.0, "displ": 4.6, "drv": "r", "fl": "r", "hwy": 22, "index": 96, "manufacturer": "ford", "model": "mustang", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 28, "cyl": 4.0, "displ": 1.6, "drv": "f", "fl": "r", "hwy": 33, "index": 100, "manufacturer": "honda", "model": "civic", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 24, "cyl": 4.0, "displ": 1.6, "drv": "f", "fl": "r", "hwy": 32, "index": 101, "manufacturer": "honda", "model": "civic", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 25, "cyl": 4.0, "displ": 1.6, "drv": "f", "fl": "r", "hwy": 32, "index": 102, "manufacturer": "honda", "model": "civic", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 23, "cyl": 4.0, "displ": 1.6, "drv": "f", "fl": "p", "hwy": 29, "index": 103, "manufacturer": "honda", "model": "civic", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 24, "cyl": 4.0, "displ": 1.6, "drv": "f", "fl": "r", "hwy": 32, "index": 104, "manufacturer": "honda", "model": "civic", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 26, "index": 109, "manufacturer": "hyundai", "model": "sonata", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 27, "index": 110, "manufacturer": "hyundai", "model": "sonata", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 2.5, "drv": "f", "fl": "r", "hwy": 26, "index": 113, "manufacturer": "hyundai", "model": "sonata", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 2.5, "drv": "f", "fl": "r", "hwy": 26, "index": 114, "manufacturer": "hyundai", "model": "sonata", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 26, "index": 116, "manufacturer": "hyundai", "model": "tiburon", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 29, "index": 117, "manufacturer": "hyundai", "model": "tiburon", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 6.0, "displ": 4.0, "drv": "4", "fl": "r", "hwy": 20, "index": 125, "manufacturer": "jeep", "model": "grand cherokee 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 8.0, "displ": 4.7, "drv": "4", "fl": "r", "hwy": 17, "index": 126, "manufacturer": "jeep", "model": "grand cherokee 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 4.0, "drv": "4", "fl": "p", "hwy": 15, "index": 131, "manufacturer": "land rover", "model": "range rover", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 4.6, "drv": "4", "fl": "p", "hwy": 15, "index": 134, "manufacturer": "land rover", "model": "range rover", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.4, "drv": "r", "fl": "r", "hwy": 17, "index": 135, "manufacturer": "lincoln", "model": "navigator 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 5.4, "drv": "r", "fl": "p", "hwy": 16, "index": 136, "manufacturer": "lincoln", "model": "navigator 2wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 6.0, "displ": 4.0, "drv": "4", "fl": "r", "hwy": 17, "index": 138, "manufacturer": "mercury", "model": "mountaineer 4wd", "trans": "auto(l5)", "year": 1999}
+{"class": "suv", "cty": 13, "cyl": 8.0, "displ": 5.0, "drv": "4", "fl": "r", "hwy": 17, "index": 141, "manufacturer": "mercury", "model": "mountaineer 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 29, "index": 142, "manufacturer": "nissan", "model": "altima", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 19, "cyl": 4.0, "displ": 2.4, "drv": "f", "fl": "r", "hwy": 27, "index": 143, "manufacturer": "nissan", "model": "altima", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 26, "index": 148, "manufacturer": "nissan", "model": "maxima", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 19, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 25, "index": 149, "manufacturer": "nissan", "model": "maxima", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 14, "cyl": 6.0, "displ": 3.3, "drv": "4", "fl": "r", "hwy": 17, "index": 151, "manufacturer": "nissan", "model": "pathfinder 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 6.0, "displ": 3.3, "drv": "4", "fl": "r", "hwy": 17, "index": 152, "manufacturer": "nissan", "model": "pathfinder 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 3.1, "drv": "f", "fl": "r", "hwy": 26, "index": 155, "manufacturer": "pontiac", "model": "grand prix", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 16, "cyl": 6.0, "displ": 3.8, "drv": "f", "fl": "p", "hwy": 26, "index": 156, "manufacturer": "pontiac", "model": "grand prix", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 17, "cyl": 6.0, "displ": 3.8, "drv": "f", "fl": "r", "hwy": 27, "index": 157, "manufacturer": "pontiac", "model": "grand prix", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 18, "cyl": 4.0, "displ": 2.5, "drv": "4", "fl": "r", "hwy": 25, "index": 160, "manufacturer": "subaru", "model": "forester awd", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 18, "cyl": 4.0, "displ": 2.5, "drv": "4", "fl": "r", "hwy": 24, "index": 161, "manufacturer": "subaru", "model": "forester awd", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 21, "cyl": 4.0, "displ": 2.2, "drv": "4", "fl": "r", "hwy": 26, "index": 166, "manufacturer": "subaru", "model": "impreza awd", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.2, "drv": "4", "fl": "r", "hwy": 26, "index": 167, "manufacturer": "subaru", "model": "impreza awd", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.5, "drv": "4", "fl": "r", "hwy": 26, "index": 168, "manufacturer": "subaru", "model": "impreza awd", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.5, "drv": "4", "fl": "r", "hwy": 26, "index": 169, "manufacturer": "subaru", "model": "impreza awd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 4.0, "displ": 2.7, "drv": "4", "fl": "r", "hwy": 20, "index": 174, "manufacturer": "toyota", "model": "4runner 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 16, "cyl": 4.0, "displ": 2.7, "drv": "4", "fl": "r", "hwy": 20, "index": 175, "manufacturer": "toyota", "model": "4runner 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 6.0, "displ": 3.4, "drv": "4", "fl": "r", "hwy": 19, "index": 176, "manufacturer": "toyota", "model": "4runner 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "suv", "cty": 15, "cyl": 6.0, "displ": 3.4, "drv": "4", "fl": "r", "hwy": 17, "index": 177, "manufacturer": "toyota", "model": "4runner 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 21, "cyl": 4.0, "displ": 2.2, "drv": "f", "fl": "r", "hwy": 29, "index": 180, "manufacturer": "toyota", "model": "camry", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 21, "cyl": 4.0, "displ": 2.2, "drv": "f", "fl": "r", "hwy": 27, "index": 181, "manufacturer": "toyota", "model": "camry", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 26, "index": 184, "manufacturer": "toyota", "model": "camry", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 26, "index": 185, "manufacturer": "toyota", "model": "camry", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 2.2, "drv": "f", "fl": "r", "hwy": 27, "index": 187, "manufacturer": "toyota", "model": "camry solara", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 2.2, "drv": "f", "fl": "r", "hwy": 29, "index": 188, "manufacturer": "toyota", "model": "camry solara", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 18, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 26, "index": 191, "manufacturer": "toyota", "model": "camry solara", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 18, "cyl": 6.0, "displ": 3.0, "drv": "f", "fl": "r", "hwy": 26, "index": 192, "manufacturer": "toyota", "model": "camry solara", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 24, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "r", "hwy": 30, "index": 194, "manufacturer": "toyota", "model": "corolla", "trans": "auto(l3)", "year": 1999}
+{"class": "compact", "cty": 24, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "r", "hwy": 33, "index": 195, "manufacturer": "toyota", "model": "corolla", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 26, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "r", "hwy": 35, "index": 196, "manufacturer": "toyota", "model": "corolla", "trans": "manual(m5)", "year": 1999}
+{"class": "suv", "cty": 11, "cyl": 8.0, "displ": 4.7, "drv": "4", "fl": "r", "hwy": 15, "index": 199, "manufacturer": "toyota", "model": "land cruiser wagon 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 15, "cyl": 4.0, "displ": 2.7, "drv": "4", "fl": "r", "hwy": 20, "index": 201, "manufacturer": "toyota", "model": "toyota tacoma 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 16, "cyl": 4.0, "displ": 2.7, "drv": "4", "fl": "r", "hwy": 20, "index": 202, "manufacturer": "toyota", "model": "toyota tacoma 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "pickup", "cty": 15, "cyl": 6.0, "displ": 3.4, "drv": "4", "fl": "r", "hwy": 17, "index": 204, "manufacturer": "toyota", "model": "toyota tacoma 4wd", "trans": "manual(m5)", "year": 1999}
+{"class": "pickup", "cty": 15, "cyl": 6.0, "displ": 3.4, "drv": "4", "fl": "r", "hwy": 19, "index": 205, "manufacturer": "toyota", "model": "toyota tacoma 4wd", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 29, "index": 208, "manufacturer": "volkswagen", "model": "gti", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 19, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 26, "index": 209, "manufacturer": "volkswagen", "model": "gti", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 17, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "r", "hwy": 24, "index": 212, "manufacturer": "volkswagen", "model": "gti", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 33, "cyl": 4.0, "displ": 1.9, "drv": "f", "fl": "d", "hwy": 44, "index": 213, "manufacturer": "volkswagen", "model": "jetta", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 21, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 29, "index": 214, "manufacturer": "volkswagen", "model": "jetta", "trans": "manual(m5)", "year": 1999}
+{"class": "compact", "cty": 19, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 26, "index": 215, "manufacturer": "volkswagen", "model": "jetta", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 16, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "r", "hwy": 23, "index": 220, "manufacturer": "volkswagen", "model": "jetta", "trans": "auto(l4)", "year": 1999}
+{"class": "compact", "cty": 17, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "r", "hwy": 24, "index": 221, "manufacturer": "volkswagen", "model": "jetta", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 35, "cyl": 4.0, "displ": 1.9, "drv": "f", "fl": "d", "hwy": 44, "index": 222, "manufacturer": "volkswagen", "model": "new beetle", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 29, "cyl": 4.0, "displ": 1.9, "drv": "f", "fl": "d", "hwy": 41, "index": 223, "manufacturer": "volkswagen", "model": "new beetle", "trans": "auto(l4)", "year": 1999}
+{"class": "subcompact", "cty": 21, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 29, "index": 224, "manufacturer": "volkswagen", "model": "new beetle", "trans": "manual(m5)", "year": 1999}
+{"class": "subcompact", "cty": 19, "cyl": 4.0, "displ": 2.0, "drv": "f", "fl": "r", "hwy": 26, "index": 225, "manufacturer": "volkswagen", "model": "new beetle", "trans": "auto(l4)", "year": 1999}
+{"class": "midsize", "cty": 21, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "p", "hwy": 29, "index": 228, "manufacturer": "volkswagen", "model": "passat", "trans": "manual(m5)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 4.0, "displ": 1.8, "drv": "f", "fl": "p", "hwy": 29, "index": 229, "manufacturer": "volkswagen", "model": "passat", "trans": "auto(l5)", "year": 1999}
+{"class": "midsize", "cty": 16, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "p", "hwy": 26, "index": 232, "manufacturer": "volkswagen", "model": "passat", "trans": "auto(l5)", "year": 1999}
+{"class": "midsize", "cty": 18, "cyl": 6.0, "displ": 2.8, "drv": "f", "fl": "p", "hwy": 26, "index": 233, "manufacturer": "volkswagen", "model": "passat", "trans": "manual(m5)", "year": 1999}

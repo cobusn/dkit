@@ -42,10 +42,49 @@ from dkit.data.manipulate import (
     iter_sample,
     merge,
     reduce_aggregate,
+    melt
 )
 from dkit.etl.reader import FileReader
 from dkit.etl.source import CsvDictSource
 from dkit.data.containers import FlexShelve
+
+
+class TestMelt(unittest.TestCase):
+
+    def test_melt(self):
+        data = [
+            {
+                "Year": "1920",
+                "Jan": "40.6",
+                "Feb": "40.8",
+                "Mar": "44.4",
+                "Apr": "46.7",
+                "May": "54.1",
+                "Jun": "58.5",
+                "Jul": "57.7",
+                "Aug": "56.4",
+                "Sep": "54.3",
+                "Oct": "50.5",
+                "Nov": "42.9",
+                "Dec": "39.8"
+            }
+        ]
+        compare = [
+            {'Year': '1920', 'Month': 'Jan', 'Temp': '40.6'},
+            {'Year': '1920', 'Month': 'Feb', 'Temp': '40.8'},
+            {'Year': '1920', 'Month': 'Mar', 'Temp': '44.4'},
+            {'Year': '1920', 'Month': 'Apr', 'Temp': '46.7'},
+            {'Year': '1920', 'Month': 'May', 'Temp': '54.1'},
+            {'Year': '1920', 'Month': 'Jun', 'Temp': '58.5'},
+            {'Year': '1920', 'Month': 'Jul', 'Temp': '57.7'},
+            {'Year': '1920', 'Month': 'Aug', 'Temp': '56.4'},
+            {'Year': '1920', 'Month': 'Sep', 'Temp': '54.3'},
+            {'Year': '1920', 'Month': 'Oct', 'Temp': '50.5'},
+            {'Year': '1920', 'Month': 'Nov', 'Temp': '42.9'},
+            {'Year': '1920', 'Month': 'Dec', 'Temp': '39.8'},
+        ]
+        d = melt(data, id_fields=["Year"], var_name="Month", value_name="Temp")
+        self.assertEqual(list(d), compare)
 
 
 class TestAggregate(unittest.TestCase):

@@ -48,6 +48,6 @@ if __name__ == "__main__":
     )
 
     CsvDictSink(
-        FileWriter("hosts.csv"),
+        FileWriter("data/hosts.csv"),
         logger=logger
     ).process(lookups)
