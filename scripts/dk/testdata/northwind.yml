@@ -1,0 +1,114 @@
+__meta__:
+  version: '0.1'
+connections:
+  northwind:
+    database: testdata/northwind.db
+    dialect: sqlite
+    driver: sqlite
+endpoints: {}
+entities:
+  Categories:
+    CategoryID: Integer(primary_key=True)
+    CategoryName: String(str_len=15, index=True)
+    Description: String()
+    Picture: Binary()
+  CustomerCustomerDemo:
+    CustomerID: String(str_len=5, primary_key=True)
+    CustomerTypeID: String(str_len=10, primary_key=True, index=True)
+  CustomerDemographics:
+    CustomerDesc: String()
+    CustomerTypeID: String(str_len=10, primary_key=True)
+  Customers:
+    Address: String(str_len=60)
+    City: String(str_len=15, index=True)
+    CompanyName: String(str_len=40, index=True)
+    ContactName: String(str_len=30)
+    ContactTitle: String(str_len=30)
+    Country: String(str_len=15)
+    CustomerID: String(str_len=5, primary_key=True)
+    Fax: String(str_len=24)
+    Phone: String(str_len=24)
+    PostalCode: String(str_len=10, index=True)
+    Region: String(str_len=15, index=True)
+  EmployeeTerritories:
+    EmployeeID: Integer(primary_key=True)
+    TerritoryID: String(str_len=20, primary_key=True, index=True)
+  Employees:
+    Address: String(str_len=60)
+    BirthDate: Datetime()
+    City: String(str_len=15)
+    Country: String(str_len=15)
+    EmployeeID: Integer(primary_key=True)
+    Extension: String(str_len=4)
+    FirstName: String(str_len=10)
+    HireDate: Datetime()
+    HomePhone: String(str_len=24)
+    LastName: String(str_len=20, index=True)
+    Notes: String()
+    Photo: Binary()
+    PhotoPath: String(str_len=255)
+    PostalCode: String(str_len=10, index=True)
+    Region: String(str_len=15)
+    ReportsTo: Integer(index=True)
+    Salary: Float()
+    Title: String(str_len=30)
+    TitleOfCourtesy: String(str_len=25)
+  Order Details:
+    Discount: Float()
+    OrderID: Integer(primary_key=True)
+    ProductID: Integer(primary_key=True, index=True)
+    Quantity: Integer()
+    UnitPrice: Numeric()
+  Orders:
+    CustomerID: String(str_len=5, index=True)
+    EmployeeID: Integer(index=True)
+    Freight: Numeric()
+    OrderDate: Datetime(index=True)
+    OrderID: Integer(primary_key=True)
+    RequiredDate: Datetime()
+    ShipAddress: String(str_len=60)
+    ShipCity: String(str_len=15)
+    ShipCountry: String(str_len=15)
+    ShipName: String(str_len=40)
+    ShipPostalCode: String(str_len=10, index=True)
+    ShipRegion: String(str_len=15)
+    ShipVia: Integer(index=True)
+    ShippedDate: Datetime(index=True)
+  Products:
+    CategoryID: Integer(index=True)
+    Discontinued: Binary()
+    ProductID: Integer(primary_key=True)
+    ProductName: String(str_len=40, index=True)
+    QuantityPerUnit: String(str_len=20)
+    ReorderLevel: Integer()
+    SupplierID: Integer(index=True)
+    UnitPrice: Numeric()
+    UnitsInStock: Integer()
+    UnitsOnOrder: Integer()
+  Region:
+    RegionDescription: String(str_len=50)
+    RegionID: Integer(primary_key=True)
+  Shippers:
+    CompanyName: String(str_len=40)
+    Phone: String(str_len=24)
+    ShipperID: Integer(primary_key=True)
+  Suppliers:
+    Address: String(str_len=60)
+    City: String(str_len=15)
+    CompanyName: String(str_len=40, index=True)
+    ContactName: String(str_len=30)
+    ContactTitle: String(str_len=30)
+    Country: String(str_len=15)
+    Fax: String(str_len=24)
+    HomePage: String()
+    Phone: String(str_len=24)
+    PostalCode: String(str_len=10, index=True)
+    Region: String(str_len=15)
+    SupplierID: Integer(primary_key=True)
+  Territories:
+    RegionID: Integer(index=True)
+    TerritoryDescription: String(str_len=50)
+    TerritoryID: String(str_len=20, primary_key=True)
+queries: {}
+relations: {}
+transforms: {}

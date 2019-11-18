@@ -267,21 +267,34 @@ class LineBreak(_AddElement):
 
 class Table(_AddElement):
 
-    class Field(Element):
+    class __TableElement(Element):
 
-        def __init__(self,  name, title=None, width=2, align="left", format_="{}",
-                     summary=None, dedup=True, heading_align="center", symbol=None):
-            self.name = name
+        def __init__(self,  title=None, width=2, align="left", heading_align="center"):
             self.title = title
+            self.width = width
             self.align = _map_align(align)
             self.heading_align = _map_align(heading_align)
-            self.width = width
-            self.dedup = dedup
-            self.format_ = format_
-            self.summary = summary
 
         def modify(self, other):
             other.fields.append(self)
+
+    class SparkBar(__TableElement):
+
+        def __init__(self, master, child, data, title=None, width=2,
+                     heading_align="center"):
+            super().__init__(title, width, align="center", header_align=heading_align)
+            self.master = master
+            self.child = child
+
+    class Field(__TableElement):
+
+        def __init__(self,  name, title=None, width=2, align="left", format_="{}",
+                     summary=None, dedup=True, heading_align="center", symbol=None):
+            super().__init__(title, width, align, heading_align)
+            self.name = name
+            self.dedup = dedup
+            self.format_ = format_
+            self.summary = summary
 
     def __init__(self, data, fields=None, align="center", font_size=None,
                  *kwds, **kwargs):

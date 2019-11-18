@@ -94,6 +94,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# vim
+*.swp
+
 # Rope project settings
 .ropeproject
 
@@ -103,6 +106,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+*.bak
 examples/content.tex
 examples/example_heatmap.pdf
 examples/hosts.csv

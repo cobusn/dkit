@@ -37,6 +37,7 @@ Data manipulation routines.
 # 24 Oct 2017 Cobus Nel       Added aggregates
 # 19 Jun 2018 Cobus Nel       Moved AttrDict to containers
 # 11 Sep 2019 Cobus Nel       Added iter_rename, iter_drop
+# 18 Nov 2019 Cobus Nel       Added reshape
 # =========== =============== =================================================
 from .. import _missing_value_
 from ..decorators import deprecated
@@ -71,8 +72,26 @@ __all__ = [
         "iter_rename",
         "iter_sample",
         "merge",
+        "melt",
         "reduce_aggregate",
 ]
+
+
+def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
+         value_name: str = "value"):
+    """
+    Reshape pivottables to key value pairs
+
+    inspired by R melt
+    """
+    for row in the_iterable:
+        index = {k: row[k] for k in id_fields}
+        for k in [k for k in row.keys() if k not in id_fields]:
+            retval = dict(index, **{
+                    var_name: k,
+                    value_name: row[k]
+                })
+            yield retval
 
 
 def reduce_aggregate(the_iterable, by_list, value_field, function=operator.add):

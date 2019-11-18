@@ -1,0 +1,29 @@
+digraph ERD {
+graph [fontname="Arial", rankdir="LR"];
+ranksep=2;
+nodesep=1;
+size="8.3,11.7!"
+
+
+"mpg" [shape=none, margin=0, label=<
+<TABLE sides="tlrb" border="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="0" width="200">
+    <TR><TD>mpg</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="class">class</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="cty">cty</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="cyl">cyl</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="displ">displ</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="drv">drv</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="fl">fl</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="hwy">hwy</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="index">index</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="manufacturer">manufacturer</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="model">model</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="trans">trans</TD></TR>
+    <TR><TD  height="0.1" sides="lrb" align="left" port="year">year</TD></TR>
+</TABLE>
+>];
+
+
+# Relationships
+}
+    

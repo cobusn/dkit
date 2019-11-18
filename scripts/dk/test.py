@@ -30,13 +30,13 @@ class TestConfig(unittest.TestCase):
         """admin init_config"""
         with self.assertRaises(exceptions.CkitApplicationException):
             admin_module.AdminModule(
-                ["init_config", "--config", "testdata/tst.cfg"]
+                ["init_config", "--config", "testdata/tst.ini"]
             ).run()
-        os.remove("testdata/tst.cfg")
+        os.remove("testdata/tst.ini")
         admin_module.AdminModule(
-            ["init_config", "--config", "testdata/tst.cfg"]
+            ["init_config", "--config", "testdata/ini.cfg"]
         ).run()
-        os.remove("testdata/tst.cfg")
+        os.remove("testdata/tst.ini")
 
     def test_init_model(self):
         """admin init_model"""
@@ -136,7 +136,7 @@ class TestExplore(TestDK):
         ]
         self.go(tests)
 
-    def test_histogram(self):
+    def _test_histogram(self):
         "x table"
         tests = [
             ["histogram", "-d", "displ", "testdata/mpg.jsonl"],
@@ -151,7 +151,7 @@ class TestExplore(TestDK):
         ]
         self.go(tests)
 
-    def test_plot(self):
+    def _test_plot(self):
         "x plot"
         tests = [
             ["plot", "-x", "cty", "-y", "hwy", "testdata/mpg.jsonl"],
@@ -219,6 +219,13 @@ class TestRun(TestDK):
         tests = [
             ["query", "-m", "testdata/northwind.yml", "--query", "select * from mpg",
              "sqlite:///testdata/mpg.db"],
+        ]
+        self.go(tests)
+
+    def test_melt(self):
+        tests = [
+            ["melt", "-i", "Year", "-K", "month", "-V", "temp",
+             "testdata/nottem.jsonl"]
         ]
         self.go(tests)
 

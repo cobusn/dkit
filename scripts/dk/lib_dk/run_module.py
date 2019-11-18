@@ -117,6 +117,18 @@ class RunModule(module.MultiCommandModule):
         if backend is not None:
             backend.close()
 
+    def do_melt(self):
+        """transpose a pivot table back to key:value pairs"""
+        self.push_to_uri(
+            self.args.output,
+            mp.melt(
+                self.input_stream(self.args.input),
+                self.args.id_fields,
+                self.args.variable_name,
+                self.args.value_name
+            )
+        )
+
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser()
@@ -155,4 +167,22 @@ class RunModule(module.MultiCommandModule):
         options.add_options_join(parser_join)
         options.add_option_output_uri(parser_join)
 
+        # melt
+        parser_melt = self.sub_parser.add_parser("melt", help=self.do_melt.__doc__)
+        options.add_option_defaults(parser_melt)
+        options.add_options_inputs(parser_melt)
+        options.add_option_n(parser_melt)
+        options.add_option_output_uri(parser_melt)
+        parser_melt.add_argument(
+            "-i", "--id_field", dest="id_fields", action="append",
+            default=[], help="add identifier field"
+        )
+        parser_melt.add_argument(
+            "-K", "--var", dest="variable_name", default="variable",
+            help="name of variable field (default is 'variable')"
+        )
+        parser_melt.add_argument(
+            "-V", "--val", dest="value_name", default="value",
+            help="name of value field (default is 'value')"
+        )
         super().parse_args()
