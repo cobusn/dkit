@@ -189,6 +189,7 @@ class InfixParser(object):
             "randint": lambda x, y: float(randint(x, y)),
             "uniform": uniform,
             "replace_na": replace_na,
+            "strftime": lambda d, f: d.strftime(f)
         }
 
         # add 1 parameter and 2 parameter functions
