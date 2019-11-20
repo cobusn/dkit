@@ -3,59 +3,34 @@
 #
 import sys; sys.path.insert(0, "..") # noqa
 
-from dkit.data import fake_helper
 from dkit.doc import document
-from dkit.doc.document import Table, Figure
+from dkit.doc.document import Table
 from dkit.doc.latex_renderer import LatexDocRenderer
-from sample_data import plot_data
+from dkit.etl import source
+from dkit.data import aggregation as agg
 
+with source.load("data/nottem_temp.jsonl") as src:
+    temp_data = list(src)
+
+avg_by_month = agg.Aggregate() \
+    + agg.GroupBy('Month') \
+    + agg.Mean("Temp").alias("mean_temp") \
 
 d = document.Document()
 d += document.Title("Document")
-d += document.SubTitle("Sub title")
+d += document.SubTitle("Temperatures")
 d += document.Author("Cobus Nel")
-d += document.Heading("Heading 1", 1)
-d += document.Heading("Heading 1.1", 2)
-d += document.Heading("Heading 1.1.1", 3)
-d += document.Paragraph("afda")
-z = document.MD(
-    """
-    ## secttion 2.1
-    This is a **markdown** document, with
-
-    * multiple
-    * options
-
-    other `verbatim` components
-
-    ```python
-    verbatim
-    ```
-    code
-    """
-)
-
-# d["clients"] = list(fake_helper.persons(n=20))
-# d["plot"] = plot_data
-
+d += document.Heading("Temperature table", 1)
 d += document.Table(
-    list(fake_helper.persons(n=20)),
+    list(avg_by_month(temp_data)),
     [
-        Table.Field("first_name", "First name", width=5),
-        Table.Field("last_name", "Last name"),
-        Table.Field("birthday", "DOB", align="right", width=4, format_="%Y-%m-%d"),
-        Table.Field("gender", "Gender"),
+        Table.Field("Month", width=2),
+        Table.Field("mean_temp", "Temp", width=2, align="right"),
+        Table.SparkLine(temp_data, "Month", "Month", "Temp", "Plot", 1),
+        Table.Field("mean_temp", "Temp 2", width=2, format_="{:.2f}", align="left"),
     ]
 )
 
-f = document.Figure(plot_data, "plotdata.pdf") \
-    + Figure.Title("Sales per Month") \
-    + Figure.GeomArea("Revenue", "index", "revenue", color="#0000FF", alpha=0.8)
-
-d += f
-
-# print(json.dumps(d.as_dict(), indent=4, default=str))
-
-with open("content.tex", "w") as texfile:
+with open("tex/sparktable.tex", "w") as texfile:
     for st in LatexDocRenderer(d.as_dict()["elements"], plot_folder="plots"):
             texfile.write(st)

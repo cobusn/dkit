@@ -22,8 +22,8 @@
 import os.path as path
 import sys
 import copy
-
 import tabulate
+
 """
 Latex helper classes
 """
@@ -621,13 +621,77 @@ class Title(SimpleTexConstruct):
 
 class LongTable(TexFoundation):
 
+    class Formatter(TexFoundation):
+
+        def __init__(self, spec):
+            self.spec = spec
+
+    class FieldFormatter(Formatter):
+
+        def __call__(self, row):
+            data = row[self.spec["name"]]
+            fmt = self.spec["format_"]
+            return self.replace_chars(fmt.format(data))
+
+    class SparkBarFormatter(Formatter):
+
+        @property
+        def _data(self):
+            return self.spec["spark_data"]
+
+        @property
+        def width(self):
+            return self.spec["width"]
+
+        @property
+        def height(self):
+            return self.spec["height"]
+
+        def child_data(self, row):
+            master = self.spec["master"]
+            child = self.spec["child"]
+            value = self.spec["value"]
+            return [float(i[value]) for i in self._data if i[child] == row[master]]
+
+        def formatted_data(self, data):
+            """return child data for row"""
+            return "".join(["({},{})".format(i, v) for i, v in enumerate(data)])
+
+        def tikz(self, row):
+            raw = self.child_data(row)
+            n = len(raw)
+            _max = max(raw)
+            _min = min(raw)
+            formatted = self.formatted_data(raw)
+            xscale = self.width / n
+            yscale = self.height / (_max - _min)
+            retval = (
+                f"\\begin{{tikzpicture}}[xscale={xscale}, yscale={yscale}]"
+                # f"\\draw[ultra thin, black!50] (-1,{_min})--({n},{_min});"
+                # f"\\draw[ultra thin, black!50] (-1,{_max})--({n},{_max});"
+                f"\\draw[ultra thin] plot[] coordinates {{{formatted}}};"
+                "\\end{tikzpicture}"
+            )
+            return retval
+
+        def __call__(self, row):
+            return self.tikz(row)
+
     def __init__(self, data, field_spec, align="center", font_size=None,
                  unit="cm"):
         self.fields = field_spec
+        self.formatters = [self.get_formatter(f) for f in field_spec]
         self.unit = unit
         self.align = align
         self.font_size = font_size
         super().__init__(data)
+
+    def get_formatter(self, field_spec):
+        fmt_map = {
+            "field": self.FieldFormatter,
+            "sparkline": self.SparkBarFormatter,
+        }
+        return fmt_map[field_spec["~>"]](field_spec)
 
     @property
     def alignment(self):
@@ -665,15 +729,9 @@ class LongTable(TexFoundation):
 
     @property
     def content(self):
-        def formatted(row, field):
-            data = row[field["name"]]
-            fmt = field["format_"]
-            return self.replace_chars(fmt.format(data))
-
-        fields = self.fields
         d = ""
         for i, row in enumerate(self.data):
-            d += "  " + " & ".join([formatted(row, f) for f in fields])
+            d += "  " + " & ".join([f(row) for f in self.formatters])
             d += r" \\" + "\n"
             # d += r" \\[2pt]" + "\n"
         return d
@@ -683,7 +741,7 @@ class LongTable(TexFoundation):
         if self.font_size is not None:
             r += f"\\begin{{{self.font_size}}}\n"
         else:
-            r += r"\begin{normalsize}\n"
+            r += r"\begin{normalsize}" + "\n"
         r += r"\setlength{\tabcolsep}{2pt}"
         r += r"\begin{longtable}" + self.environment_start + "\n"
         r += self.column_headings
@@ -692,7 +750,7 @@ class LongTable(TexFoundation):
         if self.font_size is not None:
             r += f"\\end{{{self.font_size}}}\n"
         else:
-            r += r"\begin{normalsize}\n"
+            r += r"\end{normalsize}" + "\n"
         return r
 
 

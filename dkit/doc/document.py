@@ -25,7 +25,6 @@ Create Document Artifacts
 2019        Cobus Nel       Created
 =========== =============== =================================================
 """
-
 from .. import __version__
 from ..utilities.mixins import SerDeMixin
 from ..plot import ggrammar
@@ -278,13 +277,19 @@ class Table(_AddElement):
         def modify(self, other):
             other.fields.append(self)
 
-    class SparkBar(__TableElement):
+        def format(self, row):
+            raise NotImplementedError
 
-        def __init__(self, master, child, data, title=None, width=2,
+    class SparkLine(__TableElement):
+
+        def __init__(self, spark_data, master_field, child_field, value_field, title=None, width=2,
                      heading_align="center"):
-            super().__init__(title, width, align="center", header_align=heading_align)
-            self.master = master
-            self.child = child
+            super().__init__(title, width, align="center", heading_align=heading_align)
+            self.spark_data = spark_data
+            self.master = master_field
+            self.child = child_field
+            self.value = value_field
+            self.height = 0.4
 
     class Field(__TableElement):
 

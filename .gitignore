@@ -119,3 +119,7 @@ html/html/
 test/data/*
 test/input_files/*
 test/output/*
+examples/data/hosts.csv
+examples/tex/sparklines.aux
+examples/tex/sparklines.pdf
+examples/tex/sparktable.tex
