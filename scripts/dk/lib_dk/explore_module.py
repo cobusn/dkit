@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 """
-schema subprocessing system
+Exploration sub system
 """
 import collections
 import itertools
@@ -27,7 +27,7 @@ import sys
 from re import RegexFlag
 from . import module, options
 from dkit.plot import ggrammar
-# from dkit.etl import model
+from dkit.data import manipulate as mp
 
 
 class ExploreModule(module.MultiCommandModule):
@@ -47,16 +47,24 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_distinct(self):
         """print distinct values for keys specified"""
-        # hack to only extract the required field
-        self.args.fields = [self.args.field]
+        distinct_rows = mp.distinct(
+            self.input_stream(self.args.input),
+            self.args.select_fields
+        )
 
-        field_name = self.args.field
-        distinct_values = list(set(
-            i[field_name] for i in self.input_stream(self.args.input)
-        ))
         if self.args.sort_output is True:
-            distinct_values = sorted(distinct_values, reverse=self.args.reversed)
-        self.columnize([str(i) for i in distinct_values])
+            distinct_rows = sorted(distinct_rows, reverse=self.args.reversed)
+
+        if self.args.table:
+            self.tabulate(distinct_rows)
+        elif self.args.long is True:
+            for row in distinct_rows:
+                self.print(", ".join(row.values()))
+        else:
+            self.push_to_uri(
+                self.args.output,
+                distinct_rows
+            )
 
     def do_fields(self):
         """print field names"""
@@ -200,10 +208,12 @@ class ExploreModule(module.MultiCommandModule):
         parser_distinct = self.sub_parser.add_parser("distinct", help=self.do_distinct.__doc__)
         options.add_option_defaults(parser_distinct)
         options.add_options_minimal_inputs(parser_distinct)
-        options.add_option_field_name(parser_distinct)
+        options.add_option_field_names(parser_distinct)
         options.add_option_sort_output(parser_distinct)
-        options.add_option_long_format(parser_distinct)
         options.add_option_reversed(parser_distinct)
+        options.add_option_tabulate(parser_distinct)
+        options.add_option_long_format(parser_distinct)
+        options.add_option_output_uri(parser_distinct)
 
         # fields
         parser_fields = self.sub_parser.add_parser("fields", help=self.do_fields.__doc__)

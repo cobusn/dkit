@@ -25,6 +25,7 @@ from . import module, options
 from dkit import exceptions
 from dkit.data import manipulate as mp, containers
 from dkit.etl.extensions import ext_sql_alchemy
+from dkit.doc import builder
 
 
 class RunModule(module.MultiCommandModule):
@@ -129,6 +130,11 @@ class RunModule(module.MultiCommandModule):
             )
         )
 
+    def do_report(self):
+        """run report"""
+        b = builder.ReportBuilder.from_file(self.args.report)
+        b.run()
+
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser()
@@ -139,25 +145,6 @@ class RunModule(module.MultiCommandModule):
         options.add_options_inputs(parser_etl)
         options.add_option_n(parser_etl)
         options.add_option_output_uri(parser_etl)
-
-        # query
-        parser_query = self.sub_parser.add_parser("query", help=self.do_query.__doc__)
-        group_io = parser_query.add_argument_group("connection")
-        options.add_option_connection_name_opt(group_io)
-        options.add_option_input_db_uri_optional(group_io)
-        options.add_option_defaults(parser_query)
-        group_query = parser_query.add_argument_group("sql source")
-        options.add_query_group(group_query)
-        options.add_option_output_uri(parser_query)
-        options.add_option_tabulate(parser_query)
-
-        # template
-        parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
-        options.add_option_model(parser_template)
-        options.add_options_csv(parser_template)
-        options.add_option_uri_dict(parser_template)
-        options.add_option_template(parser_template)
-        options.add_option_output_uri(parser_template)
 
         # join
         parser_join = self.sub_parser.add_parser("join", help=self.do_join.__doc__)
@@ -185,4 +172,31 @@ class RunModule(module.MultiCommandModule):
             "-V", "--val", dest="value_name", default="value",
             help="name of value field (default is 'value')"
         )
+
+        # query
+        parser_query = self.sub_parser.add_parser("query", help=self.do_query.__doc__)
+        group_io = parser_query.add_argument_group("connection")
+        options.add_option_connection_name_opt(group_io)
+        options.add_option_input_db_uri_optional(group_io)
+        options.add_option_defaults(parser_query)
+        group_query = parser_query.add_argument_group("sql source")
+        options.add_query_group(group_query)
+        options.add_option_output_uri(parser_query)
+        options.add_option_tabulate(parser_query)
+
+        # report
+        parser_report = self.sub_parser.add_parser("report", help=self.do_report.__doc__)
+        options.add_option_model(parser_report)
+        parser_report.add_argument(
+            "-r", "--report", required=True, help="report.yml file"
+        )
+
+        # template
+        parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
+        options.add_option_model(parser_template)
+        options.add_options_csv(parser_template)
+        options.add_option_uri_dict(parser_template)
+        options.add_option_template(parser_template)
+        options.add_option_output_uri(parser_template)
+
         super().parse_args()

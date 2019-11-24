@@ -269,7 +269,7 @@ class Table(_AddElement):
     class __TableElement(Element):
 
         def __init__(self,  title=None, width=2, align="left", heading_align="center"):
-            self.title = title
+            self.title = str(title)
             self.width = width
             self.align = _map_align(align)
             self.heading_align = _map_align(heading_align)
@@ -289,7 +289,7 @@ class Table(_AddElement):
             self.master = master_field
             self.child = child_field
             self.value = value_field
-            self.height = 0.4
+            self.height = 0.3
 
     class Field(__TableElement):
 

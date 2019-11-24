@@ -28,6 +28,25 @@ BOOL_MAPPING = {
 }
 
 
+def scale(values):
+    """scale values between 0 and 1
+
+    Args:
+        values: iterable
+
+    Yields:
+        scaled values
+    """
+    v = list(values)
+    _min = min(v)
+    _d = max(v) - _min
+    for x in v:
+        try:
+            yield (x - _min) / _d
+        except ZeroDivisionError:
+            yield 0
+
+
 def sub_nan(value, substitute=0.0):
     """return value while substituting nan values with replacement"""
 #   if not isinstance(value, str) and isnan(value):
