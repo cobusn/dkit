@@ -184,7 +184,8 @@ class ReportBuilder(object):
         self.definition = definition
         self.data = {}
         self.code = {
-            "len": len
+            "len": len,
+            "currency": lambda x: "R{:,.0f}".format(x)
         }
         self.documents = {}
         self.variables = {}

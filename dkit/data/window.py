@@ -5,13 +5,20 @@ from scipy.stats import linregress
 
 
 class MovingWindow(ABC):
+    """
+    Moving Window
 
-    def __init__(self, lag):
+    Args:
+        lag: moving window size
+        truncate: do not yield first n rows
+    """
+    def __init__(self, lag, truncate=True):
         self.lag = lag
         self.functions = []
         self._order_by = []
         self._partition_by = []
         self.fields = set()
+        self.truncate = truncate
 
     def partition_by(self, *fields):
         self._partition_by = fields
@@ -40,9 +47,11 @@ class MovingWindow(ABC):
                 for field in fields:
                     acc = accumulators[key]
                     acc[field].append(row[field])
-                for fn in self.functions:
-                    fn.update(acc, row)
-                yield(row)
+                updates = any([fn.update(acc, row) for fn in self.functions])
+                if updates:
+                    yield row
+                elif not self.truncate:
+                    yield row
 
     def __add__(self, other):
         other._modify_(self)
@@ -68,8 +77,10 @@ class AbstractWindowFunction(ABC):
         values = accumulator[self.field]
         if len(values) < self.lag:
             row[self._alias] = self.na
+            return False
         else:
             row[self._alias] = self.function(values)
+            return True
 
     def _modify_(self, other):
         other.functions.append(self)
@@ -83,8 +94,10 @@ class Average(AbstractWindowFunction):
         values = accumulator[self.field]
         if len(values) < self.lag:
             row[self._alias] = self.na
+            return False
         else:
             row[self._alias] = fmean(values)
+            return True
 
 
 class Gradient(AbstractWindowFunction):
@@ -94,8 +107,10 @@ class Gradient(AbstractWindowFunction):
         values = accumulator[self.field]
         if len(values) < self.lag:
             row[self._alias] = self.na
+            return False
         else:
             row[self._alias] = linregress(range(self.lag), values)[0]
+            return True
 
 
 class Median(AbstractWindowFunction):
@@ -105,8 +120,22 @@ class Median(AbstractWindowFunction):
         values = accumulator[self.field]
         if len(values) < self.lag:
             row[self._alias] = self.na
+            return False
         else:
             row[self._alias] = median(values)
+            return True
+
+
+class Last(AbstractWindowFunction):
+    prefix = "last"
+
+    def update(self, accumulator, row):
+        values = accumulator[self.field]
+        row[self._alias] = values[-1]
+        if len(values) > 0:
+            return False
+        else:
+            return True
 
 
 class Sum(AbstractWindowFunction):

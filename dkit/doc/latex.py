@@ -23,6 +23,7 @@ import os.path as path
 import sys
 import copy
 import tabulate
+from ..data.helpers import scale
 
 """
 Latex helper classes
@@ -633,10 +634,11 @@ class LongTable(TexFoundation):
             fmt = self.spec["format_"]
             return self.replace_chars(fmt.format(data))
 
-    class SparkBarFormatter(Formatter):
+    class SparkLineFormatter(Formatter):
 
         @property
         def _data(self):
+            # scale data to max 100
             return self.spec["spark_data"]
 
         @property
@@ -651,7 +653,14 @@ class LongTable(TexFoundation):
             master = self.spec["master"]
             child = self.spec["child"]
             value = self.spec["value"]
-            return [float(i[value]) for i in self._data if i[child] == row[master]]
+            d = [float(i[value]) for i in self._data if i[child] == row[master]]
+            # latex has a limited number of registers for data
+            # plotting hence the data is scaled between 0 an 100
+            # since there are no axis this does not matter
+            if len(d) > 0:
+                return [100.0 * i for i in scale(d)]
+            else:
+                return []
 
         def formatted_data(self, data):
             """return child data for row"""
@@ -660,19 +669,25 @@ class LongTable(TexFoundation):
         def tikz(self, row):
             raw = self.child_data(row)
             n = len(raw)
-            _max = max(raw)
-            _min = min(raw)
-            formatted = self.formatted_data(raw)
-            xscale = self.width / n
-            yscale = self.height / (_max - _min)
-            retval = (
-                f"\\begin{{tikzpicture}}[xscale={xscale}, yscale={yscale}]"
-                # f"\\draw[ultra thin, black!50] (-1,{_min})--({n},{_min});"
-                # f"\\draw[ultra thin, black!50] (-1,{_max})--({n},{_max});"
-                f"\\draw[ultra thin] plot[] coordinates {{{formatted}}};"
-                "\\end{tikzpicture}"
-            )
-            return retval
+            if n > 0:
+                _max = max(raw)
+                _min = min(raw)
+                formatted = self.formatted_data(raw)
+                xscale = self.width / n
+                try:
+                    yscale = self.height / (_max - _min)
+                except ZeroDivisionError:
+                    yscale = self.height
+                retval = (
+                    f"\\begin{{tikzpicture}}[xscale={xscale}, yscale={yscale}]"
+                    # f"\\draw[ultra thin, black!50] (-1,{_min})--({n},{_min});"
+                    # f"\\draw[ultra thin, black!50] (-1,{_max})--({n},{_max});"
+                    f"\\draw[ultra thin] plot[] coordinates {{{formatted}}};"
+                    "\\end{tikzpicture}"
+                )
+                return retval
+            else:
+                return ""
 
         def __call__(self, row):
             return self.tikz(row)
@@ -689,7 +704,7 @@ class LongTable(TexFoundation):
     def get_formatter(self, field_spec):
         fmt_map = {
             "field": self.FieldFormatter,
-            "sparkline": self.SparkBarFormatter,
+            "sparkline": self.SparkLineFormatter,
         }
         return fmt_map[field_spec["~>"]](field_spec)
 

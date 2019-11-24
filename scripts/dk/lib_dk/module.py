@@ -138,10 +138,8 @@ class Module(object):
 
     def tabulate(self, data, floatfmt="0.2f"):
         """tabulate data"""
-        # trim width if requested
         if hasattr(self.args, "width") and self.args.width > 0:
             w = self.args.width
-            # trim = lambda x: {k: str(v)[:w] for k, v in x.items()}
             data = (
                 lambda x: {k: str(v)[:w] for k, v in x.items()}
                 for row in data

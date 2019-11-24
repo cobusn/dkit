@@ -38,6 +38,7 @@ Data manipulation routines.
 # 19 Jun 2018 Cobus Nel       Moved AttrDict to containers
 # 11 Sep 2019 Cobus Nel       Added iter_rename, iter_drop
 # 18 Nov 2019 Cobus Nel       Added reshape
+# 21 Nov 2019 Cobus nel       Added distinct and rename
 # =========== =============== =================================================
 from .. import _missing_value_
 from ..decorators import deprecated
@@ -65,15 +66,17 @@ __all__ = [
         "ReducePivot",
         "aggregate",
         "aggregates",
+        "distinct",
         "index",
         "infer_type",
         "iter_add_id",
         "iter_drop",
         "iter_rename",
         "iter_sample",
-        "merge",
         "melt",
+        "merge",
         "reduce_aggregate",
+        "rename",
 ]
 
 
@@ -92,6 +95,37 @@ def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
                     value_name: row[k]
                 })
             yield retval
+
+
+def distinct(iter_input, field_list):
+    """extract distinct rows from iterable
+
+    Args:
+        iter_input: iterable of dictionary rows
+        field_list: fields required
+
+    Yields:
+        Dictionaries
+    """
+    _distinct = set(
+        tuple(r[i] for i in field_list) for r in iter_input
+    )
+    yield from (dict(zip(field_list, r)) for r in _distinct)
+
+
+def rename(the_iterable, rename_map):
+    """Rename rows of dictionaries
+
+    Args:
+        - the_iterable: iterable of dictionary like rows
+        - rename_map: rename dictionary
+    """
+    yield from (
+        {
+            v: row[k] for v, k in rename_map.items()
+        }
+        for row in the_iterable
+    )
 
 
 def reduce_aggregate(the_iterable, by_list, value_field, function=operator.add):

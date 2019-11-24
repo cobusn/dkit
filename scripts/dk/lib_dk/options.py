@@ -128,6 +128,12 @@ def add_option_field_name(parser):
     parser.add_argument("-d", "--field", help="field name", required=True)
 
 
+def add_option_field_names(parser):
+    """field names"""
+    parser.add_argument("-d", "--field", dest="select_fields", action="append",
+                        default=[], help="add field for aggregation")
+
+
 def add_option_file(parser):
     """specify sql file"""
     parser.add_argument(
