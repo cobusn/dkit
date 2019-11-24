@@ -389,7 +389,6 @@ class MultiKeyIndexer(Indexer):
         self.index_fields = index_fields
         self.__process()
 
-    def __process(self):
         indexes = self.index_fields
         for row in self.the_iterable:
             the_key = tuple(row[k] for k in indexes)
@@ -503,7 +502,6 @@ class Pivot(__PivotAbstract):
         - value_key: value to summarize for pivot
         - function: function for pivot. must work on lists
         - missing: value to substitute for _missing value
-        - reverse_cols: reverse order of columns if True
         - ensure_cols: ensure these columns exist
     """
     def __init__(self, data, row_keys, col_key, value_key, function=sum,
@@ -546,17 +544,19 @@ class Pivot(__PivotAbstract):
 
         for row_key in row_headings:
             retval = dict(zip(row_keys, row_key))
-            # retval = collections.OrderedDict(zip(row_keys, row_key))
-            retval.update([(str(col_key), function(self._ds[row_key].get(col_key, [missing])))
-                           for col_key in col_headings])
+            retval.update(
+                [
+                    (str(col_key), function(self._ds[row_key].get(col_key, [missing])))
+                    for col_key in col_headings
+                ]
+            )
             yield retval
 
     def __iter__(self):
         """
         Provide __iter__ functionality
         """
-        for row in self.rows():
-            yield row
+        yield from self.rows()
 
 
 class ReducePivot(__PivotAbstract):
