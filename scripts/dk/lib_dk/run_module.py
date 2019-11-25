@@ -26,9 +26,65 @@ from dkit import exceptions
 from dkit.data import manipulate as mp, containers
 from dkit.etl.extensions import ext_sql_alchemy
 from dkit.doc import builder
+from dkit.data import aggregation as agg
+import argparse
+
+
+class GroupByAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if hasattr(namespace, "group_by_operations"):
+            operations = getattr(namespace, "group_by_operations")
+        else:
+            operations = []
+            setattr(namespace, "group_by_operations", operations)
+        aggregator_class = agg.MAP_NON_PARAMETRIC_FUNCTIONS[self.dest]
+        if ":" in values:
+            v = values.split(":")
+            aggregator = aggregator_class(v[0])
+            aggregator.alias(v[1])
+        else:
+            aggregator = aggregator_class(values)
+        operations.append(aggregator)
 
 
 class RunModule(module.MultiCommandModule):
+
+    def do_agg(self):
+        """group-by with aggregation"""
+
+        def get_aggregator():
+            """build dkit.data.aggregator.Aggregate object from options"""
+            aggregator = agg.Aggregate()
+
+            # Check that at least one operation has been specified
+            if not hasattr(self.args, "group_by_operations"):
+                raise exceptions.CkitApplicationException("No group by operation specified")
+
+            # set group by keys
+            aggregator = aggregator + agg.GroupBy(*self.args.group_by)
+
+            for operation in self.args.group_by_operations:
+                aggregator = aggregator + operation
+
+            return aggregator
+
+        aggr = get_aggregator()
+        field_list = aggr.groupby_keys + [i.target for i in aggr.aggregations]
+        self.args.fields = field_list
+        if self.args.table is True:
+            a = list(aggr(self.input_stream(
+                    self.args.input, fields=aggr.required_fields)
+                ))
+            self.tabulate(a)
+        else:
+            self.push_to_uri(
+                self.args.output,
+                aggr(self.input_stream(
+                    self.args.input,
+                    fields=aggr.required_fields
+                ))
+            )
 
     def do_etl(self):
         """run etl process"""
@@ -138,6 +194,22 @@ class RunModule(module.MultiCommandModule):
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser()
+
+        # agg
+        parser_agg = self.sub_parser.add_parser("agg", help=self.do_agg.__doc__)
+        options.add_option_defaults(parser_agg)
+        options.add_options_inputs(parser_agg)
+        options.add_option_output_uri(parser_agg)
+        parser_agg.add_argument("-g", "--group_by", dest="group_by", action="append",
+                                default=[], help="add group_by field")
+        for name, class_obj in agg.MAP_NON_PARAMETRIC_FUNCTIONS.items():
+            parser_agg.add_argument(
+                f"--{name}",
+                dest=name,
+                action=GroupByAction,
+                help=class_obj.__doc__
+            )
+        options.add_option_tabulate(parser_agg)
 
         # run
         parser_etl = self.sub_parser.add_parser("etl", help=self.do_etl.__doc__)
