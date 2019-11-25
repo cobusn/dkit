@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2017 Cobus Nel
 #
@@ -46,11 +46,10 @@ class DataKit(object):
         queries      maintain queries
         mapping      maintain entity relation mapping
         schemas      maintain schemas
-        transforms   maintain transforms
+        transforms   mintain transforms
         XML          maintain XML rules
 
     action modules:
-        aggregate    aggregate data
         run          run etl or query
         xplore       explore data
 
@@ -60,7 +59,7 @@ class DataKit(object):
     (use dk MODULE -h for details)
     """
 
-    modules = sorted(["aggregate", "admin", "connections", "endpoints", "run", "queries",
+    modules = sorted(["admin", "connections", "endpoints", "run", "queries",
                       "mapping", "schemas", "transforms", "xplore", "XML"])
 
     def __init__(self, arguments):
@@ -73,10 +72,6 @@ class DataKit(object):
     def do_admin(self):
         from lib_dk import admin_module
         admin_module.AdminModule(self.arguments[2:]).run()
-
-    def do_aggregate(self):
-        from lib_dk import agg_module
-        agg_module.AggModule(self.arguments[2:]).run()
 
     def do_connections(self):
         from lib_dk import connections_module

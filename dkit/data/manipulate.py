@@ -648,7 +648,7 @@ def iter_add_id(the_iterator, key="uuid"):
 
 
 def iter_drop(the_iterator, fields):
-    """Drop specirfied fields from each row """
+    """Drop specified fields from each row """
     return (
         {k: v for k, v in row.items() if k not in fields}
         for row in the_iterator
