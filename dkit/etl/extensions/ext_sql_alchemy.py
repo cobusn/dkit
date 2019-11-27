@@ -26,6 +26,10 @@ from datetime import datetime
 from typing import Dict
 import re
 
+# =========== =============== =================================================
+# 27 Nov 2019 Cobus Nel       Added facility for options in URL
+# =========== =============== =================================================
+
 
 def _rfc_1738_quote(text):
     return re.sub(r"[:@/]", lambda m: "%%%X" % ord(m.group(0)), text)
@@ -39,7 +43,7 @@ VALID_DIALECTS = [
 class URL(object):
 
     def __init__(self, driver, username=None, password=None, host=None, port=None,
-                 database=None, **kwargs):
+                 database=None, options=None, **kwargs):
         self.drivername = driver
         self.username = username
         self.password = password
@@ -49,6 +53,7 @@ class URL(object):
         else:
             self.port = None
         self.database = database
+        self.options = options
 
     def __str__(self):
         s = self.drivername + "://"
@@ -68,6 +73,8 @@ class URL(object):
             if not(("oracle" in self.drivername) and (self.host is None)):
                 s += "/"
             s += self.database
+        if self.options is not None:
+            s += "?" + self.options
         return s
 
 
