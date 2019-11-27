@@ -18,20 +18,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""
-Classes that model etl artifacts:
+# Classes that model etl artifacts:
+#
+# =========== =============== =================================================
+# DATE        NAME            COMMENT
+# =========== =============== =================================================
+# Dec 2017    Cobus Nel       Created
+# Jan 2018    Cobus Nel       Updated
+# Jun 2018    Cobus Nel       Finalized initial version
+# Jan 2019    Cobus Nel       Added Relation class
+# Jan 2019    Cobus Nel       Added ModelServices class
+# Aug 2019    Cobus Nel       Refactor Services classes
+# 27 Nov 2019 Cobus Nel       Added facility for options in Connection object
+# =========== =============== =================================================
 
-=========== =============== =================================================
-DATE        NAME            COMMENT
-=========== =============== =================================================
-Dec 2017    Cobus Nel       Created
-Jan 2018    Cobus Nel       Updated
-Jun 2018    Cobus Nel       Finalized initial version
-Jan 2019    Cobus Nel       Added Relation class
-Jan 2019    Cobus Nel       Added ModelServices class
-Aug 2019    Cobus Nel       Refactor Services classes
-=========== =============== =================================================
-"""
 import configparser
 import importlib
 import os
@@ -189,6 +189,7 @@ class Connection(map_db.Object):
     port: int = None
     compression: str = None
     encryption: str = None
+    options: str = None
 
     @staticmethod
     def get_listing(container):
