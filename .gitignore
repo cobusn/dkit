@@ -123,3 +123,5 @@ examples/data/hosts.csv
 examples/tex/sparklines.aux
 examples/tex/sparklines.pdf
 examples/tex/sparktable.tex
+scripts/dk/dkit
+scripts/dk/testdata/ini.cfg

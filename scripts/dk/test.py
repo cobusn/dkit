@@ -229,6 +229,15 @@ class TestRun(TestDK):
         ]
         self.go(tests)
 
+    def test_pivot(self):
+        tests = [
+            ["pivot", "-g", "manufacturer", "--mean", "hwy", "-p", "class", "--table",
+             "testdata/mpg.jsonl"],
+            ["pivot", "-g", "manufacturer", "--mean", "hwy", "-p", "class",
+             "testdata/mpg.jsonl"],
+        ]
+        self.go(tests)
+
 
 class TestTransforms(TestDK):
     """

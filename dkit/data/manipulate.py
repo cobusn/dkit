@@ -636,6 +636,16 @@ class ReducePivot(__PivotAbstract):
             yield retval
 
 
+PIVOT_FUNCTIONS = {
+    "max": max,
+    "mean": statistics.fmean,
+    "median": statistics.median,
+    "min": min,
+    "std": statistics.stdev,
+    "sum": statistics.fsum,
+}
+
+
 def iter_add_id(the_iterator, key="uuid"):
     """
     Add UUID to each row

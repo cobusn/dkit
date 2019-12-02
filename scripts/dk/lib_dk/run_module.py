@@ -48,6 +48,23 @@ class GroupByAction(argparse.Action):
         operations.append(aggregator)
 
 
+class PivotFunctionAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Set function
+        setattr(
+            namespace,
+            "function", mp.PIVOT_FUNCTIONS[self.dest]
+        )
+
+        # Set aggregation field
+        setattr(
+            namespace,
+            "value_field",
+            values
+        )
+
+
 class RunModule(module.MultiCommandModule):
 
     def do_agg(self):
@@ -186,6 +203,23 @@ class RunModule(module.MultiCommandModule):
             )
         )
 
+    def do_pivot(self):
+        """create pivot"""
+        p = mp.Pivot(
+            self.input_stream(self.args.input),
+            self.args.group_by,
+            self.args.pivot,
+            self.args.value_field,
+            self.args.function,
+        )
+        if self.args.table:
+            self.tabulate(list(p))
+        else:
+            self.push_to_uri(
+                self.args.output,
+                p
+            )
+
     def do_report(self):
         """run report"""
         b = builder.ReportBuilder.from_file(self.args.report)
@@ -206,12 +240,11 @@ class RunModule(module.MultiCommandModule):
             parser_agg.add_argument(
                 f"--{name}",
                 dest=name,
-                action=GroupByAction,
-                help=class_obj.__doc__
+                action=GroupByAction
             )
         options.add_option_tabulate(parser_agg)
 
-        # run
+        # etl
         parser_etl = self.sub_parser.add_parser("etl", help=self.do_etl.__doc__)
         options.add_option_defaults(parser_etl)
         options.add_options_inputs(parser_etl)
@@ -244,6 +277,22 @@ class RunModule(module.MultiCommandModule):
             "-V", "--val", dest="value_name", default="value",
             help="name of value field (default is 'value')"
         )
+
+        # pivot
+        parser_pivot = self.sub_parser.add_parser("pivot", help=self.do_pivot.__doc__)
+        options.add_option_defaults(parser_pivot)
+        options.add_options_inputs(parser_pivot)
+        options.add_option_output_uri(parser_pivot)
+        parser_pivot.add_argument("-g", "--group_by", dest="group_by", action="append",
+                                  default=[], help="add group_by field")
+        parser_pivot.add_argument("-p", "--pivot", required=True, help="pivot field")
+        for name, class_obj in mp.PIVOT_FUNCTIONS.items():
+            parser_pivot.add_argument(
+                f"--{name}",
+                dest=name,
+                action=PivotFunctionAction
+            )
+        options.add_option_tabulate(parser_pivot)
 
         # query
         parser_query = self.sub_parser.add_parser("query", help=self.do_query.__doc__)
