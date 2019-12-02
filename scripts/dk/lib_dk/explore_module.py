@@ -89,10 +89,6 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_head(self):
         """print first n entries with optional sampling"""
-        # iter_input = itertools.islice(
-        #     self.input_stream(self.args.input),
-        #     self.args.n
-        # )
         self.tabulate(self.input_stream(self.args.input))
 
     def do_histogram(self):
@@ -164,8 +160,7 @@ class ExploreModule(module.MultiCommandModule):
         self.args.fields = fields
 
         is_match = re_filter(self.args.pattern, fields, flags)
-        self.push_to_uri(
-            self.args.output,
+        self.do_output(
             (row for row in self.input_stream(self.args.input) if is_match(row))
         )
 
@@ -225,10 +220,12 @@ class ExploreModule(module.MultiCommandModule):
         # search
         parser_search = self.sub_parser.add_parser("search", help=self.do_search.__doc__)
         options.add_option_regex(parser_search)
+        options.add_option_tabulate(parser_search)
 
         # match
         parser_match = self.sub_parser.add_parser("match", help=self.do_match.__doc__)
         options.add_option_regex(parser_match)
+        options.add_option_tabulate(parser_match)
 
         # head
         parser_head = self.sub_parser.add_parser("head", help=self.do_head.__doc__)

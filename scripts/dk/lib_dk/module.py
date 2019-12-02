@@ -126,6 +126,12 @@ class Module(object):
         """Initialize parser"""
         raise NotImplementedError
 
+    def do_output(self, iter_out):
+        if hasattr(self.args, "table") and self.args.table:
+            self.tabulate(iter_out)
+        else:
+            self.push_to_uri(self.args.output, iter_out)
+
     def parse_args(self):
         self.args = self.parser.parse_args(self.arguments)
 
