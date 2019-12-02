@@ -129,6 +129,16 @@ class TestExplore(TestDK):
         ]
         self.go(tests)
 
+    def test_regex(self):
+        """x search"""
+        tests = [
+            ["search", "-e", "audi", "testdata/mpg.csv"],
+            ["search", "-e", "audi", "testdata/mpg.csv", "--table"],
+            ["search", "-e", "audi", "testdata/mpg.csv", "-i", "--table"],
+            ["match", "-e", "audi", "testdata/mpg.csv", "-i", "--table"],
+        ]
+        self.go(tests)
+
     def test_table(self):
         "x table"
         tests = [
