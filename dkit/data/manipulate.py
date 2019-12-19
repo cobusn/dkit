@@ -39,6 +39,7 @@ Data manipulation routines.
 # 11 Sep 2019 Cobus Nel       Added iter_rename, iter_drop
 # 18 Nov 2019 Cobus Nel       Added reshape
 # 21 Nov 2019 Cobus nel       Added distinct and rename
+# 12 Dec 2019 Cobus Nel       Added Substitute
 # =========== =============== =================================================
 from .. import _missing_value_
 from ..decorators import deprecated
@@ -51,11 +52,11 @@ import itertools
 import math
 import operator
 import random
+import re
 import statistics
 import sys
 import typing
 import uuid
-
 
 __all__ = [
         "Indexer",
@@ -64,6 +65,7 @@ __all__ = [
         "MultiKeyIndexer",
         "Pivot",
         "ReducePivot",
+        "Substitute",
         "aggregate",
         "aggregates",
         "distinct",
@@ -768,6 +770,45 @@ def infer_type(input, empty_str=None, strict=True):
                 return str
     else:
         return type(input)
+
+
+class Substitute(object):
+    """Substitute values based on regular expressions
+    Args:
+        subst_map: substitution map, refer to example
+
+    Yields:
+        rows with substututed values
+
+    For example:
+
+    >>> smap = { "name": { "ACME": ["[Aa]cme.*"]} }
+    >>> data = [{"name": "acme"}, {"name": "Acme"}, {"name": "acme inc"}]
+    >>> list(Substitute(smap)(data))
+    [{'name': 'ACME'}, {'name': 'ACME'}, {'name': 'ACME'}]
+
+    """
+    def __init__(self, subst_map):
+        self.s_map = {}
+        for key, rules in subst_map.items():
+            this = []
+            self.s_map[key] = this
+            for dest, l_regex in rules.items():
+                for regex in l_regex:
+                    this.append(
+                        (re.compile(regex), dest)
+                    )
+
+    def __call__(self, iter_in):
+        for row in iter_in:
+            for field, rules in self.s_map.items():
+                for rule in rules:
+                    try:
+                        if rule[0].match(row[field]):
+                            row[field] = rule[1]
+                    except TypeError:
+                        pass
+            yield row
 
 
 class InferTypes(object):

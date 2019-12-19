@@ -388,6 +388,19 @@ Pivot
    :members:
    :undoc-members:
 
+Substitute
+----------
+
+.. image:: ../images/Substitute.svg
+   :align: center
+
+.. autoclass:: dkit.data.manipulate.Substitute
+   :members:
+   :undoc-members:
+   :special-members:
+   :exclude-members: __dict__,__weakref__,__module__
+
+
 matching
 ========
 

@@ -104,6 +104,7 @@ class GeomBar(AbstractGeom):
                  alpha: float = None, *args, **kwargs):
         super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
         self.primitive_type = "bar"
+        self.isbox = True
 
 
 class GeomDelta(GeomBar):
