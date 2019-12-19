@@ -37,7 +37,7 @@ set xlabel "{{ plot.axes[1].title }}"
 {% endif %}
 \
 {# -- aesthetic section ---------------------------------------------------- #}
-{% if plot.has_boxes %}
+{% if plot.series[0].isbox %}
 set boxwidth {{ plot.aes.box_width }} relative
 {% if plot.aes.stacked %}
 set style histogram rowstacked
@@ -184,6 +184,10 @@ class PlotUtilities():
             for i, v in enumerate(col_values):
                 if isinstance(v, str):
                     col_values[i] = '"' + v + '"'
+                elif isinstance(v, int):
+                    col_values[i] = f"{col_values[i]:d}"
+                else:
+                    col_values[i] = f"{col_values[i]:f}"
             retval += sep.join([str(i) for i in col_values]) + "\n"
         retval += "EOD\n"
         return retval

@@ -95,7 +95,6 @@ class ExploreModule(module.MultiCommandModule):
         """generate histogram for field"""
         from dkit.data.stats import Accumulator
         from dkit.data.histogram import Histogram
-        from dkit.plot import gnuplot
 
         # hack to extract only required field
         self.args.fields = [self.args.field]
@@ -103,14 +102,14 @@ class ExploreModule(module.MultiCommandModule):
 
         a = Accumulator((i[field_name] for i in self.input_stream(self.args.input)))
         h = Histogram.from_accumulator(a, precision=2)
-        # print(h)
+
         p = ggrammar.Plot(h) \
             + ggrammar.GeomHistogram(field_name, color="#FF0000", alpha=0.9) \
             + ggrammar.Title(f"Frequency distribution of {field_name}") \
             + ggrammar.YAxis("frequency") \
             + ggrammar.XAxis(field_name)
 
-        self.print(gnuplot.BackendGnuPlot("dumb").render_str(p, enhanced=True))
+        self.__render_plot(p)
 
         if self.args.table is True:
             t = [b.as_dict() for b in h.bins]
@@ -123,7 +122,7 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_plot(self):
         """generate data plot"""
-        from dkit.plot import ggrammar, gnuplot
+        from dkit.plot import ggrammar
 
         x_field = self.args.xfield
         y_field = self.args.yfield
@@ -132,7 +131,6 @@ class ExploreModule(module.MultiCommandModule):
         self.args.fields = [y_field]
 
         data = self.input_stream(self.args.input)
-
         geom = ggrammar.GEOM_MAP[self.args.plot_type]
 
         p = ggrammar.Plot(data) \
@@ -143,11 +141,20 @@ class ExploreModule(module.MultiCommandModule):
         if self.args.title is not None:
             p += ggrammar.Title(self.args.title)
 
+    def __render_plot(self, grammar):
+        from dkit.plot import gnuplot
+        print(self.args.script)
         if self.args.output is not None:
             terminal = ggrammar.Plot.terminal_from_filename(self.args.output)
-            gnuplot.BackendGnuPlot(terminal).render_output(p, self.args.output, self.args.script)
+            gnuplot.BackendGnuPlot(
+                grammar.as_dict(), terminal=terminal
+            ).render(self.args.output, self.args.script)
         else:
-            self.print(gnuplot.BackendGnuPlot("dumb").render_str(p, enhanced=True))
+            self.print(
+                gnuplot.BackendGnuPlot(
+                    grammar.as_dict(), "dumb"
+                ).render_str()
+            )
 
     def __do_regex(self, re_filter):
         flags = 0
@@ -241,6 +248,9 @@ class ExploreModule(module.MultiCommandModule):
         options.add_options_inputs(parser_histogram)
         options.add_option_field_name(parser_histogram)
         options.add_option_tabulate(parser_histogram)
+        parser_histogram.add_argument("-o", "--output", help="output to file", default=None)
+        parser_histogram.add_argument("--script", help="gnuplot script file (optional)",
+                                      default=None)
 
         # plot
         parser_plot = self.sub_parser.add_parser("plot", help=self.do_plot.__doc__)
