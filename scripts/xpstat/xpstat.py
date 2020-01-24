@@ -38,28 +38,22 @@ class PstatExport(object):
         self.file_names = file_names
         self.stat = Stats(*file_names)
 
+    def gen_row(self, k, v):
+        return {
+            "hash": hash(k),
+            "file": k[0],
+            "line_no": k[1],
+            "context": k[2],
+            "c_calls": v[0],
+            "n_calls": v[1],
+            "t_time": v[2],
+            "c_time": v[3],
+        }
+
     def iter_stats(self):
         """extract rows"""
-        i = 0
         for k, v in self.stat.stats.items():
-            cc, nc, tt, ct, callers = v
-            if i == 2:
-                # stderr.write(str(callers))
-                pass
-
-            i += 1
-            row = {
-                "hash": hash(k),
-                "file": k[0],
-                "line_no": k[1],
-                "context": k[2],
-                "n_calls": nc,
-                "c_calls": cc,
-                "total_time": tt,
-                "time_per_call": 0 if nc == 0 else tt/nc,
-                "cum_time": ct,
-                "no_callers": len(callers),
-            }
+            row = self.gen_row(k, v)
             yield row
 
 
