@@ -2,4 +2,4 @@ cffi
 mistune
 sqlalchemy
 pyyaml
-
+psycopg
