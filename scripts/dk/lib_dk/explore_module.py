@@ -35,7 +35,12 @@ class ExploreModule(module.MultiCommandModule):
     def do_count(self):
         """count instances of specified field"""
         # hack to only extract the required field
-        self.args.fields = [self.args.field]
+        # The below disable extracting only specific
+        # fields if a transform is specified. ideally the
+        # program need to figure out from the transform object
+        # which fields should be included.
+        if self.args.transform is None:
+            self.args.fields = [self.args.field]
 
         display_n = self.args.head if self.args.head > 0 else sys.maxsize - 1
         iter_input = self.input_stream_sampled(self.args.input)
