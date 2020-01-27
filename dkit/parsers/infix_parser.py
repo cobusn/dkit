@@ -141,6 +141,9 @@ class InfixParser(object):
         self._parse_stack: list = []
         self._evaluation_stack: list = []
 
+        # store names of variables parsed
+        self.parsed_variable_names = []
+
         self._operations_map = {
             "+": operator.add,
             "-": operator.sub,
@@ -288,6 +291,7 @@ class InfixParser(object):
         """
         token = toks[0]
         if token.startswith("${"):
+            self.parsed_variable_names.append(token[2:-1])
             self._parse_stack.append(lambda x: x._get_variable(token[2:-1]))
 
     def __push_op(self, strg, loc, toks):
