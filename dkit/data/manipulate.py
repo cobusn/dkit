@@ -391,6 +391,7 @@ class MultiKeyIndexer(Indexer):
         self.index_fields = index_fields
         self.__process()
 
+    def __process(self):
         indexes = self.index_fields
         for row in self.the_iterable:
             the_key = tuple(row[k] for k in indexes)

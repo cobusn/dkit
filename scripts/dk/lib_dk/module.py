@@ -207,8 +207,18 @@ class Module(object):
 
         Optionally apply entity schemas, filter or transform
         """
+
+        # if a filter is defined we need to make sure the filter fields
+        # are added to the fields extracted.
+        if hasattr(self.args, "filter") and self.args.filter is not None:
+            exp_filter = filters.ExpressionFilter(self.args.filter)
+            # ensure we extract filter fields
+            if fields is not None:
+                fields += exp_filter.parsed_variable_names
+
         _iter_in = self.input_stream_raw(uri_list, fields)
         services = self.load_services()
+
         # apply schema
         if hasattr(self.args, "entity") and self.args.entity is not None:
             _schema = services.model.schemas[self.args.entity]
@@ -216,7 +226,7 @@ class Module(object):
 
         # apply filter
         if hasattr(self.args, "filter") and self.args.filter is not None:
-            exp_filter = filters.ExpressionFilter(self.args.filter)
+            # exp_filter should already be instantiated above..
             _iter_in = filter(exp_filter, _iter_in)
 
         # apply transform

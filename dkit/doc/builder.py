@@ -183,12 +183,14 @@ class ReportBuilder(object):
     def __init__(self, definition, logger=None):
         self.definition = definition
         self.data = {}
+        self.variables = {}
         self.code = {
             "len": len,
-            "currency": lambda x: "R{:,.0f}".format(x)
+            # "currency": lambda x: "R{:,.0f}".format(x)
+            "currency": self.__fmt_currency,
+            "variables": self.variables,
         }
         self.documents = {}
-        self.variables = {}
         self.presentations = {}
         self.style_sheet = {}
         self.logger = logger if logger else lh.stderr_logger(self.__class__.__name__)
@@ -197,6 +199,9 @@ class ReportBuilder(object):
         # validate defition
         validator = schemas.SchemaValidator(schemas.report_schema, self.logger)
         validator(self.definition)
+
+    def __fmt_currency(self, the_str):
+        return "R{:,.0f}".format(the_str)
 
     @property
     def plot_folder(self):
@@ -230,7 +235,7 @@ class ReportBuilder(object):
         Load report variables
         """
         if "variables" in self.definition:
-            self.variables = self.definition["variables"]
+            self.variables.update(self.definition["variables"])
 
     def load_stylesheets(self):
         """
