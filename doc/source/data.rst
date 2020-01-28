@@ -179,8 +179,6 @@ FastFlexShelve
    :undoc-members:
    :inherited-members:
 
-
-
 FlexBSDDBShelve
 ---------------
 
@@ -193,17 +191,16 @@ FlexBSDDBShelve
    :inherited-members:
 
 
-FastFlexShelve
---------------
+OrderedSet
+----------
 
-.. image:: ../images/FastFlexShelve.svg
+.. image:: ../images/OrderedSet.svg
    :align: center
 
-.. autoclass:: dkit.data.containers.FastFlexShelve
+.. autoclass:: dkit.data.containers.OrderedSet
    :members:
    :undoc-members:
    :inherited-members:
-
 
 
 fake

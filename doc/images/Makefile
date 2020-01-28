@@ -26,7 +26,7 @@ DATA      =     AttrDict.svg Pivot.svg ReducePivot.svg Proxy.svg XmlTransformer.
 				DictionaryEmulator.svg Accumulator.svg FieldSpec.svg DictMatcher.svg\
 				Object.svg SortedCollection.svg Histogram.svg Bin.svg classes_aggregation.svg \
 				Aggregate.svg GroupBy.svg Count.svg _Shelve.svg FlexBSDDBShelve.svg \
-				FlexShelve.svg FastFlexShelve.svg Substitute.svg
+				FlexShelve.svg FastFlexShelve.svg Substitute.svg OrderedSet.svg
 ETLSOURCE =     AbstractSource.svg FileListingSource.svg AbstractMultiReaderSource.svg PickleSource.svg\
 				JsonlSource.svg CsvDictSource.svg XmlRpcSource.svg EntityValidator.svg\
 				Entity.svg Transform.svg ModelManager.svg ExpressionFilter.svg Connection.svg\
@@ -139,6 +139,9 @@ AttrDict.svg: $(CLASSROOT)/data/containers.py
 
 Substitute.svg: $(CLASSROOT)/data/manipulate.py 
 		$(PYREVERSE) $(OPTSINGLE) -c Substitute $(CLASSROOT)/data/manipulate.py
+
+OrderedSet.svg: $(CLASSROOT)/data/containers.py 
+		$(PYREVERSE) $(OPTIONS) -c OrderedSet $(CLASSROOT)/data/containers.py
 
 Pivot.svg: $(CLASSROOT)/data/manipulate.py 
 		$(PYREVERSE) $(OPTSINGLE) -c Pivot $(CLASSROOT)/data/manipulate.py
