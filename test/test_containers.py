@@ -25,6 +25,7 @@ from dkit.data.containers import (
     ReusableStack,
     SortedCollection,
     FlexShelve,
+    OrderedSet,
 )
 from random import shuffle
 from pathlib import Path
@@ -108,6 +109,68 @@ class TestFlexShelf(unittest.TestCase):
         self.assertEqual(len(list(s.items())), 1000)
         self.assertEqual(s[(100, "a")], 100)
         path.unlink()
+
+
+class TestOrderedSet(unittest.TestCase):
+
+    def setUp(self):
+        self.s = OrderedSet('abracadaba')
+        self.t = OrderedSet('simsalabim')
+
+    def test_sequence(self):
+        """Test that sequence is preserved"""
+        self.assertEqual(
+            ['a', 'b', 'r', 'c', 'd'],
+            list(self.s)
+        )
+
+    def test_op_or(self):
+        self.assertEqual(
+            self.s | self.t,
+            OrderedSet(['a', 'b', 'r', 'c', 'd', 's', 'i', 'm', 'l'])
+        )
+
+    def test_op_and(self):
+        self.assertEqual(
+            self.s & self.t,
+            OrderedSet(['a', 'b'])
+        )
+
+    def test_op_minus(self):
+        self.assertEqual(
+            self.s - self.t,
+            OrderedSet(['r', 'c', 'd'])
+        )
+
+    def test_contains(self):
+        self.assertEqual(
+            "a" in self.s,
+            True
+        )
+        self.assertEqual(
+            "z" in self.s,
+            False
+        )
+
+    def test_equal(self):
+        self.assertEqual(
+            self.s == OrderedSet("abracadaba"),
+            True
+        )
+        self.assertEqual(
+            self.s == OrderedSet("ab"),
+            False
+        )
+
+    def test_pop(self):
+        self.assertEqual(
+            self.s.pop(),
+            "d"
+        )
+        self.assertEqual(
+            self.s,
+            OrderedSet(['a', 'b', 'r', 'c'])
+        )
 
 
 if __name__ == "__main__":

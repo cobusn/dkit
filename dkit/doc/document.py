@@ -337,8 +337,8 @@ class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
     XAxis = ggrammar.XAxis
     YAxis = ggrammar.YAxis
 
-    def __init__(self, data_reference: str, filename: str = None, *args, **kwargs):
-        super().__init__(data_reference, *args, **kwargs)
+    def __init__(self, data, filename: str = None, *args, **kwargs):
+        super().__init__(data, *args, **kwargs)
         self.filename = filename
 
 
