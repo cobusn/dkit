@@ -33,6 +33,21 @@ from typing import List, Dict
 from .. import exceptions, messages
 from .stats import Accumulator
 
+all = [
+    "Aggregate",
+    "GroupBy",
+    "OrderBy",
+    "Max",
+    "Min",
+    "Median",
+    "Sum",
+    "Std",
+    "Var",
+    "Quantile",
+    "Count",
+    "IQR",
+]
+
 
 class Aggregate(object):
     """
