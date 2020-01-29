@@ -292,7 +292,20 @@ class Table(_AddElement):
             self.height = 0.3
 
     class Field(__TableElement):
+        """Field
 
+        Args:
+            * name
+            * title
+            * width
+            * align
+            * format_
+            * summary
+            * dedup
+            * heading_align
+            * symbol
+
+        """
         def __init__(self,  name, title=None, width=2, align="left", format_="{}",
                      summary=None, dedup=True, heading_align="center", symbol=None):
             super().__init__(title, width, align, heading_align)

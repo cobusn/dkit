@@ -21,6 +21,12 @@ configuration:
         plot_folder:
             required: True
             type: string
+        template_folder:
+            required: True
+            type: string
+        version:
+            required: True
+            type: integer
 latex:
     type: list
     schema:

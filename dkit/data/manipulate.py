@@ -82,6 +82,21 @@ __all__ = [
 ]
 
 
+PIVOT_FUNCTIONS = {
+    "max": max,
+    "median": statistics.median,
+    "min": min,
+    "std": statistics.stdev,
+}
+
+if sys.version_info >= (3, 8):
+    PIVOT_FUNCTIONS["mean"] = statistics.fmean
+    PIVOT_FUNCTIONS["sum"] = statistics.fsum
+else:
+    PIVOT_FUNCTIONS["mean"] = statistics.mean
+    PIVOT_FUNCTIONS["sum"] = sum
+
+
 def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
          value_name: str = "value"):
     """
@@ -637,16 +652,6 @@ class ReducePivot(__PivotAbstract):
             retval.update([(str(col_key), self._ds[row_key].get(col_key, missing))
                            for col_key in col_headings])
             yield retval
-
-
-PIVOT_FUNCTIONS = {
-    "max": max,
-    "mean": statistics.fmean,
-    "median": statistics.median,
-    "min": min,
-    "std": statistics.stdev,
-    "sum": statistics.fsum,
-}
 
 
 def iter_add_id(the_iterator, key="uuid"):

@@ -28,6 +28,7 @@ from pathlib import Path
 import jinja2
 import mistune
 import yaml
+import inflect
 from IPython import get_ipython
 from IPython.display import HTML
 from tabulate import tabulate
@@ -184,18 +185,20 @@ class ReportBuilder(object):
         self.definition = definition
         self.data = {}
         self.variables = {}
+        self.configuration = {}
         self.code = {
             "len": len,
-            # "currency": lambda x: "R{:,.0f}".format(x)
             "currency": self.__fmt_currency,
             "variables": self.variables,
+            "data": self.data,
+            "inflect": inflect.engine(),
         }
         self.documents = {}
         self.presentations = {}
         self.style_sheet = {}
         self.logger = logger if logger else lh.stderr_logger(self.__class__.__name__)
         self.logger.info("Validating report definition")
-
+        self.environment = None  # Jinja2 environment
         # validate defition
         validator = schemas.SchemaValidator(schemas.report_schema, self.logger)
         validator(self.definition)
@@ -236,6 +239,7 @@ class ReportBuilder(object):
         """
         if "variables" in self.definition:
             self.variables.update(self.definition["variables"])
+        self.configuration.update(self.definition["configuration"])
 
     def load_stylesheets(self):
         """
@@ -250,11 +254,12 @@ class ReportBuilder(object):
         """
         load all templates
         """
-        for k, v in self.definition["documents"].items():
-            self.logger.info(f"loading document template: {v}")
-            template_name = pathlib.Path.cwd() / v
-            with open(template_name) as tpl_data:
-                self.documents[k] = jinja2.Template(tpl_data.read())
+        loader_path = Path().cwd() / self.configuration["template_folder"]
+        loader = jinja2.FileSystemLoader(str(loader_path))
+        self.environment = jinja2.Environment(loader=loader)
+        for doc_name, template_name in self.definition["documents"].items():
+            self.logger.info(f"loading document template: {template_name}")
+            self.documents[doc_name] = self.environment.get_template(template_name)
 
     def load_presentations(self):
         """
