@@ -70,12 +70,47 @@ class Plot(PlotBase):
     pass
 
 
+class Adornment(PlotModifier):
+    """Custom adornments, e.g. horizontal line"""
+    def modify(self, plot):
+        plot.series.append(self)
+
+
+class LineAdornment(Adornment):
+
+    def __init__(self, color: str = None, line_style: str = None, line_width: float = None,
+                 alpha: float = None, **kwargs):
+        super().__init__()
+        self.line_style = line_style
+        self.color = color
+        self.line_width = line_width
+        self.alpha = alpha
+
+
+class HLine(LineAdornment):
+
+    def __init__(self, y, color: str = None, line_style: str = None, line_width: float = None,
+                 alpha: float = None, **kwargs):
+        super().__init__(color=color, line_style=line_style, line_width=line_width,
+                         alpha=alpha, **kwargs)
+        self.y = y
+
+
+class VLine(LineAdornment):
+
+    def __init__(self, x, color: str = None, line_style: str = None, line_width: float = None,
+                 alpha: float = None, **kwargs):
+        super().__init__(color=color, line_style=line_style, line_width=line_width,
+                         alpha=alpha, **kwargs)
+        self.x = x
+
+
 class AbstractGeom(PlotModifier):
     """
     arguments:
         * title: plot title
-        * y_data: field name for y data
-        * x_data: field name for x data
+        * y_data: y data field name
+        * x_data: x data field name
         * color: color for this series
         * alpha: alpha for color
         * y_range limit y to range

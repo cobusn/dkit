@@ -349,6 +349,8 @@ class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
     Title = ggrammar.Title
     XAxis = ggrammar.XAxis
     YAxis = ggrammar.YAxis
+    HLine = ggrammar.HLine
+    VLine = ggrammar.VLine
 
     def __init__(self, data, filename: str = None, *args, **kwargs):
         super().__init__(data, *args, **kwargs)

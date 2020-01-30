@@ -13,3 +13,5 @@
 
 ## optimistions
 * change mpak schema to use integers/floats for storing dates
+* change plots to define grammar and then apply data at plot instead of 
+  defining the data upfront.
