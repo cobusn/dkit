@@ -36,11 +36,13 @@ class MPLBackend(Backend):
             "geomarea": self.area,
             "geombar": self.bar,
             "geomdelta": self.delta,
+            "geomheatmap": self.heatmap,
             "geomhistogram": self.bar,
             "geomline": self.line,
             "geomscatter": self.scatter,
             "geomtreemap": self.treemap,
-            "geomheatmap": self.heatmap,
+            "hline": self.hline,
+            "vline": self.vline,
         }
         self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
             grammar_instance["aes"]
@@ -148,6 +150,16 @@ class MPLBackend(Backend):
     def y_values(self, series):
         return [r[series["y_data"]] for r in self.data]
 
+    def hline(self, ax, serie):
+        """draw horizontal line"""
+        ax.axhline(serie["y"], color=serie["color"], linewidth=serie["line_width"],
+                   linestyle=serie["line_style"], alpha=serie["alpha"])
+
+    def vline(self, ax, serie):
+        """draw vertical line"""
+        ax.axvline(serie["x"], color=serie["color"], linewidth=serie["line_width"],
+                   linestyle=serie["line_style"], alpha=serie["alpha"])
+
     def area(self, ax, serie):
         y_vals = self.y_values(serie)
         x_pos = [i for i, _ in enumerate(y_vals)]
@@ -226,6 +238,7 @@ class MPLBackend(Backend):
             y_vals,
             alpha=series["alpha"]
         )
+        self.set_labels(ax)
 
     def treemap(self, ax, serie):
         # format values
