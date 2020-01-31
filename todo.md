@@ -1,5 +1,10 @@
 # Todo
 
+## fixes
+* fix context manager for etl source and sink
+* allow source and sink to load from lists as well as
+  single files
+
 ## Major features
 * data analyser feature
 * integrate plantuml for documentation?
