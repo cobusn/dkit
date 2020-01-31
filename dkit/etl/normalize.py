@@ -16,7 +16,7 @@ class Dimension(DictionaryEmulator):
         - fact_fields: mapping of fact_fields to row fields
         - load: attempt to load endpoint on startup for multiple runs
     """
-    def __init__(self, endpoint, fact_keys, fact_fields, load=True):
+    def __init__(self, endpoint, fact_keys, fact_fields, load=True, update_last=True):
         super().__init__({})
         self.endpoint = endpoint
         self.fact_keys = fact_keys
@@ -26,6 +26,14 @@ class Dimension(DictionaryEmulator):
         self.load = load
         self.fkeys = list(self.fact_keys.keys())
         self.ffields = list(self.fact_fields.keys())
+        # if update_last is true, dimension values will be updated\
+        # every time it is encountered to preserve the latest
+        # values
+        if update_last:
+            self.update_row = self.update_row_last
+        else:
+            # else preserve the first values
+            self.update_row = self.update_row_first
 
     def load_file(self):
         """Called internally
@@ -48,7 +56,16 @@ class Dimension(DictionaryEmulator):
         """return row by looking up keys in row provided"""
         return self[tuple(row[k] for k in self.fact_keys.values())]
 
-    def update_row(self, row):
+    def update_row_last(self, row):
+        """update dimension every time a new value is
+        encountered
+        """
+        key = tuple(self.parsed_keys[k](row) for k in self.fkeys)
+        values = {k: self.parsed_facts[k](row) for k in self.ffields}
+        self.store[key] = values
+        return {k: self.parsed_keys[k](row) for k in self.fkeys}
+
+    def update_row_first(self, row):
         """Update dimension and return new keys
 
         Update index with another row
