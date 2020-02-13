@@ -202,6 +202,7 @@ class ReportBuilder(object):
         # validate defition
         validator = schemas.SchemaValidator(schemas.report_schema, self.logger)
         validator(self.definition)
+        self.initialize()
 
     def __fmt_currency(self, the_str):
         return "R{:,.0f}".format(the_str)
@@ -309,7 +310,7 @@ class ReportBuilder(object):
             runner.run()
             runner.clean()
 
-    def run(self, report_type="latex"):
+    def initialize(self):
         self.load_variables()
         self.load_data()
         self.load_code()
@@ -317,6 +318,7 @@ class ReportBuilder(object):
         self.load_documents()
         self.load_presentations()
 
+    def run(self, report_type="latex"):
         if report_type == "latex":
             self.render(latex_renderer.LatexDocRenderer, self.documents)
             self.render(latex_renderer.LatexBeamerRenderer, self.presentations)

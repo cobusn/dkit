@@ -76,6 +76,19 @@ class Adornment(PlotModifier):
         plot.series.append(self)
 
 
+class __TextAdornment(Adornment):
+    """Add text to plot"""
+    def __init__(self, text, location='best', alpha=None, size=None):
+        self.text = text
+        self.location = location
+        self.alpha = alpha
+        self.size = size
+
+
+class AnchoredText(__TextAdornment):
+    pass
+
+
 class LineAdornment(Adornment):
 
     def __init__(self, color: str = None, line_style: str = None, line_width: float = None,
@@ -164,7 +177,7 @@ class GeomHistogram(GeomBar):
     Plot a frequency distribution
     """
     def __init__(self, title: str, color: str = None, alpha: float = None):
-        super().__init__(title, "midpoint", "count", color, alpha)
+        super().__init__(title, "left", "count", color, alpha)
 
 
 class GeomLine(AbstractGeom):
@@ -179,10 +192,22 @@ class GeomArea(GeomLine):
     pass
 
 
+class GeomCumulative(AbstractGeom):
+    """
+    Add cumulative line on right hand axis
+    """
+    def __init__(self, title: str, y_data: str, color: str = None,
+                 alpha: float = None, *args, **kwargs):
+        super().__init__(title, x=None, y=y_data, color=color,
+                         alpha=alpha, *args, **kwargs)
+        self.primitive_type = "line"
+
 #  class PlotBoxplot(PlotLine):
 #    pass
 #  https://stackoverflow.com/questions/15404628/how-can-i-generate-box-and-whisker-plots-with-variable-box-width-in-gnuplot
 #
+
+
 class GeomScatter(AbstractGeom):
 
     def __init__(self, title: str,  x_data: str, y_data: str, color: str = None,
@@ -224,18 +249,28 @@ class Title(PlotModifier):
 
 
 class _Axis(PlotModifier):
+    """axis specification
 
+    arguments:
+        title: axis title
+        min: minimum value
+        max: maximum value
+        rotate: rotate labels
+        float_format: string.format formatting
+        defeat: supress addititiona axis formatting
+    """
     def __init__(self, title, min=None, max=None, rotation=None, float_format=None,
-                 which="0", *args, **kwargs):
+                 which="0", defeat=False, *args, **kwargs):
         self.title = title
         self.min_val = min
         self.max_val = max
         self.rotation = rotation
         self.float_format = float_format
+        self.defeat = defeat
         if str(which) in ["0", "1", "2"]:
             self.which = str(which)
         else:
-            raise CkitPlotException("Axis number can only be 0 or 1")
+            raise CkitPlotException("Axis number can only be 0, 1 or 2")
 
     def modify(self, plot):
         plot.axes[self.which] = self

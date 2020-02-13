@@ -32,7 +32,29 @@ from .stats import Accumulator
 import warnings
 import tabulate
 
-__all__ = ['Histogram']
+from boltons.statsutils import Stats
+
+__all__ = ["Histogram", "binner"]
+
+
+def binner(data, value_field, bins: int = None, bin_digits: int = 1):
+    """
+    Generate bin data for histogram data manipulation
+
+    Args:
+
+    * data: iterator for data
+    * value_field: field name for the value field to be binned
+    * bins: number of bins
+    * bin_digits: round to this number of digits
+
+    Returns:
+        * list of dicts in format {"left": value, "count": value}
+
+    """
+    stats = Stats(i[value_field] for i in data)
+    bins_ = stats.get_histogram_counts(bins=bins, bin_digits=bin_digits)
+    return [{"left": i[0], "count": i[1]} for i in bins_]
 
 
 class LegacyHistogram(Accumulator):
@@ -142,6 +164,10 @@ class Histogram(object):
             [i.as_dict() for i in self.bins],
             headers="keys"
         )
+
+    def plot_data(self):
+        """Return list of dicts for plotting"""
+        return [b.as_dict() for b in self.bins]
 
     @classmethod
     def from_accumulator(cls, accumulator: "Accumulator", n: int = 10,

@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 from matplotlib import cycler
-from matplotlib.ticker import StrMethodFormatter
+from matplotlib.ticker import StrMethodFormatter, PercentFormatter
+from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import squarify
-
+from itertools import accumulate
 from . import Backend
 from . import ggrammar
 from ..exceptions import CkitGrammarException
@@ -33,16 +34,18 @@ class MPLBackend(Backend):
     def __init__(self, grammar_instance, terminal="pdf", style_sheet=None):
         super().__init__(grammar_instance, terminal, style_sheet)
         self.render_map = {
-            "geomarea": self.area,
-            "geombar": self.bar,
-            "geomdelta": self.delta,
-            "geomheatmap": self.heatmap,
-            "geomhistogram": self.bar,
-            "geomline": self.line,
-            "geomscatter": self.scatter,
-            "geomtreemap": self.treemap,
-            "hline": self.hline,
-            "vline": self.vline,
+            "anchoredtext": self.anchored_text,
+            "geomarea": self.r_area_plot,
+            "geomcumulative": self.r_cumulative_series,
+            "geombar": self.r_bar_plot,
+            "geomdelta": self.r_delta_plot,
+            "geomheatmap": self.r_heatmap_plot,
+            "geomhistogram": self.r_hist_plot,
+            "geomline": self.r_line_plot,
+            "geomscatter": self.r_scatter_plot,
+            "geomtreemap": self.r_treemap_plot,
+            "hline": self.r_hline,
+            "vline": self.r_vline,
         }
         self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
             grammar_instance["aes"]
@@ -105,11 +108,6 @@ class MPLBackend(Backend):
         axes = self.grammar["axes"]["0"]
         if "title" in axes:
             ax.set_xlabel(axes["title"])
-        # string formatter
-        if "float_format" in axes and axes["float_format"]:
-            ax.xaxis.set_major_formatter(
-                StrMethodFormatter(axes["float_format"])
-            )
 
     def set_y_label(self, ax):
         axes = self.grammar["axes"]["1"]
@@ -125,42 +123,107 @@ class MPLBackend(Backend):
         self.set_x_label(ax)
         self.set_y_label(ax)
 
-    def set_x_ticks(self, ax):
+    def set_x_ticks(self, ax, hist=False):
         """X ticks and labels"""
         width = 0
         x_fields = set([s["x_data"] for s in self.grammar["series"]])
         if len(x_fields) != 1:
             raise CkitGrammarException("Exactly one X Axis field required")
-        x_field = list(x_fields)[0]
-        x_labels = [row[x_field] for row in self.data]
-        x_vals = np.arange(len(x_labels)) + width
-        ax.set_xticklabels(x_labels, minor=False)
-        ax.set_xticks(x_vals)
 
+        series_0 = self.grammar["series"][0]
         axes = self.grammar["axes"]["0"]
-        # rotate labels
-        if "rotation" in axes and axes["rotation"]:
-            rotate = self.grammar["axes"]["0"]["rotation"]
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(rotate)
+        x_labels = self.x_values(series_0)
+        x_vals = np.arange(len(x_labels)) + width
+
+        # apply float format
+        if "float_format" in axes and axes["float_format"]:
+            fmt = axes["float_format"]
+            x_labels = [fmt.format(i) for i in x_labels]
+
+        if hist:  # remove leftmost label for histograms
+            x_labels[0] = ""
+
+        # so not draw if suppress is specified
+        if not axes["defeat"]:
+            ax.set_xticklabels(x_labels, minor=False)
+            ax.set_xticks(x_vals)
+
+            # rotate labels
+            if "rotation" in axes and axes["rotation"]:
+                rotate = self.grammar["axes"]["0"]["rotation"]
+                for tick in ax.get_xticklabels():
+                    tick.set_rotation(rotate)
 
     def x_values(self, series):
-        return [r[series["x_data"]] for r in self.data]
+        """x values. return series if x is None"""
+        if series["x_data"] is not None:
+            return [r[series["x_data"]] for r in self.data]
+        else:
+            return [i+1 for i in range(len(self.data))]
 
     def y_values(self, series):
         return [r[series["y_data"]] for r in self.data]
 
-    def hline(self, ax, serie):
+    def anchored_text(self, ax, serie):
+        """Add anchored text"""
+        at = AnchoredText(
+            serie["text"],
+            loc=serie["location"],
+            prop=dict(
+                alpha=serie["alpha"],
+                size=serie["size"]
+            ),
+            frameon=False
+        )
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax.add_artist(at)
+
+    def render(self, file_name):
+        self.fig, ax = self.initialise()
+        for serie in self.grammar["series"]:
+            renderer = self.render_map[serie["~>"]]
+            renderer(ax, serie)
+        self.apply_aesthetics()
+        self.set_title(ax)
+        self.save(self.fig, file_name)
+
+        # release memory used by plot
+        plt.close(self.fig)
+
+    def r_cumulative_series(self, ax, serie):
+        # ax2.plot(df.index, "], color="C1", marker="D", ms=7)
+        total = sum(self.y_values(serie))
+        y_vals = list((i/total)*100 for i in accumulate(self.y_values(serie)))
+        x_pos = [i for i, _ in enumerate(y_vals)]
+
+        ax2 = ax.twinx()
+        ax2.yaxis.set_major_formatter(PercentFormatter())
+        ax2.plot(
+            x_pos,
+            y_vals,
+            alpha=serie["alpha"],
+            color="C1",
+            marker="None",
+            linewidth=0.5
+        )
+        ax2.tick_params(axis="y", colors="C1")
+        ax2.grid(False)
+        ax2.set_ylabel("Cumulative")
+
+        self.set_x_ticks(ax)
+        self.set_labels(ax)
+
+    def r_hline(self, ax, serie):
         """draw horizontal line"""
         ax.axhline(serie["y"], color=serie["color"], linewidth=serie["line_width"],
                    linestyle=serie["line_style"], alpha=serie["alpha"])
 
-    def vline(self, ax, serie):
+    def r_vline(self, ax, serie):
         """draw vertical line"""
         ax.axvline(serie["x"], color=serie["color"], linewidth=serie["line_width"],
                    linestyle=serie["line_style"], alpha=serie["alpha"])
 
-    def area(self, ax, serie):
+    def r_area_plot(self, ax, serie):
         y_vals = self.y_values(serie)
         x_pos = [i for i, _ in enumerate(y_vals)]
         ax.plot(x_pos, y_vals, alpha=serie["alpha"])
@@ -169,19 +232,26 @@ class MPLBackend(Backend):
         self.set_x_ticks(ax)
         self.set_labels(ax)
 
-    def bar(self, ax, serie):
+    def r_hist_plot(self, ax, serie):
+        self.r_bar_plot(ax, serie, hist=True)
+
+    def r_bar_plot(self, ax, serie, hist=False):
         y_vals = self.y_values(serie)
-        x_pos = [i for i, _ in enumerate(y_vals)]
+        if hist:
+            x_pos = [i + 0.5 for i, _ in enumerate(y_vals)]
+        else:
+            x_pos = [i for i, _ in enumerate(y_vals)]
         ax.bar(
             x_pos,
             y_vals,
+            width=1,
             alpha=serie["alpha"]
         )
         ax.tick_params(axis="x", which="both", length=0)
-        self.set_x_ticks(ax)
+        self.set_x_ticks(ax, hist)
         self.set_labels(ax)
 
-    def delta(self, ax, serie):
+    def r_delta_plot(self, ax, serie):
         """bar plot with positive values greeen and negative red"""
         y_vals = self.y_values(serie)
         y_pos = [i if i > 0 else 0 for i in y_vals]
@@ -193,7 +263,7 @@ class MPLBackend(Backend):
         self.set_x_ticks(ax)
         self.set_labels(ax)
 
-    def heatmap(self, ax, serie):
+    def r_heatmap_plot(self, ax, serie):
         """heatmap"""
         data = list(self.data)
         x_values = set(self.x_values(serie))
@@ -219,7 +289,8 @@ class MPLBackend(Backend):
         cbar.set_label(self.get_z_label(ax))
         self.set_labels(ax)
 
-    def line(self, ax, serie):
+    def r_line_plot(self, ax, serie):
+        """render line series"""
         y_vals = self.y_values(serie)
         x_pos = [i for i, _ in enumerate(y_vals)]
         ax.plot(
@@ -230,7 +301,8 @@ class MPLBackend(Backend):
         self.set_x_ticks(ax)
         self.set_labels(ax)
 
-    def scatter(self, ax, series):
+    def r_scatter_plot(self, ax, series):
+        """render scatter plot"""
         x_vals = self.x_values(series)
         y_vals = self.y_values(series)
         ax.scatter(
@@ -240,7 +312,7 @@ class MPLBackend(Backend):
         )
         self.set_labels(ax)
 
-    def treemap(self, ax, serie):
+    def r_treemap_plot(self, ax, serie):
         # format values
         if serie["str_format"]:
             fmt = serie["str_format"]
@@ -268,14 +340,3 @@ class MPLBackend(Backend):
             self.fig.set_figwidth(self.aes.inch_width)
         self.fig.tight_layout()
         self.fig.subplots_adjust(top=0.85)
-
-    def render(self, file_name):
-        self.fig, ax = self.initialise()
-        for serie in self.grammar["series"]:
-            renderer = self.render_map[serie["~>"]]
-            renderer(ax, serie)
-        self.apply_aesthetics()
-        self.set_title(ax)
-        self.save(self.fig, file_name)
-        # release memory used by plot
-        plt.close(self.fig)

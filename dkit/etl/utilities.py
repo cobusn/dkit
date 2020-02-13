@@ -5,10 +5,11 @@ from ..exceptions import CkitETLException
 from . import (reader, source, sink, writer)
 from .extensions import (
     ext_bxr,
-    ext_xlsx,
-    ext_tables,
-    ext_sql_alchemy,
     ext_msgpack,
+    ext_sql_alchemy,
+    ext_tables,
+    ext_xlsx,
+    ext_xls
 )
 
 
@@ -25,13 +26,14 @@ READER_MAP = {
 }
 
 SOURCE_MAP = {
-    "jsonl": source.JsonlSource,
-    "json": source.JsonSource,
-    "csv": source.CsvDictSource,
-    "xlsx": ext_xlsx.XLSXSource,
-    "pkl": source.PickleSource,
-    "mpak": ext_msgpack.MsgpackSource,
     "bxr": ext_bxr.BXRSource,
+    "csv": source.CsvDictSource,
+    "json": source.JsonSource,
+    "jsonl": source.JsonlSource,
+    "mpak": ext_msgpack.MsgpackSource,
+    "pkl": source.PickleSource,
+    "xls": ext_xls.XLSSource,
+    "xlsx": ext_xlsx.XLSXSource,
 }
 
 SINK_MAP = {
@@ -108,7 +110,7 @@ def _sink_factory(uri_struct, logger=None):
         instantiates file based sinks
         """
         snk = SINK_MAP[uri_struct["dialect"]]
-        if uri_struct["dialect"] in ["xlsx"]:
+        if uri_struct["dialect"] in ["xlsx", "xls"]:
             s = snk(
                 uri_struct["database"],
                 logger=logger
@@ -298,7 +300,7 @@ class _SourceIterFactory(object):
         """make a file based reader"""
 
         the_source = SOURCE_MAP[uri_struct["dialect"]]
-        if uri_struct["dialect"] in ["xlsx"]:
+        if uri_struct["dialect"] in ["xlsx", "xls"]:
             src = the_source(
                 [uri_struct["database"]],
                 field_names=self.field_names,

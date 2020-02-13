@@ -34,6 +34,42 @@ import cython
 from dkit.algorithms import tdigest
 import numpy
 import math
+from boltons.statsutils import Stats
+from decimal import Decimal
+
+
+def quantile_bins(values, n_quantiles=10, strict=False):
+    """compute n quantile bins
+
+    args:
+        * values: iterator of numeric values
+        * n_quantiles: how many bins
+        * strict: generate ValueError if too many similar values for bins
+
+    returns:
+        list of values: [(left, right, count), ...]
+
+    """
+    stats = Stats(values)
+    step = Decimal(1)/Decimal(n_quantiles)
+    q_list = []
+    q = step
+    last = None
+    for i in range(n_quantiles):
+        this = stats.get_quantile(q)
+        if this == last:
+            if strict:
+                raise ValueError("Too many similar value for bins")
+            else:
+                if q_list[-1][1] == this:
+                    prev = q_list.pop()
+                    last = prev[0]
+        else:
+            q_list.append((last, this, q))
+            last = this
+        q += step
+    q_list[-1] = (q_list[-1][0], None, q_list[-1][2])
+    return q_list
 
 
 class AbstractAccumulator(object):
