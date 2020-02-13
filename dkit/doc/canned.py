@@ -1,27 +1,47 @@
-from functools import lru_cache
-from dkit.data import window as win
-from dkit.data.containers import OrderedSet
-from dkit.doc.builder import is_table, is_plot
-from dkit.doc.document import Table, Figure
-from dkit.utilities.file_helper import sanitise_name
-import string
+"""
+'Canned' report components that assist in getting up to speed
+quickly with reports.
+"""
 import statistics
+import string
+from functools import lru_cache
+
+from ..data import window as win
+from ..data.containers import OrderedSet
+from ..data.histogram import binner
+from .builder import is_table, is_plot
+from .document import Table, Figure
+from ..utilities.file_helper import sanitise_name
+from .. import CURRENCY_FORMAT
 
 
-CURRENCY_FORMAT = "R{:,.0f}"
-NWDT = 1.5
+NWDT = 1.5  # width of numeric column
 
 
 class BostonMatrix(object):
-    """Helper class to generate boston matrixes
+    """Helper class to generate boston matrixes and associated plots etc.
 
     NOTE: this class will sort the data
-    """
 
+    Args:
+        - data: list of dicts
+        - id_field: unique id
+        - sequence_field (usually a date or numeric value)
+        - value_field: the value tracked
+        - description_field describes item
+        - entity_name (optional) used for plot titles
+        - window_size (time window)
+        - value_format (string.format format string) for plot
+        - h_id: table heading for id
+        - h_sequence: table heading for sequence column
+        - h_value: table heading for value column
+        - h_description: table heading for description
+        - top_n: limit tables to this number of rows
+    """
     def __init__(self, data, id_field, sequence_field, value_field,
                  description_field, entity_name=None, window_size=6, value_format=CURRENCY_FORMAT,
                  h_id=None, h_sequence=None, h_value=None, h_description=None,
-                 top_n=10, plot_folder="plots"):
+                 top_n=10):
         self.data = list(sorted(data, key=lambda x: x[sequence_field]))
         self.id_field = id_field
         self.field_value = value_field
@@ -38,7 +58,6 @@ class BostonMatrix(object):
         self.h_value = h_value or value_field
         self.h_description = h_description or description_field
         self.top_n = top_n
-        self.plot_folder = plot_folder
 
     @lru_cache
     def window(self):
@@ -51,9 +70,6 @@ class BostonMatrix(object):
 
         w2 = win.MovingWindow(win_size).partition_by(self.id_field)  \
             + win.Gradient(f"ma_{win_size}", na=0).alias(self.alias_gr)
-
-        # w2 = win.MovingWindow(win_size).partition_by(self.id_field)  \
-        #    + win.Gradient(self.field_value, na=0).alias(self.alias_gr)
 
         return list(w2(w(self.data)))
 
@@ -339,3 +355,37 @@ class BostonMatrix(object):
             align="l"
         )
         return t
+
+
+@is_plot
+def pareto_plot(data, value_field, entity_name, y_legend,
+                float_format="R{x:,.0f}"):
+    """Pareto Plot"""
+    filename = f"{sanitise_name(entity_name)}_pareto.pdf"
+    title = f"Pareto Chart: {entity_name}" if entity_name else "Pareto chart"
+    data = sorted(
+        data,
+        key=lambda x: x[value_field],
+        reverse=True
+    )
+
+    g = Figure(data, filename=filename) \
+        + Figure.GeomBar(entity_name, x_data=None, y_data=value_field) \
+        + Figure.GeomCumulative(f"Cumulative {y_legend}", value_field) \
+        + Figure.Title(title) \
+        + Figure.XAxis(f"{entity_name}", defeat=True) \
+        + Figure.YAxis(y_legend, float_format=float_format)
+    return g
+
+
+@is_plot
+def histogram_plot(data, value_field, entity_name, y_legend, bins=10,
+                   bin_digits=1, file_name=None):
+    h_bins = binner(data, value_field, bins, bin_digits=bin_digits)
+    title = f"{entity_name} histogram"
+    g = Figure(h_bins, filename=file_name) \
+        + Figure.GeomHistogram(title, alpha=0.5) \
+        + Figure.Title(title) \
+        + Figure.XAxis(entity_name, float_format="{:.0f}") \
+        + Figure.YAxis(y_legend)
+    return g

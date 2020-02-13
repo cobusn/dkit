@@ -5,6 +5,7 @@ from dkit.data.histogram import Histogram
 from dkit.data.stats import Accumulator
 from dkit.plot import ggrammar
 from dkit.plot.gnuplot import BackendGnuPlot
+from dkit.plot.matplotlib import MPLBackend
 
 
 a = Accumulator((gauss(0.0, 1.0) for i in range(100000)))
@@ -21,4 +22,9 @@ plt = ggrammar.Plot(data) \
 BackendGnuPlot(plt.as_dict(), terminal="svg").render(
     file_name="example_hist.svg",
     script_name="example_hist.plot"
+)
+
+
+MPLBackend(plt.as_dict(), terminal="svg").render(
+    file_name="example_mpl_histogram.svg"
 )

@@ -21,11 +21,17 @@ import tempfile
 import pathlib
 import yaml
 from typing import Union, TextIO, Text
+import re
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+
+__all__ = [
+    "yaml_load",
+    "sanitise_name",
+]
 
 
 def yaml_load(stream: Union[TextIO, Text]):
@@ -55,3 +61,15 @@ def temp_filename(root=None, suffix=None) -> pathlib.Path:
         _fname = _fname + "." + suffix
     retval = pathlib.Path(_root) / _fname
     return retval
+
+
+def sanitise_name(file_name):
+    """
+    sanitize text to be suitable as filenames:
+
+        -   change to lower case
+        -   replace spaces with underscore
+    """
+    s = re.sub(r"[^\w\s]", '', file_name.strip().lower())
+    s = re.sub(r"\s+", '-', s)
+    return s

@@ -44,6 +44,7 @@ Data manipulation routines.
 from .. import _missing_value_
 from ..decorators import deprecated
 from ..utilities.introspection import is_list
+from .stats import quantile_bins
 import collections
 import datetime
 import dateutil.parser
@@ -57,6 +58,8 @@ import statistics
 import sys
 import typing
 import uuid
+from collections_extended import RangeMap
+
 
 __all__ = [
         "Indexer",
@@ -663,6 +666,37 @@ def iter_add_id(the_iterator, key="uuid"):
     for row in the_iterator:
         row[key] = str(uuid.uuid4())
         yield row
+
+
+def iter_add_quantile(the_iterator, value_field, n_quantiles=10, strict=False,
+                      field_name="quantile"):
+    """
+    Add quantile membership to each row
+
+    WARINING: this function will convert input to a list and may
+    have heavy memory overhead.
+
+    args:
+        * the_iterator: input data
+        * value_field: field name for values
+        * n_quantiles: number of quantiles
+        * strict: generate an error if values overflow to other quantiles
+        * field_name: name of new field
+
+    """
+    data = list(the_iterator)
+
+    q_map = RangeMap.from_iterable(
+        quantile_bins(
+            sorted(i[value_field] for i in data)
+        )
+    )
+
+    def add_q(row):
+        row["quantile"] = q_map[row["amount"]]
+        return row
+
+    return map(add_q, data)
 
 
 def iter_drop(the_iterator, fields):

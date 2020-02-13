@@ -341,11 +341,16 @@ class Table(_AddElement):
 
 class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
 
+    AnchoredText = ggrammar.AnchoredText
     GeomArea = ggrammar.GeomArea
     GeomBar = ggrammar.GeomBar
     GeomImpulse = ggrammar.GeomImpulse
     GeomScatter = ggrammar.GeomScatter
     GeomTreeMap = ggrammar.GeomTreeMap
+    GeomHistogram = ggrammar.GeomHistogram
+    GeomDelta = ggrammar.GeomDelta
+    GeomCumulative = ggrammar.GeomCumulative
+
     Title = ggrammar.Title
     XAxis = ggrammar.XAxis
     YAxis = ggrammar.YAxis
