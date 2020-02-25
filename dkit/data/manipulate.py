@@ -688,7 +688,9 @@ def iter_add_quantile(the_iterator, value_field, n_quantiles=10, strict=False,
 
     q_map = RangeMap.from_iterable(
         quantile_bins(
-            sorted(i[value_field] for i in data)
+            (i[value_field] for i in data),
+            n_quantiles,
+            strict
         )
     )
 

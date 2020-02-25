@@ -15,6 +15,8 @@
 * apache afro integration 
 * apache parquet integration 
 * pgfplotstable http://ftp.sun.ac.za/ftp/CTAN/graphics/pgf/contrib/pgfplots/doc/pgfplotstable.pdf
+* allow options to be passed for opening a network database connection. the
+  options should be stored in the connection settings..
 
 ## optimistions
 * change mpak schema to use integers/floats for storing dates

@@ -640,10 +640,16 @@ class ETLServices(object):
 
     # constructors
     @classmethod
-    def from_file(cls, model=None, config=None) -> "ETLServices":
-        _config = load_config(config)
+    def from_file(cls, model_filename=None, config_filename=None) -> "ETLServices":
+        """instantiate services object from file
+
+        args:
+            - model_filename: name of model file, defaults to "model.yml"
+            - config filename: attempt to load default if not available
+        """
+        _config = load_config(config_filename)
         return cls(
-            load_model(ModelManager, model, _config),
+            load_model(ModelManager, model_filename, _config),
             _config
         )
 

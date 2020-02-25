@@ -27,19 +27,19 @@ COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4', "snappy"]
 ENCRYPTION_FORMATS = ['aes']
 RE_COMRESSION_FORMATS = "|".join(COMPRESSION_FORMATS)
 RE_ENCRYPTION_FORMATS = "|".join(ENCRYPTION_FORMATS)
-FILE_DIALECTS = ['csv', 'jsonl', 'json', 'tsv', 'xls', 'xlsx', 'xml', 'bxr', 'pkl', 'mpak']
+FILE_DIALECTS = ['csv', 'jsonl', 'json', 'tsv', 'xlsx', 'xls', 'xml', 'bxr', 'pkl', 'mpak']
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]
-NETWORK_DIALECTS = ["mysql", "oracle", "mssql", "postgres"]
+NETWORK_DIALECTS = ["mysql", "oracle", "mssql", "postgres", "impala"]
 SQL_DRIVERS = {
+    "firebird": "firebird+fdb",
     "hdf5": "hdf5",
-    "sqlite": "sqlite",
+    "impala": "impala",
+    "mssql": "mssql+pymssql",
+    "mysql": "mysql+mysqldb",
     "oracle": "oracle+cx_oracle",
     "postgres": "postgres",
-#    "mysql": "mysql+mysqlconnector",
-    "mysql": "mysql+mysqldb",
-    "mssql": "mssql+pymssql",
-    "firebird": "firebird+fdb",
+    "sqlite": "sqlite",
 }
 
 
@@ -113,8 +113,8 @@ def parse(uri):
 
 def _parse_file_driver(uri):
     """parse file with specified driver"""
-    # rx = r"({}):\/\/\/(.+)$".format("|".join(FILE_DIALECTS + FILE_DB_DIALECTS))
-    rx = r"(.*?):\/\/\/(.+)$"
+    rx = r"({}):\/\/\/(.+)$".format("|".join(FILE_DIALECTS + FILE_DB_DIALECTS))
+    # rx = r"(.*?):\/\/\/(.+)$"
     m = re.match(rx, uri)
     if m is not None:
         dialect = m.group(1)
@@ -173,7 +173,7 @@ def _parse_network_db(host_string):
         r"(?:(?P<username>.+):(?P<password>.*)@)?"       # username / password
         r"(?P<host>[a-zA-Z0-9_.-]+)"                      # host
         r"(?::(?P<port>[0-9]+))?"                        # port
-        r"(?:\/(?P<database>\w+))?"                      # database
+        r"(?:\/(?P<database>[-.\w]+))?"                      # database
         r"(?:\?(?P<entity>[\w_]+)(?:#\[(?P<filter>.+)\])?)?"  # entity
         r"$"                                             # end of rx
     )
