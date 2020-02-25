@@ -3,3 +3,5 @@ mistune
 sqlalchemy
 pyyaml
 psycopg
+boltons
+collections-extended

@@ -6,10 +6,58 @@ from _pickle import Pickler, Unpickler, dumps, loads
 from io import BytesIO
 
 import collections.abc
+import collections_extended as ce
 
 """
 Container data structures
 """
+
+
+__all__ = [
+    "AttrDict",
+    "DictionaryEmulator",
+    "FastFlexShelve",
+    "FlexBSDDBShelve",
+    "FlexShelve",
+    "ListEmulator",
+    "OrderedSet",
+    "RangeCounter",
+    "ReusableStack",
+    "SortedCollection",
+]
+
+class RangeCounter(object):
+    """can be used to count items in ranges"""
+
+    def __init__(self, *the_iterable):
+        last = None
+        lst = []
+        for i in the_iterable:
+            lst.append((last, i, 0))
+            last = i
+        lst.append((last, None, 0))
+        print(lst)
+        self.store = ce.RangeMap(lst)
+
+    def increment(self, value):
+        self.store[value] = self.store[value] + 1
+
+    def update(self, the_iterable):
+        breakpoint()
+        for i in the_iterable:
+            self.store[i] += 1
+
+    def __getitem__(self, key):
+        return self.store[key]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def __str__(self):
+        return str(self.store)
 
 
 class AttrDict(dict):

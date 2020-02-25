@@ -22,13 +22,22 @@ import unittest
 import sys
 sys.path.insert(0, "..")  # noqa
 from dkit.data.containers import (
-    ReusableStack,
-    SortedCollection,
     FlexShelve,
     OrderedSet,
+    RangeCounter,
+    ReusableStack,
+    SortedCollection,
 )
 from random import shuffle
 from pathlib import Path
+
+
+class TestRangeCounter(unittest.TestCase):
+
+    def test_init(self):
+        c = RangeCounter(0, 5, 10, 15)
+        print(c.store.get(2))
+        c.store.__init_subclass__
 
 
 class TestReusableStack(unittest.TestCase):

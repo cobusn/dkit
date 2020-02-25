@@ -17,7 +17,7 @@
 #
 import importlib
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...utilities import iter_helper
+from ...utilities import iter_helper, log_helper
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import CkitETLException
@@ -36,7 +36,8 @@ def _rfc_1738_quote(text):
 
 
 VALID_DIALECTS = [
-    "firebird", "mssql", "mysql", "oracle", "postgresql", "sqlite", "sybase"
+    "firebird", "mssql", "mysql", "oracle", "postgresql", "sqlite", "sybase",
+    "impala"
 ]
 
 
@@ -98,22 +99,32 @@ class SQLAlchemyAccessor(object):
                 http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
         echo:   Echo SQL statements (Default is False)
     """
-    def __init__(self, url, echo=False):
+    def __init__(self, url, echo=False, logger=None):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.url = url
-        self.engine = self.sqlalchemy.create_engine(url, echo=echo)
+        self.engine = self.sqlalchemy.create_engine(
+            url,
+            echo=echo,
+            # poolclass=self.sqlalchemy.pool.NullPool
+        )
         self.metadata = self.sqlalchemy.MetaData(bind=self.engine)
         self.__inspect = None
+        self.logger = logger or log_helper.null_logger()
 
     def __del__(self):
         self.close()
 
     def close(self):
-        self.metadata = None
-        self.__inspect = None
-        if self.engine is not None:
-            self.engine.dispose()
-        self.engine = None
+        """Will log error if any occur"""
+        try:
+            if self.engine:
+                self.engine.dispose()
+        except Exception as E:
+            self.logger.error(E)
+        finally:
+            self.engine = None
+            self.__inspect = None
+            self.metadata = None
 
     def create_table(self, table_name, validator_schema):
         """
@@ -191,6 +202,7 @@ class SQLAlchemyReflector(object):
             "FLOAT": "float",
             "Float": "float",
             "IMAGE": "binary",
+            "INT": "integer",
             "INTEGER": "integer",
             "Integer": "integer",
             "LONGBLOB": "binary",
@@ -209,6 +221,7 @@ class SQLAlchemyReflector(object):
             "SMALLINT": "int16",
             "SMALLMONEY": "decimal",
             "SmallInteger": "int16",
+            "STRING": "string",
             "String": "string",
             "TEXT": "string",
             "TIMESTAMP":  "datetime",
@@ -267,7 +280,8 @@ class SQLAlchemyReflector(object):
             del ref_col["nullable"]
             if "autoincrement" in ref_col:
                 del ref_col["autoincrement"]
-            del ref_col["default"]
+            if "default" in ref_col:
+                del ref_col["default"]
             self.__process_primary_key(_name, ref_col, pk)
             self.__process_indexes(_name, ref_col, indexes)
             retval[_name] = ref_col

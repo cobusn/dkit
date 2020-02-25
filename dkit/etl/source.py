@@ -58,10 +58,6 @@ class AbstractSource(object):
             trigger=log_trigger
         )
 
-    def as_data_frame(self):
-        """all data as Pandas data frame"""
-        raise NotImplementedError
-
     def reset(self):
         pass
 
