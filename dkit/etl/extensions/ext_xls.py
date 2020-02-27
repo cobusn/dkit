@@ -18,75 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .. import source, sink, DEFAULT_LOG_TRIGGER
-from datetime import datetime, date
-from decimal import Decimal
+from .. import source, DEFAULT_LOG_TRIGGER
 import xlrd
-
-
-class XLSSink(sink.Sink):
-    """
-    Serialize Dictionary Line to Excel using openpyxl.
-
-    [openpyxl](https://openpyxl.readthedocs.io/en/default/optimized.html)
-    """
-    def __init__(self, file_name, field_names=None, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
-        # self.xlrd = __import__('xlrd')
-        self.xlrd = xlrd
-        self.file_name = file_name
-        self.field_names = field_names
-
-    def __convert(self, value):
-        if isinstance(value, (str, int, float, datetime, date, Decimal)):
-            return value
-        else:
-            return str(value)
-
-    def process_dict(self, the_dict):
-        """
-        Each entry in the dictionary is written to a separate
-        worksheet.
-        """
-        stats = self.stats.start()
-        wb = self.xlrd.open_workbook(self.file_name)
-
-        for name, the_iterable in the_dict.items():
-            ws = wb.create_sheet(name)
-            for i, row in enumerate(the_iterable):
-                if i == 0:
-                    if self.field_names is not None:
-                        field_names = self.field_names
-                    else:
-                        field_names = list(row.keys())
-                    ws.append(field_names)
-                ws.append([self.__convert(row[k]) for k in field_names])
-                stats.increment()
-
-        wb.save(self.file_name)
-        stats.stop()
-        return self
-
-    def process(self, the_iterable):
-        stats = self.stats.start()
-        wb = self.xlrd.Workbook(write_only=True)
-        ws = wb.create_sheet()
-
-        for i, row in enumerate(the_iterable):
-            if i == 0:
-                if self.field_names is not None:
-                    field_names = self.field_names
-                else:
-                    field_names = list(row.keys())
-                ws.append(field_names)
-            ws.append([self.__convert(row[k]) for k in field_names])
-            stats.increment()
-        wb.save(self.file_name)
-        stats.stop()
-        return self
-
-    def close(self):
-        pass
 
 
 class XLSSource(source.AbstractSource):

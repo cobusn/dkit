@@ -344,13 +344,13 @@ class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
     AnchoredText = ggrammar.AnchoredText
     GeomArea = ggrammar.GeomArea
     GeomBar = ggrammar.GeomBar
+    GeomCumulative = ggrammar.GeomCumulative
+    GeomDelta = ggrammar.GeomDelta
+    GeomHistogram = ggrammar.GeomHistogram
     GeomImpulse = ggrammar.GeomImpulse
+    GeomLine = ggrammar.GeomLine
     GeomScatter = ggrammar.GeomScatter
     GeomTreeMap = ggrammar.GeomTreeMap
-    GeomHistogram = ggrammar.GeomHistogram
-    GeomDelta = ggrammar.GeomDelta
-    GeomCumulative = ggrammar.GeomCumulative
-
     Title = ggrammar.Title
     XAxis = ggrammar.XAxis
     YAxis = ggrammar.YAxis

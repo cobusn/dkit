@@ -1,7 +1,19 @@
 from abc import ABC
 from collections import defaultdict, deque
-from statistics import fmean, fsum, median
+from statistics import median
 from scipy.stats import linregress
+from ..compatibility import fmean, fsum
+
+__all__ = [
+    "MovingWindow",
+    "Average",
+    "Gradient",
+    "Median",
+    "Last",
+    "Sum",
+    "Max",
+    "Min"
+]
 
 
 class MovingWindow(ABC):
@@ -12,20 +24,17 @@ class MovingWindow(ABC):
         lag: moving window size
         truncate: do not yield first n rows
     """
-    def __init__(self, lag, truncate=True):
+
+    def __init__(self, lag, truncate=False):
         self.lag = lag
         self.functions = []
-        self._order_by = []
-        self._partition_by = []
+        self._partition_by = None
         self.fields = set()
         self.truncate = truncate
 
     def partition_by(self, *fields):
         self._partition_by = fields
         return self
-
-    def order_by(self, fields):
-        pass
 
     def get_key(self, row):
         if self._partition_by is not None:
@@ -35,11 +44,7 @@ class MovingWindow(ABC):
 
     def __call__(self, *sources):
         fields = set(i.field for i in self.functions)
-        accumulators = defaultdict(
-            lambda: defaultdict(
-                lambda: deque(maxlen=self.lag)
-            )
-        )
+        accumulators = defaultdict(lambda: defaultdict(lambda: deque(maxlen=self.lag)))
 
         for source in sources:
             for row in source:
@@ -63,7 +68,7 @@ class AbstractWindowFunction(ABC):
     function = None
     prefix = None
 
-    def __init__(self, field, alias=None, na=None):
+    def __init__(self, field, alias=None, na=0):
         self.field = field
         self._alias = alias if alias else f"{field}_{self.prefix}"
         self.na = na
@@ -88,6 +93,14 @@ class AbstractWindowFunction(ABC):
 
 
 class Average(AbstractWindowFunction):
+    """calculate moving average
+
+    args:
+        - field: numeric field to calculate
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     prefix = "ma"
 
     def update(self, accumulator, row):
@@ -101,6 +114,14 @@ class Average(AbstractWindowFunction):
 
 
 class Gradient(AbstractWindowFunction):
+    """calculate moving gradient
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     prefix = "gr"
 
     def update(self, accumulator, row):
@@ -114,6 +135,14 @@ class Gradient(AbstractWindowFunction):
 
 
 class Median(AbstractWindowFunction):
+    """calculate median for moving window
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     prefix = "median"
 
     def update(self, accumulator, row):
@@ -127,6 +156,14 @@ class Median(AbstractWindowFunction):
 
 
 class Last(AbstractWindowFunction):
+    """extraxt last value from window
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     prefix = "last"
 
     def update(self, accumulator, row):
@@ -139,15 +176,39 @@ class Last(AbstractWindowFunction):
 
 
 class Sum(AbstractWindowFunction):
+    """sum of values in window
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     function = fsum
     prefix = "sum"
 
 
 class Max(AbstractWindowFunction):
+    """max of values in window
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     function = max
     prefix = "max"
 
 
 class Min(AbstractWindowFunction):
+    """min of values in window
+
+    args:
+        - field: numeric field for calculation
+        - alias: change name to
+        - na: use this value as na (default 0)
+
+    """
     function = min
-    prefix = "max"
+    prefix = "min"

@@ -10,6 +10,7 @@
 * integrate plantuml for documentation?
 
 ## Minor feature
+* https://github.com/Wandmalfarbe/pandoc-latex-template/tree/master/examples
 * https://julien.danjou.info/finding-definitions-from-a-source-file-and-a-line-number-in-python/
 * protobuf integration
 * apache afro integration 

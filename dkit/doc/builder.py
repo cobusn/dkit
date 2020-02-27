@@ -104,7 +104,7 @@ def is_plot(func):
             renderer = matplotlib.MPLBackend(
                 the_dict
             )
-            return renderer.render(the_dict["filename"])
+            return renderer.render("plots/" + the_dict["filename"])
         else:
             return jsonise(func(*args, **kwargs))
 
@@ -118,7 +118,7 @@ def is_table(func):
         if is_in_notebook():
             the_dict = func(*args, **kwargs).as_dict()
             return HTML(
-                tabulate.tabulate(
+                tabulate(
                     the_dict["data"],
                     headers="keys",
                     tablefmt="html"
@@ -175,37 +175,24 @@ class LatexRunner(object):
                 pass
 
 
-class ReportBuilder(object):
-    """
-    Build report from configuration
+class BuilderProxy(object):
+    """load a subset of report configuration (data and varialbes)
 
-    use a from_ .. method to initialize
+    Cannot render a report but useful for use with Jupyter notebooks
     """
+
     def __init__(self, definition, logger=None):
         self.definition = definition
+        self.configuration = {}
         self.data = {}
         self.variables = {}
-        self.configuration = {}
-        self.code = {
-            "len": len,
-            "currency": self.__fmt_currency,
-            "variables": self.variables,
-            "data": self.data,
-            "inflect": inflect.engine(),
-        }
-        self.documents = {}
-        self.presentations = {}
-        self.style_sheet = {}
-        self.logger = logger if logger else lh.stderr_logger(self.__class__.__name__)
+        self.logger = logger or lh.stderr_logger(self.__class__.__name__)
         self.logger.info("Validating report definition")
-        self.environment = None  # Jinja2 environment
         # validate defition
         validator = schemas.SchemaValidator(schemas.report_schema, self.logger)
         validator(self.definition)
-        self.initialize()
-
-    def __fmt_currency(self, the_str):
-        return "R{:,.0f}".format(the_str)
+        self.load_variables()
+        self.load_data()
 
     @property
     def plot_folder(self):
@@ -221,6 +208,51 @@ class ReportBuilder(object):
             with source.load(filename) as iter_in:
                 self.data[k] = list(iter_in)
 
+    def load_variables(self):
+        """
+        Load report variables
+        """
+        if "variables" in self.definition:
+            self.variables.update(self.definition["variables"])
+        self.configuration.update(self.definition["configuration"])
+
+    @classmethod
+    def from_file(cls, file_name):
+        """
+        constructor. file is a yaml file
+        """
+        with open(file_name) as infile:
+            j = yaml.load(infile, Loader=Loader)
+        return cls(j)
+
+
+class ReportBuilder(BuilderProxy):
+    """
+    Build report from configuration
+
+    use a from_ .. method to initialize
+    """
+    def __init__(self, definition, logger=None):
+        super().__init__(definition, logger)
+        self.code = {
+            "len": len,
+            "currency": self.__fmt_currency,
+            "variables": self.variables,
+            "data": self.data,
+            "inflect": inflect.engine(),
+        }
+        self.documents = {}
+        self.presentations = {}
+        self.style_sheet = {}
+        self.environment = None  # Jinja2 environment
+        self.load_code()
+        self.load_stylesheets()
+        self.load_documents()
+        self.load_presentations()
+
+    def __fmt_currency(self, the_str):
+        return "R{:,.0f}".format(the_str)
+
     def load_code(self):
         """
         load all code
@@ -233,14 +265,6 @@ class ReportBuilder(object):
             module_ = import_module(module_name)
             class_ = getattr(module_, class_name)
             self.code[k] = class_(self)
-
-    def load_variables(self):
-        """
-        Load report variables
-        """
-        if "variables" in self.definition:
-            self.variables.update(self.definition["variables"])
-        self.configuration.update(self.definition["configuration"])
 
     def load_stylesheets(self):
         """
@@ -272,15 +296,6 @@ class ReportBuilder(object):
             with open(template_name) as tpl_data:
                 self.presentations[k] = jinja2.Template(tpl_data.read())
 
-    @classmethod
-    def from_file(cls, file_name):
-        """
-        constructor. file is a yaml file
-        """
-        with open(file_name) as infile:
-            j = yaml.load(infile, Loader=Loader)
-        return cls(j)
-
     def render(self, renderer, documents):
         """
         render report
@@ -309,14 +324,6 @@ class ReportBuilder(object):
             runner = LatexRunner(_name, output_folder="output")
             runner.run()
             runner.clean()
-
-    def initialize(self):
-        self.load_variables()
-        self.load_data()
-        self.load_code()
-        self.load_stylesheets()
-        self.load_documents()
-        self.load_presentations()
 
     def run(self, report_type="latex"):
         if report_type == "latex":
