@@ -38,6 +38,14 @@ class TestSQLAlchemyFactory(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        #
+        # Impala is not a well integrated dialect
+        #
+        cls.dialects = [
+            i for i in ext_sql_alchemy.VALID_DIALECTS
+            if i != "impala"
+        ]
+
         cls.validator = schema.EntityValidator(
             yaml.load(SCHEMA, Loader=yaml.SafeLoader)
         )
@@ -47,7 +55,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         Create SQL statement from entity
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
-        for dialect in ext_sql_alchemy.VALID_DIALECTS:
+        for dialect in self.dialects:
             print(factory.create_sql_schema(dialect, person=self.validator))
 
     def test_sql_select(self):
@@ -55,7 +63,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         Create SQL select statement from entity
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
-        for dialect in ext_sql_alchemy.VALID_DIALECTS:
+        for dialect in self.dialects:
             print(factory.create_sql_select(dialect, person=self.validator))
 
 

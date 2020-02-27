@@ -86,16 +86,6 @@ class TestEndpointFactory(unittest.TestCase):
         s = parse("sqlite:///input_files/sample.db?sales")
         self.assertEqual(data, s)
 
-    def test_shm_dialect(self):
-        """file based sqlite dialect"""
-        data = self.blank.copy()
-        data["driver"] = "shm"
-        data["compression"] = "snappy"
-        data["dialect"] = "pkl"
-        data["database"] = "/sample.pkl.snappy"
-        s = parse("shm:///sample.pkl.snappy")
-        self.assertEqual(data, s)
-
     def test_stdout_data(self):
         """file based data with specified dialect"""
         data = self.blank.copy()

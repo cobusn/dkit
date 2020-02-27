@@ -21,11 +21,9 @@
 import os
 import unittest
 import sys
-import datetime
 sys.path.insert(0, "..") # noqa
 
 from dkit.etl.extensions import ext_xls
-from test_config import DATA_TYPES
 
 
 class TestXLSSource(unittest.TestCase):
@@ -63,46 +61,6 @@ class TestXLSSource(unittest.TestCase):
         t.reset()
         l2 = list(t)
         self.assertEqual(len(ll), len(l2))
-
-
-class TestXLSSink(unittest.TestCase):
-
-    def test_data_types(self):
-        """
-        test writing various data types to excel.
-        """
-        g_data = (DATA_TYPES for i in range(10))
-        snk_xls = ext_xls.XLSSink(os.path.join("output", "xls_data_types.xls"))
-        snk_xls.process(g_data)
-
-    def test_process_dict(self):
-        """
-        test process_dict method
-        """
-        g_data = list((DATA_TYPES for i in range(10)))
-        snk_xls = ext_xls.XLSSink(os.path.join("output", "xls_multi_sheet.xls"))
-        sheets = {"page 1": g_data, "page 2": g_data}
-        snk_xls.process_dict(sheets)
-
-    def test_10000_rows(self):
-        """
-        Test writing 10 000 rows to xls file
-        """
-        g_data = (DATA_TYPES for i in range(10000))
-        snk_xls = ext_xls.XLSSink(os.path.join("output", "xls_10000_rows.xls"))
-        snk_xls.process(g_data)
-
-    def test_sorted_fields(self):
-        """
-        Test writing xls file with specified field list
-        """
-        g_data = (DATA_TYPES for i in range(10))
-        field_list = list(reversed(sorted(DATA_TYPES.keys())[:3]))
-        snk_xls = ext_xls.XLSSink(
-            os.path.join("output", "xls_field_list.xls"),
-            field_names=field_list
-        )
-        snk_xls.process(g_data)
 
 
 if __name__ == '__main__':

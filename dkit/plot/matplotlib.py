@@ -189,6 +189,7 @@ class MPLBackend(Backend):
 
         # release memory used by plot
         plt.close(self.fig)
+        return self.fig
 
     def r_cumulative_series(self, ax, serie):
         # ax2.plot(df.index, "], color="C1", marker="D", ms=7)
