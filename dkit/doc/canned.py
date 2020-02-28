@@ -17,6 +17,49 @@ from .. import CURRENCY_FORMAT
 
 NWDT = 1.5  # width of numeric column
 
+__all__ = [
+    "BostonMatrix",
+    "histogram_plot",
+    "pareto_plot",
+]
+
+
+@is_plot
+def histogram_plot(data, value_field, value_heading, entity_name, title=None, bins=10,
+                   bin_digits=1, file_name=None, float_format="{:.0f}"):
+
+    h_bins = binner(data, value_field, bins, bin_digits=bin_digits)
+    _file_name = file_name or f"{sanitise_name(value_field)}_{sanitise_name(entity_name)}_hist.pdf"
+    title_ = title or f"{entity_name} Histogram"
+
+    g = Figure(h_bins, filename=_file_name) \
+        + Figure.GeomHistogram(title, alpha=0.5) \
+        + Figure.Title(title_) \
+        + Figure.XAxis(value_heading, float_format=float_format) \
+        + Figure.YAxis("Frequency")
+    return g
+
+
+@is_plot
+def pareto_plot(data, value_field, entity_name, y_legend,
+                float_format="R{x:,.0f}"):
+    """Pareto Plot"""
+    filename = f"{sanitise_name(entity_name)}_pareto.pdf"
+    title = f"Pareto Chart: {entity_name}" if entity_name else "Pareto chart"
+    data = sorted(
+        data,
+        key=lambda x: x[value_field],
+        reverse=True
+    )
+
+    g = Figure(data, filename=filename) \
+        + Figure.GeomBar(entity_name, x_data=None, y_data=value_field) \
+        + Figure.GeomCumulative(f"Cumulative {y_legend}", value_field) \
+        + Figure.Title(title) \
+        + Figure.XAxis(f"{entity_name}", defeat=True) \
+        + Figure.YAxis(y_legend, float_format=float_format)
+    return g
+
 
 class BostonMatrix(object):
     """Helper class to generate boston matrixes and associated plots etc.
@@ -36,12 +79,15 @@ class BostonMatrix(object):
         - h_sequence: table heading for sequence column
         - h_value: table heading for value column
         - h_description: table heading for description
+        - x_title: title for x axis
+        - y_title: title for y axis
         - top_n: limit tables to this number of rows
     """
     def __init__(self, data, id_field, sequence_field, value_field,
-                 description_field, entity_name=None, window_size=6, value_format=CURRENCY_FORMAT,
+                 description_field, entity_name=None, window_size=6,
+                 table_value_format=CURRENCY_FORMAT, plot_value_format=CURRENCY_FORMAT,
                  h_id=None, h_sequence=None, h_value=None, h_description=None,
-                 top_n=10):
+                 y_title="Revenue", x_title="Growth per month", top_n=10):
         self.data = list(sorted(data, key=lambda x: x[sequence_field]))
         self.id_field = id_field
         self.field_value = value_field
@@ -49,12 +95,15 @@ class BostonMatrix(object):
         self.field_description = description_field
         self.entity_name = entity_name
         self.window_size = window_size
-        self.value_format = value_format
+        self.table_value_format = table_value_format
+        self.plot_value_format = plot_value_format
         self.alias_median = f"ma_{self.window_size}"
         self.alias_gr = f"gr_{self.window_size}"
         self.alias_mean = f"mean_{self.window_size}"
         self.h_id = h_id or id_field
         self.h_sequence = h_sequence or sequence_field
+        self.y_title = y_title
+        self.x_title = x_title
         self.h_value = h_value or value_field
         self.h_description = h_description or description_field
         self.top_n = top_n
@@ -99,7 +148,7 @@ class BostonMatrix(object):
             align=align
         )
 
-    def col_identifier(self, title="Iidentifier", width=2, format_="{}", align="r"):
+    def col_identifier(self, title="Identifier", width=2, format_="{}", align="r"):
         """helper to add identifier column"""
         return Table.Field(
             self.id_field,
@@ -115,7 +164,7 @@ class BostonMatrix(object):
             self.field_value,
             title,
             width=width,
-            format_=format_,
+            format_=self.table_value_format,
             align=align
         )
 
@@ -125,7 +174,7 @@ class BostonMatrix(object):
             self.alias_gr,
             title,
             width=width,
-            format_=format_,
+            format_=self.table_value_format,
             align=align
         )
 
@@ -135,7 +184,7 @@ class BostonMatrix(object):
             self.alias_median,
             title,
             width=width,
-            format_=format_,
+            format_=self.table_value_format,
             align=align
         )
 
@@ -267,7 +316,7 @@ class BostonMatrix(object):
             key=lambda x: x[self.alias_gr]
         )))
 
-    def table_revenue(self):
+    def table_share(self):
         return self.formatted_table(self.data_by_share()[:self.top_n])
 
     def table_growth(self):
@@ -297,8 +346,8 @@ class BostonMatrix(object):
             + Figure.GeomScatter("Quadrants", x_data=self.alias_gr, y_data=self.field_value,
                                  alpha=0.5) \
             + Figure.Title(title) \
-            + Figure.XAxis("Growth per month", float_format="R{x:,.0f}") \
-            + Figure.YAxis("Revenue", float_format="R{x:,.0f}") \
+            + Figure.XAxis(self.x_title, float_format=self.plot_value_format) \
+            + Figure.YAxis(self.y_title, float_format=self.plot_value_format) \
             + Figure.HLine(self.median_last_interval(), line_width=0.5, color="black",
                            alpha=0.5) \
             + Figure.VLine(0, line_width=0.5, color="black", alpha=0.5) \
@@ -308,6 +357,17 @@ class BostonMatrix(object):
             + Figure.AnchoredText("Q4", location="lower left", size=9, alpha=0.2)
 
         return g
+
+    def last_interval_histogram_plot(self, bins=10, bin_digits=1, file_name=None):
+        return histogram_plot(
+            data=self.last_interval(),
+            value_field=self.field_value,
+            value_heading=self.h_value,
+            entity_name=self.entity_name,
+            bins=bins,
+            bin_digits=bin_digits,
+            file_name=file_name
+        )
 
     @is_plot
     def pareto_plot(self):
@@ -324,7 +384,7 @@ class BostonMatrix(object):
             + Figure.GeomCumulative("Cumulative Revenue", "last_value") \
             + Figure.Title(title) \
             + Figure.XAxis(f"{self.entity_name}", defeat=True) \
-            + Figure.YAxis("Revenue", float_format="R{x:,.0f}")
+            + Figure.YAxis(self.y_title, float_format=self.plot_value_format)
         return g
 
     @is_table
@@ -355,37 +415,3 @@ class BostonMatrix(object):
             align="l"
         )
         return t
-
-
-@is_plot
-def pareto_plot(data, value_field, entity_name, y_legend,
-                float_format="R{x:,.0f}"):
-    """Pareto Plot"""
-    filename = f"{sanitise_name(entity_name)}_pareto.pdf"
-    title = f"Pareto Chart: {entity_name}" if entity_name else "Pareto chart"
-    data = sorted(
-        data,
-        key=lambda x: x[value_field],
-        reverse=True
-    )
-
-    g = Figure(data, filename=filename) \
-        + Figure.GeomBar(entity_name, x_data=None, y_data=value_field) \
-        + Figure.GeomCumulative(f"Cumulative {y_legend}", value_field) \
-        + Figure.Title(title) \
-        + Figure.XAxis(f"{entity_name}", defeat=True) \
-        + Figure.YAxis(y_legend, float_format=float_format)
-    return g
-
-
-@is_plot
-def histogram_plot(data, value_field, entity_name, y_legend, bins=10,
-                   bin_digits=1, file_name=None):
-    h_bins = binner(data, value_field, bins, bin_digits=bin_digits)
-    title = f"{entity_name} histogram"
-    g = Figure(h_bins, filename=file_name) \
-        + Figure.GeomHistogram(title, alpha=0.5) \
-        + Figure.Title(title) \
-        + Figure.XAxis(entity_name, float_format="{:.0f}") \
-        + Figure.YAxis(y_legend)
-    return g
