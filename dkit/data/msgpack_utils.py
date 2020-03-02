@@ -40,7 +40,8 @@ class MsgpackEncoder(object):
     43: datetime.date
     44: decimal
     """
-    msgpack = __import__("msgpack")
+    def __init__(self):
+        self.msgpack = __import__("msgpack")
 
     def _unpacker_hook(self, code, data):
         if code == _DATETIME_EXT_TYPE:

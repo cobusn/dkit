@@ -21,7 +21,9 @@ setup(
     author_email='cobus at nel.org.za',
     setup_requires=["cffi>=1.4.0"],
     install_requires=[
+        "boltons",
         "cffi>=1.4.0",
+        "mistune",
         "numpy",
         "scipy",
     ],
