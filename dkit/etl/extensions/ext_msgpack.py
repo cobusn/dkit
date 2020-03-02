@@ -134,11 +134,11 @@ class MsgpackSink(sink.Sink):
     http://msgpack.org/index.html/
     """
     def __init__(self, writer, field_names=None, logger=None, log_template=None,
-                 chunk_size=5000, encoder=msgpack_utils.MsgpackEncoder()):
+                 chunk_size=5000, encoder=None,):
         super().__init__(logger=logger, log_template=log_template)
         self.writer = writer
         self.field_names = field_names
-        self.encoder = encoder
+        self.encoder = encoder or msgpack_utils.MsgpackEncoder()
         self.chunk_size = chunk_size
 
     def get_list(self, chunk):

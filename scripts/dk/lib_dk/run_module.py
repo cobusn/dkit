@@ -25,7 +25,6 @@ from . import module, options
 from dkit import exceptions
 from dkit.data import manipulate as mp, containers
 from dkit.etl.extensions import ext_sql_alchemy
-from dkit.doc import builder
 from dkit.data import aggregation as agg
 import argparse
 
@@ -222,6 +221,8 @@ class RunModule(module.MultiCommandModule):
 
     def do_report(self):
         """run report"""
+        from dkit.doc import builder
+
         b = builder.ReportBuilder.from_file(self.args.report)
         b.run()
 
