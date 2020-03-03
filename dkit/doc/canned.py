@@ -97,7 +97,7 @@ class BostonMatrix(object):
         self.window_size = window_size
         self.table_value_format = table_value_format
         self.plot_value_format = plot_value_format
-        self.alias_median = f"ma_{self.window_size}"
+        self.alias_ma = f"ma_{self.window_size}"
         self.alias_gr = f"gr_{self.window_size}"
         self.alias_mean = f"mean_{self.window_size}"
         self.h_id = h_id or id_field
@@ -113,7 +113,7 @@ class BostonMatrix(object):
         """Add Moving Average and gradient over Window"""
         win_size = self.window_size
         w = win.MovingWindow(win_size).partition_by(self.id_field) \
-            + win.Median(self.field_value, na=0).alias(self.alias_median) \
+            + win.Median(self.field_value, na=0).alias(self.alias_ma) \
             + win.Average(self.field_value, na=0).alias(self.alias_mean) \
             + win.Last(self.field_value).alias("last_value")
 
@@ -181,7 +181,7 @@ class BostonMatrix(object):
     def col_median(self, title="Median(${n})", width=NWDT, format_=CURRENCY_FORMAT, align="r"):
         title = string.Template(title).safe_substitute({"n": self.window_size})
         return Table.Field(
-            self.alias_median,
+            self.alias_ma,
             title,
             width=width,
             format_=self.table_value_format,
@@ -205,7 +205,7 @@ class BostonMatrix(object):
             self.window(),
             self.id_field,
             self.id_field,
-            self.alias_median,
+            self.alias_ma,
             title=title,
             width=width
         )
@@ -257,7 +257,7 @@ class BostonMatrix(object):
         return list(map(add_q, sorted(
             (
                 i for i in self.last_interval()
-                if i[self.alias_median] > self.median_last_interval()
+                if i[self.alias_ma] > self.median_last_interval()
                 and i[self.alias_gr] < 0
             ),
             key=lambda x: x[self.alias_gr]
@@ -274,7 +274,7 @@ class BostonMatrix(object):
         return list(map(add_q, sorted(
             (
                 i for i in self.last_interval()
-                if i[self.alias_median] > self.median_last_interval()
+                if i[self.alias_ma] > self.median_last_interval()
                 and i[self.alias_gr] >= 0
             ),
             key=lambda x: x[self.alias_gr],
@@ -292,7 +292,7 @@ class BostonMatrix(object):
         return list(map(add_q, sorted(
             (
                 i for i in self.last_interval()
-                if i[self.alias_median] < self.median_last_interval()
+                if i[self.alias_ma] < self.median_last_interval()
                 and i[self.alias_gr] >= 0
             ),
             key=lambda x: x[self.alias_gr],
@@ -310,7 +310,7 @@ class BostonMatrix(object):
         return list(map(add_q, sorted(
             (
                 i for i in self.last_interval()
-                if i[self.alias_median] < self.median_last_interval()
+                if i[self.alias_ma] < self.median_last_interval()
                 and i[self.alias_gr] < 0
             ),
             key=lambda x: x[self.alias_gr]
