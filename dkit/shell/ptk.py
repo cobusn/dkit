@@ -22,10 +22,8 @@ import shlex
 import textwrap
 from abc import ABCMeta, abstractmethod
 
-from prompt_toolkit import prompt
+from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
-from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 
 from .. import base
@@ -43,7 +41,7 @@ class ProxyCmd(base.ConfiguredObject, metaclass=ABCMeta):
     cmd = ""
 
     @abstractmethod
-    async def run(self, args):
+    def run(self, args):
         pass
 
     def complete(self, tokens, document):
@@ -76,7 +74,7 @@ class CmdCompleter(Completer):
                 tokens = shlex.split(line)
                 if line.endswith(" "):
                     tokens.append("")
-                print(tokens)
+                # print(tokens)
             except ValueError:
                 return
 
@@ -101,70 +99,91 @@ class CmdCompleter(Completer):
         yield from (Completion(i, start_position=-pos) for i in completions)
 
 
-class AsyncCmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
+class CmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
     """
     Abstract Base Class for Async Command Applications
+
+    args:
+        lst_commands: list of commmands
+        repository: repository instance
+        debug: True to defeat error handling
+
     """
-    def __init__(self, repository=None, **kwargs):
+    def __init__(self, commands=None, repository=None, debug=False, **kwargs):
+        self.debug = debug
         super().__init__(repository, **kwargs)
         self.completer = CmdCompleter([])
+        self.quit = False
+        self.commands = commands
+        if self.commands is not None:
+            self.add_commands(self.commands)
 
-    async def run(self):
+    def _process_line(self):
+        # Complete command and options
+        str_line = self.session.prompt(
+            "$ ",
+            completer=self.completer,
+            mouse_support=False,
+            # history=history,
+        )
+
+        try:
+            line = shlex.split(str_line)
+        except ValueError:
+            return
+
+        if len(line) > 0:
+            command = line[0]
+
+            # run registered command
+            if command in self.completer.cmd_map:
+                # print(command)
+                runner = self.completer.cmd_map[command]
+                runner.run(line)
+
+            # exit
+            if command.lower() == 'exit':
+                print("Good bye..")
+                self.quit = True
+                return
+
+    def run(self):
         """
         Run application
         """
-        use_asyncio_event_loop()
-        history = InMemoryHistory()
-        while True:
-            try:
-                with patch_stdout():
-                    # Complete command and options
-                    str_line = await prompt(
-                        "$ ",
-                        completer=self.completer,
-                        history=history,
-                        async_=True,
-                    )
+        self.session = PromptSession()
+        # history = InMemoryHistory()
+        if self.debug:
+            while not self.quit:
+                self._process_line()
+        else:
+            while not self.quit:
+                try:
+                    with patch_stdout():
+                        self._process_line()
+                except CkitApplicationException as E:
+                    print(E)
+                except CkitShellException as E:
+                    print(E)
+                except IndexError as E:
+                    print(E)
+                except KeyError as E:
+                    print("Invalid Key: {}".format(E))
+                except FileNotFoundError as E:
+                    print(E)
+                except(EOFError, KeyboardInterrupt):
+                    return
+                except(CkitArgumentException) as E:
+                    print(E)
+                except argparse.ArgumentError as E:
+                    print(E)
+                except ValueError as E:
+                    print(E)
 
-                    try:
-                        line = shlex.split(str_line)
-                    except ValueError:
-                        return
-
-                    if len(line) > 0:
-                        command = line[0]
-
-                        # run registered command
-                        if command in self.completer.cmd_map:
-                            runner = self.completer.cmd_map[command]
-                            await runner.run(line)
-
-                        # exit
-                        if command.lower() == 'exit':
-                            print("Good bye..")
-                            return
-
-            except CkitApplicationException as E:
-                print(E)
-            except CkitShellException as E:
-                print(E)
-            except IndexError as E:
-                print(E)
-            except KeyError as E:
-                print("Invalid Key: {}".format(E))
-            except FileNotFoundError as E:
-                print(E)
-            except(EOFError, KeyboardInterrupt):
-                return
-            except(CkitArgumentException) as E:
-                print(E)
-            except argparse.ArgumentError as E:
-                print(E)
-            except ValueError as E:
-                print(E)
-
-    def add_commands(self, lst_commands):
-        self.completer.cmd_map.update({i.cmd: i for i in lst_commands})
+    def add_commands(self, commands):
+        self.completer.cmd_map.update(
+            {i.cmd: i for i in commands}
+        )
 
 
 class HelpCmd(ProxyCmd):
@@ -191,7 +210,7 @@ class HelpCmd(ProxyCmd):
             if i.startswith(token)
         )
 
-    async def run(self, args):
+    def run(self, args):
         if len(args) == 1:
             for command in self.map_commands.keys():
                 echo(command)

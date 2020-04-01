@@ -16,11 +16,26 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 from uuid import uuid4
+from zlib import crc32, adler32
 
 
 URLSAFE32 = "abcdefghijkmnpqrstuvwxy23456789"
 URLSAVE32L = "ABCDEFGHIJKMNPQRSTUVWXY23456789"
 A85CHARSET = "!#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstu"
+SENSIBLE = "abcdefghijkmnpqrstuvwxyABCDEFGHIJKMNPQRSTUVWXY23456789"
+
+
+def short_crc32(data, alphabet=SENSIBLE):
+    """crc32 encoded with alphabet to shorten string"""
+    return encode(crc32(data), SENSIBLE)
+
+
+def short_adler32(data, alphabet=SENSIBLE):
+    """adler hash encoded with alphabet to shorten string
+
+    adler is faster than crc32
+    """
+    return encode(adler32(data), SENSIBLE)
 
 
 def uid():
