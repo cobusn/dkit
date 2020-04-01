@@ -304,7 +304,7 @@ class ConfiguredObject(object):
             self.repository = Repository()
         else:
             self.repository = repository
-        super().__init__(**kwds)
+        super().__init__()
 
     # ==========================================================================
     #  Properties
