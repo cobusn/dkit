@@ -203,17 +203,17 @@ class StringReader(ClosedReader):
     """
     Creates reader file object from string
 
-    :param the_string: String object
-    :param encoding: default to utf-8
-    :parame io_type: file type (Default is io.StringIO)
+    Args:
+        * param: the_string: String object
+        * io_type: file type (Default is io.StringIO)
+
     """
-    def __init__(self, the_string, encoding="utf-8", io_type=io.StringIO):
+    def __init__(self, the_string, io_type=io.StringIO):
         self.io = io_type
         self.the_string = the_string
-        self.encoding = encoding
 
     def open(self):
-        return self.io(self.the_string.encode(self.encoding))
+        return self.io(self.the_string)
 
 
 class BytesStringReader(StringReader):

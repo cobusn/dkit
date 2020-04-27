@@ -19,10 +19,12 @@ from __future__ import print_function
 import os
 import unittest
 import sys
-sys.path.insert(0, "..")
-
-from dkit.etl.reader import FileReader
-from dkit.etl.reader import Bz2Reader
+sys.path.insert(0, "..")  # noqa
+from dkit.etl.reader import (
+    FileReader,
+    Bz2Reader,
+    StringReader
+)
 from dkit.etl.source import CsvDictSource
 from dkit.utilities import log_helper as log
 from create_data import FIELD_NAMES
@@ -69,6 +71,21 @@ class TestCsvDictSource(unittest.TestCase):
         src = CsvDictSource([r], logger=logger)
         src.stats.trigger = 20
         _ = list(src)
+
+    def test_custom_headings(self):
+        """test custom headings provided"""
+        # breakpoint()
+        with open("input_files/sample.csv", "rt") as infile:
+            next(infile)
+            data = infile.read()
+        headers = [
+            "id", "name", "company", "ip", "birthday", "year", "score"
+        ]
+        src = list(CsvDictSource([StringReader(data)], headers=headers))
+        row = src[0]
+        for k in headers:
+            assert k in row
+
 
 if __name__ == '__main__':
     unittest.main()
