@@ -10,13 +10,14 @@ class ArgumentParser(argparse.ArgumentParser):
 
     * instead of exiting, Raise an Exception instead that
     will be handled by the shell.
+
     * disable built in help
     """
     def __init__(self, *kwds, **kwargs):
         super().__init__(add_help=False, *kwds, **kwargs)
 
     def error(self, message):
-        raise argparse.ArgumentError(message)
+        raise argparse.ArgumentError(None, message)
 
 
 def echo(*kwds, **kwargs):
