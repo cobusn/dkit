@@ -25,7 +25,7 @@ from abc import ABCMeta, abstractmethod
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
-
+from prompt_toolkit.shortcuts import clear
 from .. import base
 from ..exceptions import CkitApplicationException, CkitArgumentException, CkitShellException
 from .console import echo
@@ -58,6 +58,7 @@ class CmdCompleter(Completer):
     def __init__(self, lst_commands):
         self.cmd_map = {i.cmd: i for i in lst_commands}
         self.cmd_map["help"] = HelpCmd(self)
+        self.cmd_map["clear"] = ClearCmd(self)
 
     @property
     def commands(self):
@@ -184,6 +185,14 @@ class CmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
         self.completer.cmd_map.update(
             {i.cmd: i for i in commands}
         )
+
+
+class ClearCmd(ProxyCmd):
+    """
+    clear screen
+    """
+    def run(self, args):
+        clear()
 
 
 class HelpCmd(ProxyCmd):
