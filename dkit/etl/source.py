@@ -21,8 +21,11 @@
 """
 Sources are ETL artifacts that implement interaction with
 encodings independent of the storage mechanism
-"""
 
+=========== =========== =================================================
+27 Apr 2020 Cobus Nel   Fixed field name bug in CsvDictSource
+=========== =========== =================================================
+"""
 import csv
 import glob
 import json
@@ -388,74 +391,62 @@ class CsvDictSource(AbstractMultiReaderSource):
     """
     read records from CSV sources
 
-    :reader_list: list of reader objects
-    :field_names: (optional) list of fields to extract
-    :delimiter: (optional) defaults to ","
-    :logger: (optional) logger instance
-    :log_template: (optional) python log template
-    :skip_lines: (optional) number of lines to skip at start of file
+    Args:
+
+        * reader_list: list of reader objects
+        * headings: (optional) specify headers separately if data without headings
+        * field_names: (optional) list of fields to extract
+        * delimiter: (optional) defaults to ","
+        * logger: (optional) logger instance
+        * log_template: (optional) python log template
+        * skip_lines: (optional) number of lines to skip at start of file
+
     """
     def __init__(self, reader_list, field_names=None, delimiter=",",
-                 logger=None, log_template=None, log_trigger=DEFAULT_LOG_TRIGGER,
-                 skip_lines=0, **kwargs):
+                 headers=None, logger=None, log_template=None,
+                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
         self.delimiter = delimiter
+        self.headings = headers
         super().__init__(
             reader_list, field_names, logger=logger, log_template=log_template,
             log_trigger=log_trigger, **kwargs
         )
 
     def iter_all_fields(self):
-        """
-        Iterate through files
-        """
+        """return all columns"""
+
+        def open_reader(input_):
+            """iterate through all rows"""
+            for _ in range(self.skip_lines):
+                # skip specified blank lines.
+                next(input_)
+
+            csv_in = csv.DictReader(
+                input_,
+                fieldnames=self.headings,
+                delimiter=self.delimiter,
+                skipinitialspace=True
+            )
+            return csv_in
+
+        # main loop
         stats = self.stats.start()
         for o_reader in self.reader_list:
             if o_reader.is_open:
-                for _ in range(self.skip_lines):
-                    # skip specified blank lines.
-                    next(o_reader)
-                csv_in = csv.DictReader(
-                    o_reader,
-                    self.field_names,
-                    delimiter=self.delimiter,
-                    skipinitialspace=True
-                )
-                for row in csv_in:
-                    yield(row)
+                for row in open_reader(o_reader):
+                    yield row
                     stats.increment()
             else:
                 with o_reader.open() as in_file:
-                    for _ in range(self.skip_lines):
-                        next(in_file)
-                    csv_in = csv.DictReader(in_file, delimiter=self.delimiter)
-                    for row in csv_in:
-                        yield(row)
+                    for row in open_reader(in_file):
+                        yield row
                         stats.increment()
         stats.stop()
 
     def iter_some_fields(self, field_names):
-        """
-        Iterate through files
-        """
-        stats = self.stats.start()
-        for o_reader in self.reader_list:
-            if o_reader.is_open:
-                for _ in range(self.skip_lines):
-                    # skip specified blank lines.
-                    next(o_reader)
-                csv_in = csv.reader(o_reader, delimiter=self.delimiter, skipinitialspace=True)
-                for row in csv_in:
-                    yield {k: row[i] for i, k in enumerate(field_names)}
-                    stats.increment()
-            else:
-                with o_reader.open() as in_file:
-                    for _ in range(self.skip_lines):
-                        next(in_file)
-                    csv_in = csv.reader(in_file, self.field_names, delimiter=self.delimiter)
-                    for row in csv_in:
-                        yield {k: row[i] for i, k in enumerate(field_names)}
-                        stats.increment()
-        stats.stop()
+        """return only specified columns"""
+        for row in self.iter_all_fields():
+            yield {k: row[k] for k in field_names}
 
 
 class XmlRpcSource(AbstractRowSource):

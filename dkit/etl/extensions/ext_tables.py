@@ -188,7 +188,7 @@ class PyTablesAccessor(object):
         return node.coldescrs
 
     def close(self):
-        if self.h5_file is not None:
+        if hasattr(self, "h5_file") and self.h5_file is not None:
             self.h5_file.close()
 
     def __del__(self):
