@@ -427,8 +427,13 @@ def add_options_sampling_input(parser, k=defaults.DEFAULT_SAMPLE_SIZE):
 def add_options_csv(parser):
     """Add CSV Options to parsser"""
     parser.add_argument('--skip', dest="skip_lines",
-                        help="skip number of lines in input file", default=0, type=int)
-    parser.add_argument('--delimiter', dest="delimiter", help="field delimiter",
+                        help="[CSV only] skip number of lines in input file",
+                        default=0, type=int)
+    parser.add_argument('--headings', dest="headings",
+                        help="[CSV only] file that define headings (one heading per line)",
+                        default=None)
+    parser.add_argument('--delimiter', dest="delimiter",
+                        help="[CSV only] field delimiter",
                         default=",")
 
 

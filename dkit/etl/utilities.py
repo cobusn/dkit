@@ -186,11 +186,12 @@ def sink_factory(uri_struct, logger=None):
 
 
 @contextmanager
-def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter=","):
+def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter=",",
+                headings=None):
     """parse uri string and open + return sink"""
     try:
         parsed = uri_parser.parse(uri)
-        factory = _SourceIterFactory(parsed, skip_lines, field_names, logger, delimiter)
+        factory = _SourceIterFactory(parsed, skip_lines, field_names, logger, delimiter, headings)
         yield factory
     finally:
         factory.close()
@@ -198,7 +199,7 @@ def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter
 
 @contextmanager
 def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delimiter=",",
-                   where_clause=None):
+                   headings=None, where_clause=None):
     """
     Instantiates Source objects from a list of uri's
 
@@ -209,10 +210,11 @@ def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delim
         field_names: (optional) list of field names to extract
         logger: (optional) logging instance
         delimiter: (optional) csv delimiter
+        headings: (optional) csv headings if not in file
     """
     try:
         factory = _SourceIterFactory(
-            file_list, skip_lines, field_names, logger, delimiter, where_clause
+            file_list, skip_lines, field_names, logger, delimiter, where_clause, headings
         )
         yield factory
     finally:
@@ -231,7 +233,7 @@ class _SourceIterFactory(object):
         delimiter: (optional) csv delimiter
     """
     def __init__(self, uri_struct, skip_lines=0, field_names=None, logger=None,
-                 delimiter=",", where_clause=None):
+                 delimiter=",", where_clause=None, headings=None):
         self.uri_struct = uri_struct
         self.skip_lines = skip_lines
         self.field_names = field_names
@@ -239,6 +241,7 @@ class _SourceIterFactory(object):
         self.delimiter = delimiter
         self.cleanup = []
         self.where_clause = where_clause
+        self.headings = headings
 
     def __make_source(self, uri_struct):
         """
@@ -318,7 +321,8 @@ class _SourceIterFactory(object):
                     field_names=self.field_names,
                     delimiter=self.delimiter,
                     logger=self.logger,
-                    skip_lines=self.skip_lines
+                    skip_lines=self.skip_lines,
+                    headings=self.headings
                 )
                 self.cleanup.append(src)
                 return src
@@ -329,7 +333,8 @@ class _SourceIterFactory(object):
                     field_names=self.field_names,
                     delimiter=self.delimiter,
                     logger=self.logger,
-                    skip_lines=self.skip_lines
+                    skip_lines=self.skip_lines,
+                    headings=self.headings
                 )
                 self.cleanup.append(src)
                 return src
