@@ -403,10 +403,10 @@ class CsvDictSource(AbstractMultiReaderSource):
 
     """
     def __init__(self, reader_list, field_names=None, delimiter=",",
-                 headers=None, logger=None, log_template=None,
+                 headings=None, logger=None, log_template=None,
                  log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
         self.delimiter = delimiter
-        self.headings = headers
+        self.headings = headings
         super().__init__(
             reader_list, field_names, logger=logger, log_template=log_template,
             log_trigger=log_trigger, **kwargs

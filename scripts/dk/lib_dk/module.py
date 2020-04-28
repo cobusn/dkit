@@ -188,6 +188,13 @@ class Module(object):
         else:
             field_list = None
 
+        # load CSV headings if specified
+        if hasattr(self.args, "headings") and self.args.headings:
+            with open(self.args.headings, "rt") as infile:
+                headings = list(infile)
+        else:
+            headings = None
+
         # where clause
         where_clause = self.args.where if hasattr(self.args, "where") else None
         for the_uri in uri_list:
@@ -197,7 +204,8 @@ class Module(object):
                 logger=self.logger,
                 delimiter=delimiter,
                 field_names=field_list,
-                where_clause=where_clause
+                where_clause=where_clause,
+                headings=headings,
             ) as in_data:
                 yield from in_data
 
