@@ -101,8 +101,10 @@ class FileListingSource(AbstractSource):
 class AbstractRowSource(AbstractSource):
 
     def __init__(self, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
+                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0,
+                 encryption_type=None, **kwargs):
         super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger)
+        self.encryption_type = encryption_type
         self.field_names = field_names
         self.skip_lines = skip_lines
 
@@ -164,7 +166,6 @@ class PickleSource(AbstractMultiReaderSource):
     :logger: (optional) logger instance
     :log_template: (optional) python log template
     """
-
     def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
                  log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
         super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
