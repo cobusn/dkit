@@ -566,7 +566,7 @@ class SQLServices(model.ETLServices):
         i_entity = self.model.entities[i_endpoint.entity]
 
         i_url = as_sqla_url(
-            self.get_connection(i_endpoint.connection).as_dict(include_none=True)
+            self.model.get_connection(i_endpoint.connection).as_dict(include_none=True)
         )
 
         # create the table
