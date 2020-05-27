@@ -81,7 +81,7 @@ class TestCsvDictSource(unittest.TestCase):
         headers = [
             "id", "name", "company", "ip", "birthday", "year", "score"
         ]
-        src = list(CsvDictSource([StringReader(data)], headers=headers))
+        src = list(CsvDictSource([StringReader(data)], headings=headers))
         row = src[0]
         for k in headers:
             assert k in row

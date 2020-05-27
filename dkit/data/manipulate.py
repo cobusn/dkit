@@ -133,6 +133,19 @@ def distinct(iter_input, field_list):
     yield from (dict(zip(field_list, r)) for r in _distinct)
 
 
+def distinct_values(iter_input, field) -> set:
+    """extract distinct values from iterable of dicts
+
+    Args:
+        * iter_input: iterable of dictionary rows
+        * field: field
+
+    returns:
+        set containing distinct values
+    """
+    return set(r[field] for r in iter_input)
+
+
 def rename(the_iterable, rename_map):
     """Rename rows of dictionaries
 

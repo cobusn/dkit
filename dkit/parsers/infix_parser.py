@@ -43,7 +43,7 @@ http://pyparsing.wikispaces.com/file/view/fourFn.py/30154950/fourFn.py
 import math
 import operator
 from random import (randint, uniform)
-
+from datetime import datetime
 from pyparsing import (
     CaselessLiteral,
     Combine,
@@ -183,7 +183,8 @@ class InfixParser(object):
             "title": lambda x: x.title(),
             "trunc": math.trunc,
             "upper": lambda x: x.upper(),
-            "from_unixtime": time_helper.from_unixtime,
+            "from_unixtime": time_helper.from_unixtime,  # include TZ
+            "from_timestamp": datetime.fromtimestamp,
         }
         if functions is not None:
             self._f1_map.update(functions)
@@ -192,7 +193,8 @@ class InfixParser(object):
             "randint": lambda x, y: float(randint(x, y)),
             "uniform": uniform,
             "replace_na": replace_na,
-            "strftime": lambda d, f: d.strftime(f)
+            "strftime": lambda d, f: d.strftime(f),
+            "strptime": datetime.strptime,
         }
 
         # add 1 parameter and 2 parameter functions

@@ -39,6 +39,11 @@ from ..utilities import (instrumentation, log_helper, iff)
 from ..parsers import uri_parser
 from ..data import json_utils as ju
 
+# Deferred modules
+# from ..utilities.cmd_helper import LazyLoad
+# cryptography = LazyLoad("cryptography")
+# import cryptography
+
 
 class AbstractSource(object):
     """
@@ -202,6 +207,51 @@ class PickleSource(AbstractMultiReaderSource):
             else:
                 with o_reader.open() as in_file:
                     yield from self.iter_chunk(in_file)
+        stats.stop()
+
+
+class EncryptSource(AbstractRowSource):
+
+    def __init__(self, file_name, key, compression=None, serde=None,  field_names=None, logger=None,
+                 log_template=None, log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
+        super().__init__(field_names=field_names, logger=logger,
+                         log_template=log_template, log_trigger=log_trigger, **kwargs)
+        self.file_name = file_name
+        self.key = key
+        self.serde = serde or _pickle
+        self.compression = compression
+
+    def iter_chunk(self, open_reader):
+        from cryptography.fernet import Fernet
+        fernet = Fernet(self.key)
+        iff_stream = iff.IFFReader(open_reader)
+        for chunk in iff_stream:
+            if self.compression:
+                retval = self.serde.loads(
+                    self.compression.decompress(
+                        fernet.decrypt(chunk)
+                    )
+                )
+            else:
+                retval = self.serde.loads(
+                    fernet.decrypt(chunk)
+                )
+            yield from retval
+            self.stats.increment(len(retval))
+
+    def iter_some_fields(self, field_names):
+        self.stats.start()
+        with open(self.file_name, "rb") as o_reader:
+            yield from (
+                {k: r[k] for k in self.field_names}
+                for r in self.iter_chunk(o_reader)
+            )
+        self.stats.stop()
+
+    def iter_all_fields(self):
+        stats = self.stats.start()
+        with open(self.file_name, "rb") as o_reader:
+            yield from self.iter_chunk(o_reader)
         stats.stop()
 
 

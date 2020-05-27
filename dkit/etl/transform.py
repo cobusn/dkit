@@ -64,6 +64,10 @@ class FormulaTransform(Transform):
             for k, v in rule_map.items()
         }
 
+    def transform(self, row):
+        """transform one row"""
+        return {k: p(row) for k, p in self.recipe.items()}
+
     def __call__(self, the_iterable):
         return (
             {k: p(row) for k, p in self.recipe.items()}

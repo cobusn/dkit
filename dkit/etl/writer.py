@@ -17,6 +17,7 @@
 #
 
 # Note import of hdfs library in class definition.
+
 import sys
 import bz2
 import codecs

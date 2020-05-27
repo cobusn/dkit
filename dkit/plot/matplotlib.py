@@ -144,7 +144,7 @@ class MPLBackend(Backend):
             x_labels[0] = ""
 
         # so not draw if suppress is specified
-        if not axes["defeat"]:
+        if ("defeat" not in axes) or ("defeat" in axes and not axes["defeat"]):
             ax.set_xticklabels(x_labels, minor=False)
             ax.set_xticks(x_vals)
 

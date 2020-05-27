@@ -27,7 +27,9 @@ COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4', "snappy"]
 ENCRYPTION_FORMATS = ['aes']
 RE_COMRESSION_FORMATS = "|".join(COMPRESSION_FORMATS)
 RE_ENCRYPTION_FORMATS = "|".join(ENCRYPTION_FORMATS)
-FILE_DIALECTS = ['csv', 'jsonl', 'json', 'tsv', 'xlsx', 'xls', 'xml', 'bxr', 'pkl', 'mpak']
+FILE_DIALECTS = [
+    'csv', 'jsonl', 'json', 'tsv', 'xlsx', 'xls', 'xml', 'bxr', 'pkl', 'mpak', 'pke'
+]
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]
 NETWORK_DIALECTS = ["mysql", "oracle", "mssql", "postgres", "impala"]
@@ -49,8 +51,8 @@ class URIStruct:
     fields.
     """
     def __init__(self, dialect=None, driver=None, database=None, username=None, password=None,
-                 host=None, port=None, compression=None, entity=None, filter=None,
-                 encryption=None):
+                 host=None, port=None, compression=None, entity=None, filter=None):
+        # encryption=None):
         self.dialect = dialect
         self.driver = driver
         self.database = database
@@ -60,7 +62,7 @@ class URIStruct:
         self.port = port
         self.compression = compression
         self.entity = entity
-        self.encryption = encryption
+        # self.encryption = encryption
         self.filter = filter
 
     @classmethod
@@ -113,8 +115,9 @@ def parse(uri):
 
 def _parse_file_driver(uri):
     """parse file with specified driver"""
-    rx = r"({}):\/\/\/(.+)$".format("|".join(FILE_DIALECTS + FILE_DB_DIALECTS))
-    # rx = r"(.*?):\/\/\/(.+)$"
+    rx = r"({}):\/\/\/(.+)$".format("|".join(
+        FILE_DIALECTS + FILE_DB_DIALECTS + SHARED_MEMORY_DIALECTS
+    ))
     m = re.match(rx, uri)
     if m is not None:
         dialect = m.group(1)
@@ -134,7 +137,7 @@ def _parse_file_driver(uri):
                 dialect=_parse_dialect_from_filename(m.group(2)),
                 driver="shm",
                 compression=_parse_compression_from_filename(m.group(2)),
-                encryption=_parse_encryption_from_filename(m.group(2))
+                # encryption=_parse_encryption_from_filename(m.group(2))
             ).as_dict()
         elif dialect in FILE_DIALECTS:
             return URIStruct(
@@ -142,7 +145,7 @@ def _parse_file_driver(uri):
                 dialect=m.group(1),
                 driver="file",
                 compression=_parse_compression_from_filename(m.group(2)),
-                encryption=_parse_encryption_from_filename(m.group(2))
+                # encryption=_parse_encryption_from_filename(m.group(2))
             ).as_dict()
         else:
             raise exceptions.CkitParseException(messages.MSG_0014.format(dialect))
@@ -191,7 +194,7 @@ def _parse_file_name(uri):
     return URIStruct(
         database=uri,
         compression=_parse_compression_from_filename(uri),
-        encryption=_parse_encryption_from_filename(uri),
+        # encryption=_parse_encryption_from_filename(uri),
         driver="file",
         dialect=_parse_dialect_from_filename(uri)
     ).as_dict()
@@ -221,13 +224,13 @@ def _parse_compression_from_filename(file_name):
         return r.group(1)
 
 
-def _parse_encryption_from_filename(file_name):
-    """
-    determine encryption from filename
-    """
-    p = re.compile(r".+\.({})$".format(RE_ENCRYPTION_FORMATS))
-    r = p.search(file_name)
-    if r is None:
-        return None
-    else:
-        return r.group(1)
+# def _parse_encryption_from_filename(file_name):
+#    """
+#    determine encryption from filename
+#    """
+#    p = re.compile(r".+\.({})$".format(RE_ENCRYPTION_FORMATS))
+#    r = p.search(file_name)
+#    if r is None:
+#        return None
+#    else:
+#        return r.group(1)

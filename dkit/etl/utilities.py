@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 import os
 import pickle
-from ..exceptions import CkitETLException
+from ..exceptions import CkitETLException, CkitArgumentException
+from .. import messages
 from . import (reader, source, sink, writer)
 from .extensions import (
     ext_bxr,
@@ -12,7 +13,10 @@ from .extensions import (
     ext_xls
 )
 
-
+import gzip
+import bz2
+import lzma
+import _pickle
 from ..parsers import uri_parser
 
 BINARY_DIALECTS = ["mpak", "pkl"]
@@ -31,19 +35,21 @@ SOURCE_MAP = {
     "json": source.JsonSource,
     "jsonl": source.JsonlSource,
     "mpak": ext_msgpack.MsgpackSource,
+    "pke": source.EncryptSource,
     "pkl": source.PickleSource,
     "xls": ext_xls.XLSSource,
     "xlsx": ext_xlsx.XLSXSource,
 }
 
 SINK_MAP = {
-    "jsonl": sink.JsonlSink,
-    "json": sink.JsonSink,
-    "csv": sink.CsvDictSink,
-    "xlsx": ext_xlsx.XlsxSink,
-    "pkl": sink.PickleSink,
-    "mpak": ext_msgpack.MsgpackSink,
     "bxr": ext_bxr.BXRSink,
+    "csv": sink.CsvDictSink,
+    "json": sink.JsonSink,
+    "jsonl": sink.JsonlSink,
+    "mpak": ext_msgpack.MsgpackSink,
+    "pke": sink.EncryptSink,
+    "pkl": sink.PickleSink,
+    "xlsx": ext_xlsx.XlsxSink,
 }
 
 WRITER_MAP = {
@@ -53,6 +59,13 @@ WRITER_MAP = {
     "xz": writer.LzmaWriter,
     "lz4": writer.Lz4Writer,
     }
+
+
+COMPRESS_LIB = {
+    "gz": gzip,
+    "bz2": bz2,
+    "xz": lzma,
+}
 
 
 class Dumper(object):
@@ -76,14 +89,14 @@ class Dumper(object):
         return data
 
 
-def open_sink(uri: str, logger=None) -> sink.Sink:
+def open_sink(uri: str, logger=None, key=None) -> sink.Sink:
     """
     parse uri string and open + return sink
     """
-    return sink_factory(uri_parser.parse(uri), logger)
+    return sink_factory(uri_parser.parse(uri), logger, key)
 
 
-def _sink_factory(uri_struct, logger=None):
+def _sink_factory(uri_struct, logger=None, key=None):
     """
     Instantiate a sink object from uri
     """
@@ -116,6 +129,19 @@ def _sink_factory(uri_struct, logger=None):
                 logger=logger
             )
             # cleanup.append(s)
+            return s
+        elif uri_struct["dialect"] in ["pke"]:
+            if uri_struct["compression"]:
+                compress = COMPRESS_LIB[uri_struct["compression"]]
+            else:
+                compress = None
+            s = snk(
+                uri_struct["database"],
+                logger=logger,
+                compress=compress,
+                serde=_pickle,
+                key=key,
+            )
             return s
         else:
             s = snk(
@@ -173,11 +199,11 @@ def _sink_factory(uri_struct, logger=None):
 
 
 @contextmanager
-def sink_factory(uri_struct, logger=None):
+def sink_factory(uri_struct, logger=None, key=None):
     """
     Instantiate a sink object from uri
     """
-    cleanup, factory = _sink_factory(uri_struct)
+    cleanup, factory = _sink_factory(uri_struct, logger=logger, key=key)
     try:
         yield factory
     finally:
@@ -187,11 +213,13 @@ def sink_factory(uri_struct, logger=None):
 
 @contextmanager
 def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter=",",
-                headings=None):
+                headings=None, key=None):
     """parse uri string and open + return sink"""
     try:
         parsed = uri_parser.parse(uri)
-        factory = _SourceIterFactory(parsed, skip_lines, field_names, logger, delimiter, headings)
+        factory = _SourceIterFactory(
+            parsed, skip_lines, field_names, logger, delimiter, headings, key=key
+        )
         yield factory
     finally:
         factory.close()
@@ -199,7 +227,7 @@ def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter
 
 @contextmanager
 def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delimiter=",",
-                   headings=None, where_clause=None):
+                   headings=None, where_clause=None, key=None):
     """
     Instantiates Source objects from a list of uri's
 
@@ -211,10 +239,12 @@ def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delim
         logger: (optional) logging instance
         delimiter: (optional) csv delimiter
         headings: (optional) csv headings if not in file
+        key: (optional) encryption key
     """
     try:
         factory = _SourceIterFactory(
-            file_list, skip_lines, field_names, logger, delimiter, where_clause, headings
+            file_list, skip_lines, field_names, logger, delimiter, where_clause, headings,
+            key=key
         )
         yield factory
     finally:
@@ -233,7 +263,7 @@ class _SourceIterFactory(object):
         delimiter: (optional) csv delimiter
     """
     def __init__(self, uri_struct, skip_lines=0, field_names=None, logger=None,
-                 delimiter=",", where_clause=None, headings=None):
+                 delimiter=",", where_clause=None, headings=None, key=None):
         self.uri_struct = uri_struct
         self.skip_lines = skip_lines
         self.field_names = field_names
@@ -242,6 +272,7 @@ class _SourceIterFactory(object):
         self.cleanup = []
         self.where_clause = where_clause
         self.headings = headings
+        self.key = key
 
     def __make_source(self, uri_struct):
         """
@@ -338,6 +369,25 @@ class _SourceIterFactory(object):
                 )
                 self.cleanup.append(src)
                 return src
+
+        elif uri_struct["dialect"] in ["pke"]:
+            # Encryption key must be specified
+            if not self.key:
+                raise CkitArgumentException(messages.MSG_0022)
+
+            if uri_struct["compression"]:
+                compression = COMPRESS_LIB[uri_struct["compression"]]
+            else:
+                compression = None
+
+            return the_source(
+                uri_struct["database"],
+                compression=compression,
+                key=self.key,
+                headings=self.headings,
+                field_names=self.field_names,
+                logger=self.logger
+            )
 
         # All others
         else:

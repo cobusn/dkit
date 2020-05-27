@@ -20,6 +20,24 @@
 # SOFTWARE.
 #
 import argparse
+import importlib
+
+
+class LazyLoad(object):
+    """
+    lazy import of modules
+
+    args:
+        * name: name of module
+    """
+    def __init__(self, library):
+        self._library = library
+        self._mod = None
+
+    def __getattrib__(self, name):
+        if not self._mod:
+            self._mod = importlib.import_module(self._library)
+        return getattr(self._mod, name)
 
 
 def confirm(prompt=None, default=False):

@@ -360,6 +360,8 @@ def load_config(config):
 
     config_files = []
     global_path = os.path.expanduser(GLOBAL_CONFIG_FILE)
+    default_local_path = os.path.expanduser(LOCAL_CONFIG_FILE)
+
     if os.path.exists(global_path):
         config_files.append(global_path)
 
@@ -367,18 +369,16 @@ def load_config(config):
     if isinstance(config, (str, Path)):
         config_files.append(config)
         c = configparser.ConfigParser()
-        c.read(config_files)
-        return c
 
     # Nothing specified, attempt to load defaults
-    if config is None:
+    elif os.path.exists(default_local_path):
+        config_files.append(LOCAL_CONFIG_FILE)
+
+    if len(config_files) == 0:
+        raise exceptions.CkitConfigException(messages.MSG_0021)
+    else:
         c = configparser.ConfigParser()
-        if os.path.exists(LOCAL_CONFIG_FILE):
-            config_files.append(LOCAL_CONFIG_FILE)
-        if len(config_files) == 0:
-            raise exceptions.CkitConfigException(messages.MSG_0021)
-        else:
-            c.read([GLOBAL_CONFIG_FILE, LOCAL_CONFIG_FILE])
+        c.read(config_files)
         return c
 
 
@@ -565,7 +565,9 @@ class ModelManager(map_db.FileObjectMapDB):
         # this need to be here due to recursive imports
         from . import utilities
         uri_struct = self.get_uri(uri)
-        cleanup, factory = utilities._sink_factory(uri_struct, logger)
+        cleanup, factory = utilities._sink_factory(
+            uri_struct, logger, key=self.encryption_key
+        )
         try:
             yield factory
         finally:
@@ -573,7 +575,8 @@ class ModelManager(map_db.FileObjectMapDB):
                 obj.close()
 
     @contextmanager
-    def source(self, uri: str, skip_lines: int = 0, field_names=None, logger=None, delimiter=","):
+    def source(self, uri: str, skip_lines: int = 0, field_names=None, logger=None, delimiter=",",
+               where_clause=None, headings=None):
         """
         open context manager for source
 
@@ -592,7 +595,14 @@ class ModelManager(map_db.FileObjectMapDB):
         try:
             parsed = self.get_uri(uri)
             factory = utilities._SourceIterFactory(
-                parsed, skip_lines, field_names, logger, delimiter
+                parsed,
+                skip_lines,
+                field_names=field_names,
+                logger=logger,
+                delimiter=delimiter,
+                key=self.encryption_key,
+                where_clause=where_clause,
+                headings=headings
             )
             yield factory
         finally:
@@ -634,7 +644,7 @@ class ETLServices(object):
     Args:
         args:   argparse arguments
     """
-    def __init__(self, model_instance, config_instance: configparser.ConfigParser):
+    def __init__(self, model_instance: ModelManager, config_instance: configparser.ConfigParser):
         self.model = model_instance
         self.config = config_instance
 
