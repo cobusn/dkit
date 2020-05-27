@@ -226,8 +226,8 @@ class BytesStringReader(StringReader):
     :param the_string: String object
     :param encoding: encoding, defualt to 'utf-8'
     """
-    def __init__(self, the_string, encoding="utf-8"):
-        super().__init__(the_string, encoding, io.BytesIO)
+    def __init__(self, the_string):
+        super().__init__(the_string.encode('ascii'), io.BytesIO)
 
 
 class CompressionReader(FileReader):

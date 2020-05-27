@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Cobus Nel
+# Copyright (c) 2019 Cobus Nel
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,36 +18,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import unittest
-from dkit.parsers.type_parser import TypeParser
+import sys
+sys.path.insert(0, "..")  # noqa
+from dkit.utilities.benchmarking import benchmark
+from tabulate import tabulate
+
+def a():
+    sum(range(100))
 
 
-class TestTypeParser(unittest.TestCase):
+def b():
+    j = 0
+    for k in range(100):
+        j += k
 
-    def test_valid(self):
-        """
-        Test type parser parser
-        """
-        tests = [
-            ["String()", {"type": "string"}],
-            ["String(str_len=10)", {"type": "string", "str_len": 10}],
-            ["String(str_len=10, primary_key=True)",
-             {"type": "string", "str_len": 10, "primary_key": True}
-             ],
-            ["Integer()", {"type": "integer"}],
-            ["Integer(nullable=True)", {"type": "integer", "nullable": True}],
-            ["Integer(primary_key=True)", {"type": "integer", "primary_key": True}],
-            ["Boolean(index=True)", {"type": "boolean", "index": True}],
-        ]
-        parser = TypeParser()
-        for test in tests:
-            parsed = parser.parse(test[0])
-            self.assertEqual(parsed, test[1])
 
-    def test_invalid_conttent(self):
-        with self.assertRaises(ValueError) as _:
-            parser = TypeParser()
-            parser.parse("Integer(Foo=True)")
+class TestBenchmark(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_1(self):
+        results = benchmark((a, b), 500, 100)
+        print(tabulate(results.table(), floatfmt=",.2f", headers="keys"))
 
 
 if __name__ == '__main__':

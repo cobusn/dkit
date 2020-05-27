@@ -99,7 +99,7 @@ class SQLAlchemyAccessor(object):
                 http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
         echo:   Echo SQL statements (Default is False)
     """
-    def __init__(self, url, echo=False, logger=None):
+    def __init__(self, url: str, echo: bool = False, logger=None):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.url = url
         self.engine = self.sqlalchemy.create_engine(

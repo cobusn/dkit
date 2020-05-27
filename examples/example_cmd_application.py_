@@ -1,7 +1,7 @@
 import asyncio
 import sys; sys.path.insert(0, "..")  # noqa
 
-from dkit.shell.ptk import AsyncCmdApplication, ProxyCmd, Completion
+from dkit.shell.ptk_aio import AsyncCmdApplication, ProxyCmd, Completion
 
 
 class CmdPrint(ProxyCmd):

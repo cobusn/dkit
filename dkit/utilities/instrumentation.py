@@ -37,7 +37,7 @@ class MESSAGES(Enum):
 
 
 class TimerException(Exception):
-    pass
+    """timer exception"""
 
 
 class Timer(object):
@@ -411,8 +411,8 @@ class CounterLogger(Counter, Timer):
         """
         self._counter += value
         if self._counter >= self.__next_trigger:
-                self.__do_log()
-                self.__next_trigger = self._counter + self.__trigger
+            self.__do_log()
+            self.__next_trigger = self._counter + self.__trigger
         return self._counter
 
     def stop(self):

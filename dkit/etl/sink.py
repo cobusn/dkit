@@ -38,6 +38,11 @@ from ..utilities import instrumentation
 from ..utilities import iff
 from ..data import json_utils as ju
 from ..utilities.iter_helper import chunker
+from ..utilities.cmd_helper import LazyLoad
+
+# Deferred modules
+# cryptography = LazyLoad("cryptography")
+import cryptography
 
 # CONSTANTS
 DATE_FMT = '%Y-%m-%d'
@@ -288,7 +293,9 @@ class PickleSink(Sink):
         iff_stream = iff.IFFWriter(destination)
         for chunk in chunker(the_iterator, self.chunk_size):
             c = list(chunk)
-            iff_stream.write(pickle.dumps(c))
+            iff_stream.write(
+                pickle.dumps(c)
+            )
             self.stats.increment(len(c))
 
     def process(self, the_iterator):
@@ -300,6 +307,47 @@ class PickleSink(Sink):
                 self._write_chunks(the_iterator, out_stream)
         self.stats.stop()
         return self
+
+
+class EncryptSink(Sink):
+    """
+    Serialize to AES encrypted
+    """
+    def __init__(self, file_name, key, compress=None, serde=None,
+                 chunk_size=5000, logger=None, log_template=None):
+        super().__init__(logger=logger, log_template=log_template)
+        self.file_name = file_name
+        self.chunk_size = chunk_size
+        # [ser]ializer default to pickle
+        self.serde = serde or pickle
+        self.compress = compress
+        self.key = key
+        self.iff_stream = None
+
+    def process(self, the_iterator):
+        from cryptography.fernet import Fernet
+        fernet = Fernet(self.key)
+        with open(self.file_name, "bw") as destination:
+            iff_stream = iff.IFFWriter(destination)
+            self.stats.start()
+            for chunk in chunker(the_iterator, self.chunk_size):
+                c = list(chunk)
+                if self.compress:
+                    iff_stream.write(
+                        fernet.encrypt(
+                            self.compress.compress(
+                                self.serde.dumps(c)
+                            )
+                        )
+                    )
+                else:
+                    iff_stream.write(
+                        fernet.encrypt(
+                            self.serde.dumps(c)
+                        )
+                    )
+                self.stats.increment(len(c))
+            self.stats.stop()
 
 
 class NullSink(Sink):

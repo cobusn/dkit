@@ -45,7 +45,7 @@ class TestEndpointFactory(unittest.TestCase):
             "host": None,
             "port": None,
             "entity": None,
-            "encryption": None,
+#            "encryption": None,
             "filter": None
         }
 
@@ -69,12 +69,12 @@ class TestEndpointFactory(unittest.TestCase):
             self.assertEqual(s, data)
 
             # encrypted
-            data["driver"] = "file"
-            data["compression"] = "gz"
-            data["encryption"] = "aes"
-            data["database"] = "input_files/sample.{}.gz.aes".format(dialect)
-            s = parse("input_files/sample.{}.gz.aes".format(dialect))
-            self.assertEqual(s, data)
+            # data["driver"] = "file"
+            # data["compression"] = "gz"
+            # data["encryption"] = "aes"
+            # data["database"] = "input_files/sample.{}.gz.aes".format(dialect)
+            # s = parse("input_files/sample.{}.gz.aes".format(dialect))
+            # self.assertEqual(s, data)
 
     def test_sqlite_dialect(self):
         """file based sqlite dialect"""
@@ -122,6 +122,15 @@ class TestEndpointFactory(unittest.TestCase):
         s = parse("mpak:///input_files/sample.mpak")
         self.assertEqual(data, s)
 
+    def test_specified_pke_kdata(self):
+        """file based data with specified dialect"""
+        data = self.blank.copy()
+        data["driver"] = "file"
+        data["dialect"] = "pke"
+        data["database"] = "input_files/sample.pke"
+        s = parse("pke:///input_files/sample.pke")
+        self.assertEqual(data, s)
+
     def test_hdf5_dialect(self):
         """hdf5 based file dialect"""
         data = self.blank.copy()
@@ -141,7 +150,8 @@ class TestEndpointFactory(unittest.TestCase):
                 {'username': 'user', 'password': 'now#zzy', 'host': 'sample-db.co.za',
                  'port': '99', 'database': 'database', 'entity': 'sales',
                  'dialect': "mysql", 'filter': 'a=10', 'driver': "mysql+mysqldb",
-                 'compression': None, 'encryption': None}
+                 'compression': None,}
+                # 'encryption': None}
             ],
         ]
         for test in tests:

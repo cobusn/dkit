@@ -35,7 +35,7 @@ from . import defaults
 from dkit import exceptions
 from dkit.data import manipulate as mp
 from dkit.data import filters
-from dkit.etl import utilities, transform, model
+from dkit.etl import transform, model
 from dkit.shell import console
 from dkit.utilities import cmd_helper
 
@@ -198,14 +198,14 @@ class Module(object):
         # where clause
         where_clause = self.args.where if hasattr(self.args, "where") else None
         for the_uri in uri_list:
-            with utilities.source_factory(
-                model_services.model.get_uri(the_uri),
+            with model_services.model.source(
+                uri=the_uri,
                 skip_lines=self.args.skip_lines,
-                logger=self.logger,
-                delimiter=delimiter,
                 field_names=field_list,
+                logger=self.logger,
                 where_clause=where_clause,
                 headings=headings,
+                delimiter=delimiter,
             ) as in_data:
                 yield from in_data
 
@@ -273,8 +273,7 @@ class Module(object):
         write output to sink
         """
         services = self.load_services()
-        uri_struct = services.model.get_uri(uri_name)
-        with utilities.sink_factory(uri_struct) as dest:
+        with services.model.sink(uri_name) as dest:
             dest.process(the_iterable)
 
 

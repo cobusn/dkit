@@ -1,3 +1,7 @@
+sphinx
+sphinxcontrib-napoleon
+xlrd
+posix_ipc
 boltons
 cerberus
 cffi

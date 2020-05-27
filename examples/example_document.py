@@ -58,4 +58,4 @@ d += f
 
 with open("content.tex", "w") as texfile:
     for st in LatexDocRenderer(d.as_dict()["elements"], plot_folder="plots"):
-            texfile.write(st)
+        texfile.write(st)
