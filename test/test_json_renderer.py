@@ -32,7 +32,7 @@ from textwrap import dedent
 import mistune
 import unittest
 sys.path.insert(0, "..")  # noqa
-from dkit.doc.md_to_json import JSONRenderer
+from dkit.doc.json_renderer import JSONRenderer
 from dkit.doc import latex_renderer
 
 

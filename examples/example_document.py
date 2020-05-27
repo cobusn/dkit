@@ -18,7 +18,7 @@ d += document.Heading("Heading 1", 1)
 d += document.Heading("Heading 1.1", 2)
 d += document.Heading("Heading 1.1.1", 3)
 d += document.Paragraph("afda")
-z = document.MD(
+d += document.MD(
     """
     ## secttion 2.1
     This is a **markdown** document, with

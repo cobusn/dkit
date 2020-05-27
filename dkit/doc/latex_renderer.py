@@ -1,8 +1,10 @@
 from . import latex as tex
 from .document import AbstractRenderer
-
+from ..utilities.introspection import is_list
 from ..plot import matplotlib as mpl
 from pathlib import Path
+import mistune
+from .json_renderer import JSONRenderer
 
 
 class LatexDocRenderer(AbstractRenderer):
@@ -24,13 +26,19 @@ class LatexDocRenderer(AbstractRenderer):
         self.stylesheet = style_sheet if style_sheet else {}
         self.plot_backend = plot_backend
         self.root = root_container if root_container else tex.Container()
-        self.path = [self.root]
+        # self.path = [self.root]
 
     def _append_node(self, node):
         """
         append node to node hierarchy
         """
-        self.path[-1].append(node)
+        if is_list(node):
+            for n in node:
+                self.root.append(n)
+                # self.path[-1].append(n)
+        else:
+            self.root.append(node)
+            # self.path[-1].append(node)
         return node
 
     def to_tex_list(self, elements):
@@ -109,6 +117,10 @@ class LatexDocRenderer(AbstractRenderer):
 
     def make_paragraph(self, element):
         return tex.Paragraph(self.to_tex_list(element["data"]))
+
+    def make_markdown(self, element):
+        transform = mistune.Markdown(renderer=JSONRenderer())
+        return [self.callbacks[e["~>"]](e) for e in transform(element["data"])]
 
     def make_table(self, data):
         if data["font_size"]:
