@@ -33,7 +33,7 @@ from IPython import get_ipython
 from IPython.display import HTML
 from tabulate import tabulate
 from string import Template
-from . import md_to_json, latex_renderer, schemas
+from . import json_renderer, latex_renderer, schemas
 from ..etl import source
 from ..plot import matplotlib
 from ..utilities import log_helper as lh
@@ -311,7 +311,7 @@ class ReportBuilder(BuilderProxy):
             rendered = _template.render(**self.code)
 
             # create json cannonical format
-            md = mistune.Markdown(renderer=md_to_json.JSONRenderer())
+            md = mistune.Markdown(renderer=json_renderer.JSONRenderer())
             dict_ = md(rendered)
 
             # render to endpoint

@@ -223,8 +223,11 @@ class Bold(_AddElement):
 
 class MD(_AddElement):
 
-    def __init__(self, data,  *kwds, **kwargs):
-        super().__init__(textwrap.dedent(data), *kwds, **kwargs)
+    def as_dict(self):
+        return {
+            "~>": "md",
+            "data": textwrap.dedent(self.data)
+        }
 
 
 class BlockQuote(_AddElement):
@@ -409,6 +412,7 @@ class AbstractRenderer(ABC):
             "list": self.make_list,
             "linebreak": self.make_line_break,
             "listing": self.make_listing,
+            "md": self.make_markdown,
             "paragraph": self.make_paragraph,
             "table":  self.make_table,
             "text": self.make_text,
@@ -457,6 +461,10 @@ class AbstractRenderer(ABC):
 
     @abstractmethod
     def make_listing(self, element):
+        pass
+
+    @abstractmethod
+    def make_markdown(self, element):
         pass
 
     @abstractmethod
