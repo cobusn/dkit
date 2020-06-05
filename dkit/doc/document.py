@@ -236,11 +236,13 @@ class BlockQuote(_AddElement):
 
 class Image(_AddElement):
 
-    def __init__(self, source,  title, text, align="center", *kwds, **kwargs):
+    def __init__(self, source,  title=None, align="center",
+                 width=None, height=None, *kwds, **kwargs):
         super().__init__(source, *kwds, **kwargs)
         self.title = title
-        self.align = _map_align(align)
-        self.text = text
+        self.align = align
+        self.width = width
+        self.height = height
 
 
 class Listing(_AddElement):
@@ -250,21 +252,24 @@ class Listing(_AddElement):
         self.language = language
 
 
+
 class List(_AddElement):
 
     class Entry(_AddElement):
         pass
 
-    def __init__(self, ordered, *kwds, **kwargs):
+    def __init__(self, ordered=False, *kwds, **kwargs):
         super().__init__([], *kwds, **kwargs)
         self.ordered = ordered
 
     def add_entry(self, element):
-        self.data.append(element)
+        self.data.append(self.Entry(element))
 
 
 class LineBreak(_AddElement):
-    pass
+
+    def __init__(self, lines=1, *kwds, **kwargs):
+        super().__init__(lines, *kwds, **kwargs)
 
 
 class Table(_AddElement):

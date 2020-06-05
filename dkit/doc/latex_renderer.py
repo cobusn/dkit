@@ -94,6 +94,10 @@ class LatexDocRenderer(AbstractRenderer):
         return tex.LineBreak()
 
     def make_entry(self, element):
+        #
+        # not sure if this is called...
+        #
+        #
         return tex.Item(self.to_tex_list(element["data"]))
 
     def make_list(self, element):

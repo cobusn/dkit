@@ -1,5 +1,5 @@
 """
-'Canned' report components that assist in getting up to speed
+Canned' report components that assist in getting up to speed
 quickly with reports.
 """
 import statistics

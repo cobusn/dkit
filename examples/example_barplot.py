@@ -13,7 +13,7 @@ data = [
     {"index": "jul", "sales": 10, "revenue": 20},
 ]
 
-ggrammar = ggrammar.Plot(data) \
+gg = ggrammar.Plot(data) \
     + ggrammar.GeomBar("Revenue", y_data="revenue", x_data="index", color="#0000FF", alpha=0.8) \
     + ggrammar.Title("2018 Sales") \
     + ggrammar.YAxis("Rand", min=0, max=100, ticks=1) \
@@ -21,7 +21,7 @@ ggrammar = ggrammar.Plot(data) \
     + ggrammar.Aesthetic(stacked=True, width=15, height=10)
 
 
-BackendGnuPlot(ggrammar.as_dict(), terminal="svg").render(
+BackendGnuPlot(gg.as_dict(), terminal="svg").render(
     file_name="example_barplot.svg",
     script_name="example_barplot.plot"
 )
