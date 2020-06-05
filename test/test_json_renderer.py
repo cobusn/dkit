@@ -121,8 +121,8 @@ class TestMD2Json(unittest.TestCase):
     def test_image(self):
         """image"""
         o = self.o.image("test.jpg", "title", "text")
-        c = [{'~>': 'image', 'data': 'test.jpg', 'title': 'title', 'align': 'center',
-              'text': 'text'}]
+        c = [{'~>': 'image', 'data': 'test.jpg', 'title': 'title',
+              'align': 'text', 'width': None, 'height': None}]
         self.assertEqual(o, c)
 
     def test_list(self):
@@ -137,30 +137,35 @@ class TestMD2Json(unittest.TestCase):
         s = dedent(snippet)
         markdown = mistune.Markdown(renderer=JSONRenderer())
         c = markdown(s)
-        o = [{'~>': 'paragraph', 'data': [
+        print(c)
+        o = [
             {
-                '~>': 'text',
-                'data': 'This is a list:'
-            }
-        ]}, {
-            '~>': 'list',
-            'data': [
-                {'~>': 'entry',
-                 'data': [
-                     {'~>': 'text', 'data': 'one'},
-                     {'~>': 'list', 'data': [
-                         {
-                             '~>': 'entry',
-                             'data': [{'~>': 'text', 'data': 'two'}]
-                         }
-                     ], 'ordered': False
-                     }]},
-                {'~>': 'entry', 'data': [{'~>': 'text', 'data': 'three'}]}
-            ],
-            'ordered': False
-        }
-        ]
-
+                '~>': 'paragraph',
+                'data': [
+                    {'~>': 'text', 'data': 'This is a list:'}
+                ]
+            },
+            {
+                '~>': 'list',
+                'data': [
+                    {
+                        '~>': 'entry',
+                        'data': {
+                            '~>': 'entry',
+                            'data': [
+                                {'~>': 'text', 'data': 'one'},
+                                {'~>': 'list', 'data': [
+                                    {
+                                        '~>': 'entry',
+                                        'data': {'~>': 'entry', 'data': [
+                                            {'~>': 'text', 'data': 'two'}
+                                        ]
+                                        }
+                                    }
+                                ], 'ordered': False}]}},
+                    {'~>': 'entry', 'data':
+                     {'~>': 'entry', 'data': [{'~>': 'text', 'data': 'three'}]}}],
+                'ordered': False}]
         self.assertEqual(o, c)
 
     def test_line_break(self):
