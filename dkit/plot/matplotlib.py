@@ -39,6 +39,7 @@ class MPLBackend(Backend):
             "geomcumulative": self.r_cumulative_series,
             "geombar": self.r_bar_plot,
             "geomdelta": self.r_delta_plot,
+            "geomfill": self.r_fill_plot,
             "geomheatmap": self.r_heatmap_plot,
             "geomhistogram": self.r_hist_plot,
             "geomline": self.r_line_plot,
@@ -68,7 +69,9 @@ class MPLBackend(Backend):
         """Apply settings specified in stylesheet"""
         style = self.style_sheet["plot"]
         if "theme" in style:
-            plt.style.use('ggplot')
+            plt.style.use(style["theme"])
+        else:
+            plt.style.use("default")
         if "width" in style and "height" in style:
             plt.rc("figure", figsize=(
                 to_inch(style["width"]),
@@ -83,6 +86,8 @@ class MPLBackend(Backend):
             if "ticklabelsize" in axes_:
                 plt.rc("xtick", labelsize=axes_["ticklabelsize"])
                 plt.rc("ytick", labelsize=axes_["ticklabelsize"])
+            if "linewidth" in axes_:
+                plt.rc("axes", linewidth=axes_["linewidth"])
 
         if "colors" in style:
             colors = style["colors"]
@@ -127,8 +132,8 @@ class MPLBackend(Backend):
         """X ticks and labels"""
         width = 0
         x_fields = set([s["x_data"] for s in self.grammar["series"]])
-        if len(x_fields) != 1:
-            raise CkitGrammarException("Exactly one X Axis field required")
+        # if len(x_fields) != 1:
+        #     raise CkitGrammarException("Exactly one X Axis field required")
 
         series_0 = self.grammar["series"][0]
         axes = self.grammar["axes"]["0"]
@@ -139,6 +144,10 @@ class MPLBackend(Backend):
         if "float_format" in axes and axes["float_format"]:
             fmt = axes["float_format"]
             x_labels = [fmt.format(i) for i in x_labels]
+
+        if "time_format" in axes and axes["time_format"]:
+            fmt = axes["time_format"]
+            x_labels = [i.strftime(fmt) for i in x_labels]
 
         if hist:  # remove leftmost label for histograms
             x_labels[0] = ""
@@ -159,10 +168,10 @@ class MPLBackend(Backend):
         if series["x_data"] is not None:
             return [r[series["x_data"]] for r in self.data]
         else:
-            return [i+1 for i in range(len(self.data))]
+            return [i for i in range(len(self.data))]
 
-    def y_values(self, series):
-        return [r[series["y_data"]] for r in self.data]
+    def y_values(self, series, name="y_data"):
+        return [r[series[name]] for r in self.data]
 
     def anchored_text(self, ax, serie):
         """Add anchored text"""
@@ -223,6 +232,23 @@ class MPLBackend(Backend):
         """draw vertical line"""
         ax.axvline(serie["x"], color=serie["color"], linewidth=serie["line_width"],
                    linestyle=serie["line_style"], alpha=serie["alpha"])
+
+    def r_fill_plot(self, ax, serie):
+        """two lines with area between filled"""
+        y_upper = self.y_values(serie, "y_upper")
+        y_lower = self.y_values(serie, "y_lower")
+        x_pos = [i for i, _ in enumerate(y_upper)]
+        if "color" in serie and serie["color"]:
+            color = serie["color"]
+        else:
+            color = None
+        ax.plot(x_pos, y_upper, alpha=serie["line_alpha"], color=color, linewidth=0.5)
+        ax.plot(x_pos, y_lower, alpha=serie["line_alpha"], color=color, linewidth=0.5)
+        ax.fill_between(x_pos, y_lower, y_upper, color=color,
+                        alpha=serie["fill_alpha"])
+        ax.tick_params(axis="x", which="both", length=0)
+        self.set_x_ticks(ax)
+        self.set_labels(ax)
 
     def r_area_plot(self, ax, serie):
         y_vals = self.y_values(serie)
@@ -297,6 +323,7 @@ class MPLBackend(Backend):
         ax.plot(
             x_pos,
             y_vals,
+            color=serie["color"],
             alpha=serie["alpha"]
         )
         self.set_x_ticks(ax)
