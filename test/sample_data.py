@@ -35,14 +35,25 @@ histogram_data = Histogram.from_accumulator(
 
 
 plot_data = [
-    {"index": "jan", "sales": 1, "revenue": 0.1},
+    {"index": "jan", "sales": 12, "revenue": 0.1},
     {"index": "feb", "sales": 10, "revenue": 30},
     {"index": "mar", "sales": 13, "revenue": 25},
     {"index": "apr", "sales": 10, "revenue": 20},
-    {"index": "may", "sales": 10, "revenue": 50},
+    {"index": "may", "sales": 15, "revenue": 50},
     {"index": "jun", "sales": 10, "revenue": 20},
     {"index": "jul", "sales": 10, "revenue": 20},
 ]
+
+def update_control_chart(row):
+    """add control chart values"""
+    r = dict(row)
+    r["upper"] = 15
+    r["lower"] = 8
+    r["mean"] = 15
+    return(r)
+
+
+control_chart_data = list(map(update_control_chart, plot_data))
 
 
 scatter_data = [

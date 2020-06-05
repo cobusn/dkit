@@ -32,6 +32,8 @@ class Backend(ABC):
         self.terminal = terminal
         self.style_sheet = style_sheet if style_sheet else {}
         self.data = grammar["data"]
+        for i, row in enumerate(self.data):
+            row["_index"] = i
 
     @abstractmethod
     def render(self, file_name):

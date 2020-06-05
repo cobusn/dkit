@@ -4,7 +4,7 @@ import os
 
 from . import VALID_TERMINALS
 from ..utilities.mixins import SerDeMixin
-from ..exceptions import CkitPlotException
+from ..exceptions import CkitPlotException, CkitArgumentException
 
 
 Num = Union[int, float]
@@ -14,7 +14,7 @@ class PlotBase(ABC, SerDeMixin):
     """base class for plots"""
 
     def __init__(self, data, *args, **kwargs):
-        self.data = data
+        self.data = list(data)
         self.series = []
         self.title = None
         self.axes = {"0": {}, "1": {}}
@@ -60,7 +60,7 @@ class PlotModifier(SerDeMixin):
     """base class for plot modifiers"""
 
     def modify(self, plot):
-        pass
+        plot.series.append(self)
 
 
 class Plot(PlotBase):
@@ -137,9 +137,6 @@ class AbstractGeom(PlotModifier):
         self.color = color
         self.alpha = alpha
 
-    def modify(self, plot):
-        plot.series.append(self)
-
     @abstractmethod
     def primitive_type(self):
         """primitive type of graph (e.g line)"""
@@ -186,6 +183,23 @@ class GeomLine(AbstractGeom):
                  alpha: float = None, *args, **kwargs):
         super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
         self.primitive_type = "line"
+
+
+class GeomFill(AbstractGeom):
+    """
+    Fill between two lines
+    """
+    def __init__(self, title: str,  x_data: str, y_upper: str, y_lower: str,
+                 color: str = "green", line_alpha: float = 0.8,
+                 fill_alpha: float = 0.3, *args, **kwargs):
+        self.primitive_type = "line"
+        self.title = title
+        self.x_data = x_data
+        self.y_upper = y_upper
+        self.y_lower = y_lower
+        self.fill_alpha = fill_alpha
+        self.line_alpha = line_alpha
+        self.color = color
 
 
 class GeomArea(GeomLine):
@@ -260,12 +274,15 @@ class _Axis(PlotModifier):
         defeat: supress addititiona axis formatting
     """
     def __init__(self, title, min=None, max=None, rotation=None, float_format=None,
-                 which="0", defeat=False, *args, **kwargs):
+                 time_format=None, which="0", defeat=False, *args, **kwargs):
         self.title = title
         self.min_val = min
         self.max_val = max
         self.rotation = rotation
+        if all([time_format, float_format]):
+            raise CkitArgumentException("float_format and time_format is mutually exclusive")
         self.float_format = float_format
+        self.time_format = time_format
         self.defeat = defeat
         if str(which) in ["0", "1", "2"]:
             self.which = str(which)

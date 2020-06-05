@@ -6,7 +6,7 @@ from dkit.plot.matplotlib import MPLBackend
 from dkit.plot.gnuplot import BackendGnuPlot
 
 
-from sample_data import plot_data, scatter_data, histogram_data
+from sample_data import plot_data, scatter_data, histogram_data, control_chart_data
 
 
 class TestGnuplot(unittest.TestCase):
@@ -57,6 +57,13 @@ class TestGnuplot(unittest.TestCase):
         plt = self.gen_plt(plot_data)
         plt += ggrammar.GeomBar("Revenue", "index", "revenue", alpha=0.6)
         self.render(plt, self.out_path / "example_bar_plot.svg")
+
+    def test_fill_plot(self):
+        """test fill plot"""
+        plt = self.gen_plt(control_chart_data)
+        plt += ggrammar.GeomFill("Control Chart", x_data="index", y_upper="upper",
+                                 y_lower="lower")
+        self.render(plt, self.out_path / "example_fill_plot.svg")
 
     def test_scatter_plot(self):
         """test scatter plot"""
