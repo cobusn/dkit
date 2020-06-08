@@ -129,13 +129,14 @@ class AbstractGeom(PlotModifier):
         * y_range limit y to range
     """
     def __init__(self, title: str,  x: str, y: str, color: str = None,
-                 alpha: float = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+                 alpha: float = None, _filter=None, *args, **kwargs):
         self.title = title
         self.x_data = x
         self.y_data = y
         self.color = color
         self.alpha = alpha
+        self.filter_ = _filter
+        super().__init__(*args, **kwargs)
 
     @abstractmethod
     def primitive_type(self):
@@ -180,9 +181,11 @@ class GeomHistogram(GeomBar):
 class GeomLine(AbstractGeom):
 
     def __init__(self, title: str,  x_data: str, y_data: str, color: str = None,
-                 alpha: float = None, *args, **kwargs):
-        super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
+                 alpha: float = None, filter_: str = None, line_style: str = None,
+                 *args, **kwargs):
         self.primitive_type = "line"
+        self.line_style = line_style
+        super().__init__(title, x_data, y_data, color, alpha, filter_, *args, **kwargs)
 
 
 class GeomFill(AbstractGeom):
@@ -225,8 +228,8 @@ class GeomCumulative(AbstractGeom):
 class GeomScatter(AbstractGeom):
 
     def __init__(self, title: str,  x_data: str, y_data: str, color: str = None,
-                 alpha: float = None, *args, **kwargs):
-        super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
+                 alpha: float = None, _filter=None, *args, **kwargs):
+        super().__init__(title, x_data, y_data, color, alpha, _filter, *args, **kwargs)
         self.primitive_type = "point"
 
 
