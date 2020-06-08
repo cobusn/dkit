@@ -32,15 +32,17 @@ def control_chart_plot(data, x="x", y=None, y_hat=None, ucl="ucl", lcl="lcl", ti
     plot a control chart with upper control and lower control limits
     """
     g = Figure(data, filename=file_name) \
-        + Figure.GeomFill("Limits", x, ucl, lcl, color="green", fill_alpha=0.2) \
-        + Figure.GeomLine("Expected", x, y_hat, color="green") \
         + Figure.Title(title) \
         + Figure.XAxis(x_title, rotation=80, time_format=time_format) \
         + Figure.YAxis(y_title, float_format=float_format) \
-        + gg.Aesthetic(width=width, height=height)
+        + gg.Aesthetic(width=width, height=height) \
+        + Figure.GeomFill("Limits", x, ucl, lcl, color="green", fill_alpha=0.2) \
+        + Figure.GeomLine("Expected", x, y_hat, color="black", line_style="--")
     if y:
-        g += Figure.GeomScatter("Value", "_index", y)
-
+        g += Figure.GeomScatter("Value", "_index", y, color="red",
+                                _filter=f'${{{y}}}<${{{lcl}}} | ${{{y}}}>${{{ucl}}}')
+        g += Figure.GeomScatter("Value", "_index", y, color="green",
+                                _filter=f'${{{y}}}<=${{{ucl}}} & ${{{y}}}>=${{{lcl}}}')
     return g
 
 

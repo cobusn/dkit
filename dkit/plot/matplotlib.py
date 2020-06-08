@@ -7,7 +7,8 @@ import squarify
 from itertools import accumulate
 from . import Backend
 from . import ggrammar
-from ..exceptions import CkitGrammarException
+from ..data.filters import ExpressionFilter
+# from ..exceptions import CkitGrammarException
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -131,13 +132,12 @@ class MPLBackend(Backend):
     def set_x_ticks(self, ax, hist=False):
         """X ticks and labels"""
         width = 0
-        x_fields = set([s["x_data"] for s in self.grammar["series"]])
+        # x_fields = set([s["x_data"] for s in self.grammar["series"]])
         # if len(x_fields) != 1:
         #     raise CkitGrammarException("Exactly one X Axis field required")
-
         series_0 = self.grammar["series"][0]
         axes = self.grammar["axes"]["0"]
-        x_labels = self.x_values(series_0)
+        x_labels = self.get_x_values(series_0)
         x_vals = np.arange(len(x_labels)) + width
 
         # apply float format
@@ -163,15 +163,35 @@ class MPLBackend(Backend):
                 for tick in ax.get_xticklabels():
                     tick.set_rotation(rotate)
 
-    def x_values(self, series):
+    def get_color(self, series):
+        if "color" in series and series["color"]:
+            return series["color"]
+        else:
+            return None
+
+    def get_x_values(self, series, name="x_data"):
         """x values. return series if x is None"""
         if series["x_data"] is not None:
-            return [r[series["x_data"]] for r in self.data]
+            if "filter_" in series and series["filter_"]:
+                f = ExpressionFilter(series["filter_"])
+                return [r[series[name]] for r in filter(f, self.data)]
+            else:
+                return [r[series[name]] for r in self.data]
         else:
             return [i for i in range(len(self.data))]
 
-    def y_values(self, series, name="y_data"):
-        return [r[series[name]] for r in self.data]
+    def get_y_values(self, series, name="y_data"):
+        if "filter_" in series and series["filter_"]:
+            f = ExpressionFilter(series["filter_"])
+            return [r[series[name]] for r in filter(f, self.data)]
+        else:
+            return [r[series[name]] for r in self.data]
+
+    def get_line_style(self, series):
+        if "line_style" in series:
+            return series["line_style"]
+        else:
+            return None
 
     def anchored_text(self, ax, serie):
         """Add anchored text"""
@@ -202,8 +222,8 @@ class MPLBackend(Backend):
 
     def r_cumulative_series(self, ax, serie):
         # ax2.plot(df.index, "], color="C1", marker="D", ms=7)
-        total = sum(self.y_values(serie))
-        y_vals = list((i/total)*100 for i in accumulate(self.y_values(serie)))
+        total = sum(self.get_y_values(serie))
+        y_vals = list((i/total)*100 for i in accumulate(self.get_y_values(serie)))
         x_pos = [i for i, _ in enumerate(y_vals)]
 
         ax2 = ax.twinx()
@@ -235,8 +255,8 @@ class MPLBackend(Backend):
 
     def r_fill_plot(self, ax, serie):
         """two lines with area between filled"""
-        y_upper = self.y_values(serie, "y_upper")
-        y_lower = self.y_values(serie, "y_lower")
+        y_upper = self.get_y_values(serie, "y_upper")
+        y_lower = self.get_y_values(serie, "y_lower")
         x_pos = [i for i, _ in enumerate(y_upper)]
         if "color" in serie and serie["color"]:
             color = serie["color"]
@@ -251,7 +271,7 @@ class MPLBackend(Backend):
         self.set_labels(ax)
 
     def r_area_plot(self, ax, serie):
-        y_vals = self.y_values(serie)
+        y_vals = self.get_y_values(serie)
         x_pos = [i for i, _ in enumerate(y_vals)]
         ax.plot(x_pos, y_vals, alpha=serie["alpha"])
         ax.fill_between(x_pos, 0, y_vals, alpha=1)
@@ -263,7 +283,7 @@ class MPLBackend(Backend):
         self.r_bar_plot(ax, serie, hist=True)
 
     def r_bar_plot(self, ax, serie, hist=False):
-        y_vals = self.y_values(serie)
+        y_vals = self.get_y_values(serie)
         if hist:
             x_pos = [i + 0.5 for i, _ in enumerate(y_vals)]
         else:
@@ -280,7 +300,7 @@ class MPLBackend(Backend):
 
     def r_delta_plot(self, ax, serie):
         """bar plot with positive values greeen and negative red"""
-        y_vals = self.y_values(serie)
+        y_vals = self.get_y_values(serie)
         y_pos = [i if i > 0 else 0 for i in y_vals]
         y_neg = [i if i < 0 else 0 for i in y_vals]
         x_pos = [i for i, _ in enumerate(y_vals)]
@@ -293,8 +313,8 @@ class MPLBackend(Backend):
     def r_heatmap_plot(self, ax, serie):
         """heatmap"""
         data = list(self.data)
-        x_values = set(self.x_values(serie))
-        y_values = set(self.y_values(serie))
+        x_values = set(self.get_x_values(serie))
+        y_values = set(self.get_y_values(serie))
         x_dim = len(x_values)
         y_dim = len(y_values)
 
@@ -318,24 +338,24 @@ class MPLBackend(Backend):
 
     def r_line_plot(self, ax, serie):
         """render line series"""
-        y_vals = self.y_values(serie)
+        y_vals = self.get_y_values(serie)
         x_pos = [i for i, _ in enumerate(y_vals)]
         ax.plot(
             x_pos,
             y_vals,
             color=serie["color"],
-            alpha=serie["alpha"]
+            alpha=serie["alpha"],
+            linestyle=self.get_line_style(serie)
         )
         self.set_x_ticks(ax)
         self.set_labels(ax)
 
     def r_scatter_plot(self, ax, series):
         """render scatter plot"""
-        x_vals = self.x_values(series)
-        y_vals = self.y_values(series)
         ax.scatter(
-            x_vals,
-            y_vals,
+            self.get_x_values(series),
+            self.get_y_values(series),
+            color=self.get_color(series),
             alpha=series["alpha"]
         )
         self.set_labels(ax)
@@ -344,13 +364,13 @@ class MPLBackend(Backend):
         # format values
         if serie["str_format"]:
             fmt = serie["str_format"]
-            values = [fmt.format(i) for i in self.y_values(serie)]
+            values = [fmt.format(i) for i in self.get_y_values(serie)]
         else:
-            values = self.y_values(serie)
+            values = self.get_y_values(serie)
 
         squarify.plot(
-            sizes=self.y_values(serie),
-            label=self.x_values(serie),
+            sizes=self.get_y_values(serie),
+            label=self.get_x_values(serie),
             value=values,
             alpha=serie["alpha"],
             ax=ax
