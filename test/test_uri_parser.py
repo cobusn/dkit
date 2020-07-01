@@ -150,8 +150,14 @@ class TestEndpointFactory(unittest.TestCase):
                 {'username': 'user', 'password': 'now#zzy', 'host': 'sample-db.co.za',
                  'port': '99', 'database': 'database', 'entity': 'sales',
                  'dialect': "mysql", 'filter': 'a=10', 'driver': "mysql+mysqldb",
-                 'compression': None,}
-                # 'encryption': None}
+                 'compression': None}
+            ],
+            [
+                "sybase://user:now#zzy@sample-db.co.za:99/database",
+                {'username': 'user', 'password': 'now#zzy', 'host': 'sample-db.co.za',
+                 'port': '99', 'database': 'database', 'entity': None,
+                 'dialect': "sybase", 'filter': None, 'driver': "sqlalchemy_sqlany",
+                 'compression': None}
             ],
         ]
         for test in tests:
