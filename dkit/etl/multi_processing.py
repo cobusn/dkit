@@ -33,11 +33,10 @@ class Coordinator(source.AbstractSource):
     multiprocessing framework
     """
 
-    def __init__(self, the_iterator: Iterable, worker_class: "Worker", process_count: int=None,
-                 logger=None, log_template: str=None, log_trigger: int=10000,
-                 queue_size: int=1000, worker_args=(), worker_kwargs={}):
+    def __init__(self,  worker_class: "Worker", process_count: int = None,
+                 logger=None, log_template: str = None, log_trigger: int = 10000,
+                 queue_size: int = 1000, worker_args=(), worker_kwargs={}):
         super().__init__(logger, log_template, log_trigger)
-        self.the_iterator: Iterable = the_iterator
         self.worker_class: "Worker" = worker_class
         self.process_count: int = process_count if process_count else multiprocessing.cpu_count()
         self.queue_size: int = queue_size
@@ -52,6 +51,9 @@ class Coordinator(source.AbstractSource):
         self.process_list = []
         self.counter_in = instrumentation.CounterLogger(self.logger)
         self.counter_out = instrumentation.CounterLogger(self.logger)
+
+    def __call__(Iterable: input):
+        pass
 
     def __instantiate_workers(self):
         """
@@ -119,7 +121,7 @@ class Coordinator(source.AbstractSource):
                     pass
 
         # Get the rest out as well..
-        #while self.counter_out.value < self.counter_in.value:
+        # while self.counter_out.value < self.counter_in.value:
         while (self.queue_in.qsize() > 0 or self.queue_out.qsize() > 0):
             try:
                 if self.counter_out.value % self.log_trigger == 0:
@@ -141,7 +143,7 @@ class Worker(multiprocessing.Process):
 
     Inherit from this class and implement the run method.
 
-    Interface to the outside world:
+    Interface:
         * self.pull()
         * self.push()
         * self.lock: global lock
