@@ -237,9 +237,8 @@ class XMLStat(ContentHandler):
             self.stats.increment()
             self.stack.pop()
 
-    def __init__(self, logger=None, log_trigger=10000):
-        self.logger = logger
-        self.stats = CounterLogger(logger=logger, trigger=log_trigger)
+    def __init__(self, log_trigger=10000):
+        self.stats = CounterLogger(logger=__name__, trigger=log_trigger)
 
     def process_stream(self, stream: typing.TextIO) -> collections.Counter:
         """

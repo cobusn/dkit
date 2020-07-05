@@ -18,6 +18,10 @@
 from .. import source, sink, DEFAULT_LOG_TRIGGER
 from datetime import datetime, date
 from decimal import Decimal
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class XlsxSink(sink.Sink):
@@ -26,8 +30,8 @@ class XlsxSink(sink.Sink):
 
     [openpyxl](https://openpyxl.readthedocs.io/en/default/optimized.html)
     """
-    def __init__(self, file_name, field_names=None, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, file_name, field_names=None):
+        super().__init__()
         self.openpyxl = __import__('openpyxl')
         self.file_name = file_name
         self.field_names = field_names
@@ -94,9 +98,8 @@ class XLSXSource(source.AbstractSource):
     """
 
     def __init__(self, file_name_list, work_sheet=None,
-                 field_names=None, skip_lines=0, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER):
-        super(XLSXSource, self).__init__(logger, log_template=log_template, log_trigger=log_trigger)
+                 field_names=None, skip_lines=0, log_trigger=DEFAULT_LOG_TRIGGER):
+        super(XLSXSource, self).__init__(log_trigger=log_trigger)
         self.openpyxl = __import__('openpyxl')
         self.file_names = file_name_list
         self.__field_names = field_names
@@ -113,7 +116,7 @@ class XLSXSource(source.AbstractSource):
     def __it(self):
         stats = self.stats.start()
         for file_name in self.file_names:
-            self.logger.info(file_name)
+            logger.info(file_name)
             wb = self.openpyxl.load_workbook(file_name, read_only=True)
             if self.work_sheet is None:
                 ws_name = wb.sheetnames[0]

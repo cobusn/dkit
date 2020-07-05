@@ -22,10 +22,10 @@ import argparse
 import codecs
 import configparser
 import getpass
-import logging
 import itertools
 import operator
 import os
+import logging
 import textwrap
 from typing import Dict, List, Iterable
 
@@ -37,7 +37,7 @@ from dkit.data import manipulate as mp
 from dkit.data import filters
 from dkit.etl import transform, model
 from dkit.shell import console
-from dkit.utilities import cmd_helper
+from dkit.utilities import cmd_helper, log_helper
 
 
 class Module(object):
@@ -47,7 +47,6 @@ class Module(object):
         self.parser = argparse.ArgumentParser()
         self.init_parser()
         self.table_style = defaults.TABLE_STYLE
-        self.logger = logging.getLogger(defaults.LOGGER_NAME)
         self.__config = None
         # the below is only loaded when required
         self.current_services = None
@@ -122,6 +121,17 @@ class Module(object):
         """get password interactively"""
         return getpass.getpass(prompt)
 
+    def init_logging(self):
+        """initialize logging pipeline"""
+        if "verbose" in self.args and self.args.verbose:
+            log_helper.init_stderr_logger(level=logging.INFO)
+        elif "warning" in self.args and self.args.warning:
+            log_helper.init_stderr_logger(level=logging.WARN)
+        elif "debug" in self.args and self.args.debug:
+            log_helper.init_stderr_logger(level=logging.DEBUG)
+        else:
+            log_helper.init_null_logger()
+
     def init_parser(self):
         """Initialize parser"""
         raise NotImplementedError
@@ -134,6 +144,7 @@ class Module(object):
 
     def parse_args(self):
         self.args = self.parser.parse_args(self.arguments)
+        self.init_logging()
 
     def print(self, *data):
         """print"""
@@ -202,7 +213,6 @@ class Module(object):
                 uri=the_uri,
                 skip_lines=self.args.skip_lines,
                 field_names=field_list,
-                logger=self.logger,
                 where_clause=where_clause,
                 headings=headings,
                 delimiter=delimiter,

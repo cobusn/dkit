@@ -2,20 +2,17 @@
 Example usage of Configured Applicatons.
 """
 import sys
-sys.path.insert(0, "..")
+sys.path.insert(0, "..") # noqa
 
 from dkit import base
 
-# Application with Logger functionality
-class LogApplication(base.InitLoggingMixin, base.ConfiguredObject):
-    pass
 
 # Application with Configuration functionality
-class ArgApplication(base.ConfiguredApplication, base.InitArgumentsMixin, 
-                     base.InitConfigMixin, base.InitLoggingMixin):
+class ArgApplication(base.ConfiguredApplication, base.InitArgumentsMixin, base.InitConfigMixin):
 
     def __init__(self, **kwargs):
         super(ArgApplication, self).__init__(**kwargs)
+
 
 if __name__ == "__main__":
     # Print MRO
@@ -24,6 +21,5 @@ if __name__ == "__main__":
 
     mixd = ArgApplication()
 
-    mixd.logger.info("a log entry")
     print(mixd.arguments)
     print(mixd.config)

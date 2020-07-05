@@ -39,10 +39,9 @@ class XmlSource(source.AbstractMultiReaderSource):
     :param reader_list: list of reader instances
     :param boundary: name of boundary element
     :param fields_dict: dictionary of field definitions
-    :param log_template: logging template
     """
-    def __init__(self, reader_list, boundary, fields_dict, logger=None, log_template=None):
-        super().__init__(reader_list, logger=logger, log_template=log_template)
+    def __init__(self, reader_list, boundary, fields_dict):
+        super().__init__(reader_list)
         self.transformer = xml_helper.XmlTransformer(boundary, fields_dict)
 
     def __iter__(self):
@@ -63,7 +62,7 @@ class XmlSource(source.AbstractMultiReaderSource):
         stats.stop()
 
     @classmethod
-    def from_recipe(cls, reader_list, recipe, logger=None, log_template=None):
+    def from_recipe(cls, reader_list, recipe):
         """
         dictionary based constructor
 
@@ -87,6 +86,4 @@ class XmlSource(source.AbstractMultiReaderSource):
             reader_list,
             recipe["boundary"],
             recipe["fields_dict"],
-            logger,
-            log_template
         )

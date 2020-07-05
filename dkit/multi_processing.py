@@ -24,11 +24,13 @@ Multiprocessing abstractions
 import multiprocessing
 import queue
 from typing import Iterable, MutableMapping, Dict
-from . import source
-from ..utilities import instrumentation
+from .utilities import instrumentation
 from .utilities.identifier import uuid
 from datetime import datetime
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 SENTINEL = StopIteration
 
 
@@ -66,7 +68,7 @@ class Pipeline(object):
     """
     multiprocessing framework
     """
-    def __init__(self,  workers: Dict, logger=None, log_trigger: int = 10000,
+    def __init__(self,  workers: Dict, log_trigger: int = 10000,
                  queue_size: int = 1000, journal: Journal = None):
         self.workers = workers
         self.queue_size: int = queue_size
@@ -75,8 +77,8 @@ class Pipeline(object):
         self.queue_log = multiprocessing.Queue(self.queue_size)
         self.queues = []
         self.instances = defaultdict(lambda: [])
-        self.counter_in = instrumentation.CounterLogger(self.logger)
-        self.counter_out = instrumentation.CounterLogger(self.logger)
+        self.counter_in = instrumentation.CounterLogger(self.__class__.__name__)
+        self.counter_out = instrumentation.CounterLogger(self.__class__.__name__)
         self.journal = journal or Journal()
         self.done = multiprocessing.Event()
 
@@ -87,7 +89,7 @@ class Pipeline(object):
         """
         Create worker processes
         """
-        self.logger.info("Instantiating {} worker processes.".format(self.process_count))
+        logger.info("Instantiating {} worker processes.".format(self.process_count))
         self.q_inbound = q_in = multiprocessing.Queue(self.queue_size)
         for Worker, instances in self.workers.items():
             q_out = multiprocessing.Queue(self.queue_size)
@@ -119,13 +121,13 @@ class Pipeline(object):
         msg = "ITER_IN: {}, ITER_OUT: {}, Q_IN: {}, Q_OUT: {}".format(
             iter_in, iter_out, q_in, q_out
         )
-        self.logger.info(msg)
+        logger.info(msg)
 
     def __kill_processes(self):
         """
         Kill worker processes
         """
-        self.logger.info("Killing {} worker processes".format(self.process_count))
+        logger.info("Killing {} worker processes".format(self.process_count))
         for i in range(len(self.process_list)):
             self.queue_in.put(SENTINEL)
 
@@ -163,7 +165,7 @@ class Pipeline(object):
                 pass
 
         self.__kill_processes()
-        self.logger.debug("Joining queues.")
+        logger.debug("Joining queues.")
         self.queue_in.join()
 
 

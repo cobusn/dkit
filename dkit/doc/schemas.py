@@ -1,16 +1,18 @@
 #  shcema for report.yaml
 import cerberus
 import yaml
+import logging
 
 from ..exceptions import CkitValidationException
 from ..messages import MSG_0019
-from ..utilities import log_helper as lh
 
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+
+logger = logging.getLogger(__name__)
 
 
 report_schema = """
@@ -64,15 +66,12 @@ class SchemaValidator(object):
     """
     load Cerberus schema from yaml object
 
-    log any errors
-
     arguments:
         schema_yaml: yaml formatted schema
         logger: logger instance, default to stderr
     """
-    def __init__(self, schema_yaml: str, logger=None):
+    def __init__(self, schema_yaml: str):
         self.schema = yaml.load(schema_yaml, Loader=Loader)
-        self.logger = logger if logger else lh.stderr_logger()
         self.validator = cerberus.Validator(self.schema)
 
     def validate(self, instance):
@@ -82,7 +81,7 @@ class SchemaValidator(object):
         validated = self.validator.validate(instance)
         if not validated:
             for k, error in self.validator.errors.items():
-                self.logger.error(f"element {k}: {str(error)}")
+                logger.error(f"element {k}: {str(error)}")
             raise CkitValidationException(MSG_0019)
 
     def __call__(self, instance):
