@@ -1,4 +1,4 @@
-__version__ = "20.5.1"
+__version__ = "20.6.1"
 
 _missing_value_ = None
 CHUNK_SIZE = 10_000
