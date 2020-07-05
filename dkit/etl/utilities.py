@@ -89,14 +89,14 @@ class Dumper(object):
         return data
 
 
-def open_sink(uri: str, logger=None, key=None) -> sink.Sink:
+def open_sink(uri: str, key=None) -> sink.Sink:
     """
     parse uri string and open + return sink
     """
-    return sink_factory(uri_parser.parse(uri), logger, key)
+    return sink_factory(uri_parser.parse(uri), key)
 
 
-def _sink_factory(uri_struct, logger=None, key=None):
+def _sink_factory(uri_struct, key=None):
     """
     Instantiate a sink object from uri
     """
@@ -124,10 +124,7 @@ def _sink_factory(uri_struct, logger=None, key=None):
         """
         snk = SINK_MAP[uri_struct["dialect"]]
         if uri_struct["dialect"] in ["xlsx", "xls"]:
-            s = snk(
-                uri_struct["database"],
-                logger=logger
-            )
+            s = snk(uri_struct["database"])
             # cleanup.append(s)
             return s
         elif uri_struct["dialect"] in ["pke"]:
@@ -137,7 +134,6 @@ def _sink_factory(uri_struct, logger=None, key=None):
                 compress = None
             s = snk(
                 uri_struct["database"],
-                logger=logger,
                 compress=compress,
                 serde=_pickle,
                 key=key,
@@ -146,7 +142,6 @@ def _sink_factory(uri_struct, logger=None, key=None):
         else:
             s = snk(
                 make_writer_instance(uri_struct),
-                logger=logger
             )
             # cleanup.append(s)
             return s
@@ -160,14 +155,14 @@ def _sink_factory(uri_struct, logger=None, key=None):
             file_name=uri_struct["database"],
             compression=uri_struct["compression"]
         )
-        return snk(_writer, logger=logger)
+        return snk(_writer)
 
     def make_hdf5_sink(uri_struct):
         file_name = uri_struct["database"]
         node = uri_struct["entity"]
         accessor = ext_tables.PyTablesAccessor(file_name)
         cleanup.append(accessor)
-        return ext_tables.PyTablesSink(accessor, node, logger=logger)
+        return ext_tables.PyTablesSink(accessor, node)
 
     def make_sqla_sink(uri_struct):
         table_name = uri_struct["entity"]
@@ -180,7 +175,6 @@ def _sink_factory(uri_struct, logger=None, key=None):
         return ext_sql_alchemy.SQLAlchemySink(
             accessor,
             table_name,
-            logger=logger
         )
 
     dispatcher = {
@@ -199,11 +193,11 @@ def _sink_factory(uri_struct, logger=None, key=None):
 
 
 @contextmanager
-def sink_factory(uri_struct, logger=None, key=None):
+def sink_factory(uri_struct, key=None):
     """
     Instantiate a sink object from uri
     """
-    cleanup, factory = _sink_factory(uri_struct, logger=logger, key=key)
+    cleanup, factory = _sink_factory(uri_struct, key=key)
     try:
         yield factory
     finally:
@@ -212,13 +206,13 @@ def sink_factory(uri_struct, logger=None, key=None):
 
 
 @contextmanager
-def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter=",",
+def open_source(uri: str, skip_lines=0, field_names=None, delimiter=",",
                 headings=None, key=None):
     """parse uri string and open + return sink"""
     try:
         parsed = uri_parser.parse(uri)
         factory = _SourceIterFactory(
-            parsed, skip_lines, field_names, logger, delimiter, headings, key=key
+            parsed, skip_lines, field_names, delimiter, headings, key=key
         )
         yield factory
     finally:
@@ -226,7 +220,7 @@ def open_source(uri: str, skip_lines=0, field_names=None, logger=None, delimiter
 
 
 @contextmanager
-def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delimiter=",",
+def source_factory(file_list, skip_lines=0, field_names=None, delimiter=",",
                    headings=None, where_clause=None, key=None):
     """
     Instantiates Source objects from a list of uri's
@@ -236,14 +230,13 @@ def source_factory(file_list, skip_lines=0, field_names=None, logger=None, delim
         kind: type of sink (auto, xlsx, csv, jsonl)
         skip_lines: (optional) number of lines to skip
         field_names: (optional) list of field names to extract
-        logger: (optional) logging instance
         delimiter: (optional) csv delimiter
         headings: (optional) csv headings if not in file
         key: (optional) encryption key
     """
     try:
         factory = _SourceIterFactory(
-            file_list, skip_lines, field_names, logger, delimiter, where_clause, headings,
+            file_list, skip_lines, field_names, delimiter, where_clause, headings,
             key=key
         )
         yield factory
@@ -259,15 +252,13 @@ class _SourceIterFactory(object):
         uri_list: list of uri strings
         skip_lines: (optional) number of lines to skip
         field_names: (optional) list of field names to extract
-        logger: (optional) logging instance
         delimiter: (optional) csv delimiter
     """
-    def __init__(self, uri_struct, skip_lines=0, field_names=None, logger=None,
-                 delimiter=",", where_clause=None, headings=None, key=None):
+    def __init__(self, uri_struct, skip_lines=0, field_names=None, delimiter=",",
+                 where_clause=None, headings=None, key=None):
         self.uri_struct = uri_struct
         self.skip_lines = skip_lines
         self.field_names = field_names
-        self.logger = logger
         self.delimiter = delimiter
         self.cleanup = []
         self.where_clause = where_clause
@@ -300,7 +291,6 @@ class _SourceIterFactory(object):
             full_path,
             where_clause,
             field_names=self.field_names,
-            logger=self.logger,
         )
 
     def __make_sqla_source(self, uri_struct):
@@ -313,7 +303,6 @@ class _SourceIterFactory(object):
             uri_struct["entity"],
             where_clause=self.where_clause if self.where_clause else uri_struct["filter"],
             field_names=self.field_names,
-            logger=self.logger,
         )
 
     def __make_shm_source(self, uri_struct):
@@ -326,7 +315,6 @@ class _SourceIterFactory(object):
         src = the_source(
             [the_reader],
             field_names=self.field_names,
-            logger=self.logger
         )
         return src
 
@@ -338,7 +326,6 @@ class _SourceIterFactory(object):
             src = the_source(
                 [uri_struct["database"]],
                 field_names=self.field_names,
-                logger=self.logger,
                 skip_lines=self.skip_lines
             )
             self.cleanup.append(src)
@@ -351,7 +338,6 @@ class _SourceIterFactory(object):
                     [reader.StdinReader()],
                     field_names=self.field_names,
                     delimiter=self.delimiter,
-                    logger=self.logger,
                     skip_lines=self.skip_lines,
                     headings=self.headings
                 )
@@ -363,7 +349,6 @@ class _SourceIterFactory(object):
                     [the_reader(uri_struct["database"])],
                     field_names=self.field_names,
                     delimiter=self.delimiter,
-                    logger=self.logger,
                     skip_lines=self.skip_lines,
                     headings=self.headings
                 )
@@ -386,7 +371,6 @@ class _SourceIterFactory(object):
                 key=self.key,
                 headings=self.headings,
                 field_names=self.field_names,
-                logger=self.logger
             )
 
         # All others
@@ -395,7 +379,6 @@ class _SourceIterFactory(object):
                 return the_source(
                     [reader.StdinReader()],
                     field_names=self.field_names,
-                    logger=self.logger,
                 )
             else:
                 the_reader = READER_MAP[uri_struct["compression"]]
@@ -403,13 +386,11 @@ class _SourceIterFactory(object):
                     return the_source(
                         [the_reader(uri_struct["database"], mode="rb")],
                         field_names=self.field_names,
-                        logger=self.logger,
                     )
                 else:
                     return the_source(
                         [the_reader(uri_struct["database"])],
                         field_names=self.field_names,
-                        logger=self.logger,
                     )
 
     def close(self):

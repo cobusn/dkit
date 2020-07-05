@@ -18,9 +18,8 @@
 import os
 import unittest
 import sys
-sys.path.insert(0, "..")
+sys.path.insert(0, "..")  # noqa
 
-from dkit.utilities import log_helper as log
 from dkit.etl.reader import FileReader
 from dkit.etl.source import CsvDictSource
 from dkit.etl.writer import FileWriter
@@ -59,10 +58,9 @@ class TestKeyIndexer(unittest.TestCase):
         CsvDictSink(writer, field_names=["name", "id", "id"]).process(self.csv_source)
 
     def test_csv_writer_stats(self):
-        logger = log.file_logger("output/write_stats.log", "csv stats")
         gen = ({"key": i} for i in range(1000))
         writer = FileWriter("output/stats.csv")
-        sink = CsvDictSink(writer, logger=logger)
+        sink = CsvDictSink(writer)
         sink.stats.trigger = 50
         sink.process(gen)
 

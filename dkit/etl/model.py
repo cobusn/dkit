@@ -558,7 +558,7 @@ class ModelManager(map_db.FileObjectMapDB):
             return uri_parser.parse(uri)
 
     @contextmanager
-    def sink(self, uri, logger=None):
+    def sink(self, uri):
         """
         Instantiate a sink object from uri
         """
@@ -566,7 +566,7 @@ class ModelManager(map_db.FileObjectMapDB):
         from . import utilities
         uri_struct = self.get_uri(uri)
         cleanup, factory = utilities._sink_factory(
-            uri_struct, logger, key=self.encryption_key
+            uri_struct, key=self.encryption_key
         )
         try:
             yield factory
@@ -575,7 +575,7 @@ class ModelManager(map_db.FileObjectMapDB):
                 obj.close()
 
     @contextmanager
-    def source(self, uri: str, skip_lines: int = 0, field_names=None, logger=None, delimiter=",",
+    def source(self, uri: str, skip_lines: int = 0, field_names=None, delimiter=",",
                where_clause=None, headings=None):
         """
         open context manager for source
@@ -584,7 +584,6 @@ class ModelManager(map_db.FileObjectMapDB):
             - uri: uri (use ::endpoint_name for endpoint)
             - skip_lines (number of lines to skip)
             - field names: list of fields to yield
-            - logger
             - delimitier (",")
 
         returns:
@@ -598,7 +597,6 @@ class ModelManager(map_db.FileObjectMapDB):
                 parsed,
                 skip_lines,
                 field_names=field_names,
-                logger=logger,
                 delimiter=delimiter,
                 key=self.encryption_key,
                 where_clause=where_clause,

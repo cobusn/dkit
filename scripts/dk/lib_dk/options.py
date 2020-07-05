@@ -41,9 +41,9 @@ def add_options_minimal(parser):
 
 
 def add_option_defaults(parser):
+    add_option_logging(parser)
     add_option_config(parser)
     add_option_model(parser)
-    add_option_trigger(parser)
 
 
 def add_option_alternate_model(parser):
@@ -373,8 +373,15 @@ def add_option_tabulate(parser):
                         help=add_option_tabulate.__doc__)
 
 
-def add_option_trigger(parser):
+def add_option_logging(parser):
     """add option for transform name"""
+    me_group = parser.add_mutually_exclusive_group()
+    me_group.add_argument('-v', '--verbose', dest="verbose", default=False, action="store_true",
+                        help="display informational messages")
+    me_group.add_argument('--warning', default=False, action="store_true",
+                        help="display warning messages")
+    me_group.add_argument('--debug', default=False, action="store_true",
+                        help="display debug messages")
     parser.add_argument('--trigger', dest="log_trigger", default=None, type=int,
                         help="Trigger log action on this number of records")
 

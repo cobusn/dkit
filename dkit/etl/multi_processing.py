@@ -23,9 +23,12 @@ import queue
 from typing import Iterable, MutableMapping
 from . import source
 from ..utilities import instrumentation
-
+import logging
 
 SENTINEL = StopIteration
+
+
+logger = logging.getLogger(__name__)
 
 
 class Coordinator(source.AbstractSource):
@@ -34,14 +37,13 @@ class Coordinator(source.AbstractSource):
     """
 
     def __init__(self,  worker_class: "Worker", process_count: int = None,
-                 logger=None, log_template: str = None, log_trigger: int = 10000,
-                 queue_size: int = 1000, worker_args=(), worker_kwargs={}):
-        super().__init__(logger, log_template, log_trigger)
+                 log_trigger: int = 10000, queue_size: int = 1000, worker_args=(),
+                 worker_kwargs={}):
+        super().__init__(log_trigger)
         self.worker_class: "Worker" = worker_class
         self.process_count: int = process_count if process_count else multiprocessing.cpu_count()
         self.queue_size: int = queue_size
         self.shared_lock: multiprocessing.Lock = multiprocessing.Lock()
-        self.log_trigger: int = log_trigger
         self.worker_args = worker_args
         self.worker_kwargs = worker_kwargs
 
@@ -49,8 +51,8 @@ class Coordinator(source.AbstractSource):
         self.queue_out = multiprocessing.Queue(self.queue_size)
         self.queue_log = multiprocessing.Queue(self.queue_size)
         self.process_list = []
-        self.counter_in = instrumentation.CounterLogger(self.logger)
-        self.counter_out = instrumentation.CounterLogger(self.logger)
+        self.counter_in = instrumentation.CounterLogger(__name__)
+        self.counter_out = instrumentation.CounterLogger(__name__)
 
     def __call__(Iterable: input):
         pass
@@ -59,7 +61,7 @@ class Coordinator(source.AbstractSource):
         """
         Create worker processes
         """
-        self.logger.info("Instantiating {} worker processes.".format(self.process_count))
+        logger.info("Instantiating {} worker processes.".format(self.process_count))
         for _ in range(self.process_count):
             new_worker = self.worker_class(
                 self.queue_in,
@@ -89,13 +91,13 @@ class Coordinator(source.AbstractSource):
         msg = "ITER_IN: {}, ITER_OUT: {}, Q_IN: {}, Q_OUT: {}".format(
             iter_in, iter_out, q_in, q_out
         )
-        self.logger.info(msg)
+        logger.info(msg)
 
     def __kill_processes(self):
         """
         Kill worker processes
         """
-        self.logger.info("Killing {} worker processes".format(self.process_count))
+        logger.info("Killing {} worker processes".format(self.process_count))
         for i in range(len(self.process_list)):
             self.queue_in.put(SENTINEL)
 
@@ -133,7 +135,7 @@ class Coordinator(source.AbstractSource):
                 pass
 
         self.__kill_processes()
-        self.logger.debug("Joining queues.")
+        logger.debug("Joining queues.")
         self.queue_in.join()
 
 

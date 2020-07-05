@@ -27,7 +27,6 @@ DEFAULT_MODEL_FILE = model.DEFAULT_MODEL_FILE
 GLOBAL_CONFIG_FILE = model.GLOBAL_CONFIG_FILE
 LOCAL_CONFIG_FILE = model.LOCAL_CONFIG_FILE
 CASE_TRANSFORMS = ["upper", "lower", "camel", "same"]
-LOGGER_NAME = "dk_logger"
 TABLE_STYLE = "simple"
 MSG_ERR_FILE_EXIST = "file '{}' exists already"
 MSK_ERR_KEYERROR = "key {} is not valid"

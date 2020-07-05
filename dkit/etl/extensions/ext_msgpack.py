@@ -23,21 +23,20 @@ from ...utilities.iter_helper import chunker
 
 class MsgpackSource(source.AbstractMultiReaderSource):
 
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 encoder=msgpack_utils.MsgpackEncoder):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template)
+    def __init__(self, reader_list, field_names=None, encoder=msgpack_utils.MsgpackEncoder):
+        super().__init__(reader_list, field_names)
         self.encoder = encoder()
 
     def iter_some_fields(self, field_names):
         self.stats.start()
         for o_reader in self.reader_list:
             if o_reader.is_open:
-                    for chunk in self.encoder.unpacker(o_reader):
-                        yield from (
-                            {k: r[k] for k in field_names}
-                            for r in chunk
-                        )
-                        self.stats.increment(len(chunk))
+                for chunk in self.encoder.unpacker(o_reader):
+                    yield from (
+                        {k: r[k] for k in field_names}
+                        for r in chunk
+                    )
+                    self.stats.increment(len(chunk))
             else:
                 with o_reader.open() as in_file:
                     for chunk in self.encoder.unpacker(in_file):
@@ -52,9 +51,9 @@ class MsgpackSource(source.AbstractMultiReaderSource):
         self.stats.start()
         for o_reader in self.reader_list:
             if o_reader.is_open:
-                    for chunk in self.encoder.unpacker(o_reader):
-                        yield from chunk
-                        self.stats.increment(len(chunk))
+                for chunk in self.encoder.unpacker(o_reader):
+                    yield from chunk
+                    self.stats.increment(len(chunk))
             else:
                 with o_reader.open() as in_file:
                     for chunk in self.encoder.unpacker(in_file):
@@ -65,9 +64,8 @@ class MsgpackSource(source.AbstractMultiReaderSource):
 
 class LegacyMsgpackSource(source.AbstractMultiReaderSource):
 
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 encoder=msgpack_utils.MsgpackEncoder):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template)
+    def __init__(self, reader_list, field_names=None, encoder=msgpack_utils.MsgpackEncoder):
+        super().__init__(reader_list, field_names)
         self.encoder = encoder()
 
     def iter_some_fields(self, field_names):
@@ -109,8 +107,8 @@ class delete_me__MsgpackSink(sink.FileIteratorSink):
 
     http://msgpack.org/index.html/
     """
-    def __init__(self, writer, field_names=None, logger=None, log_template=None):
-        super().__init__(writer, logger=logger, log_template=log_template)
+    def __init__(self, writer, field_names=None):
+        super().__init__(writer)
         self.field_names = field_names
         if field_names is not None:
             self.process_line = self.__process_line_selected_fields
@@ -133,9 +131,8 @@ class MsgpackSink(sink.Sink):
 
     http://msgpack.org/index.html/
     """
-    def __init__(self, writer, field_names=None, logger=None, log_template=None,
-                 chunk_size=5000, encoder=None,):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, writer, field_names=None, chunk_size=5000, encoder=None,):
+        super().__init__()
         self.writer = writer
         self.field_names = field_names
         self.encoder = encoder or msgpack_utils.MsgpackEncoder()

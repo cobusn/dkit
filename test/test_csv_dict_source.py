@@ -26,7 +26,6 @@ from dkit.etl.reader import (
     StringReader
 )
 from dkit.etl.source import CsvDictSource
-from dkit.utilities import log_helper as log
 from create_data import FIELD_NAMES
 
 
@@ -67,8 +66,7 @@ class TestCsvDictSource(unittest.TestCase):
 
     def test_csv_reader_stats(self):
         r = FileReader("input_files/sample.csv")
-        logger = log.file_logger("output/read_stats.log", "csv read stats")
-        src = CsvDictSource([r], logger=logger)
+        src = CsvDictSource([r])
         src.stats.trigger = 20
         _ = list(src)
 

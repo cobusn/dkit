@@ -137,7 +137,6 @@ class RunModule(module.MultiCommandModule):
             i = srv.run_query(
                     connection,
                     str_query,
-                    logger=self.logger
                 )
             for i, row in enumerate(i):
                 data.append(row)
@@ -150,7 +149,6 @@ class RunModule(module.MultiCommandModule):
                 srv.run_query(
                     connection,
                     str_query,
-                    logger=self.logger
                 )
             )
 
