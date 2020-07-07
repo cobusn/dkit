@@ -22,12 +22,13 @@
 Multiprocessing abstractions
 """
 import multiprocessing
+import threading
 import queue
-from typing import Iterable, MutableMapping, Dict
+from typing import Iterable, Dict
 from .utilities import instrumentation
-from .utilities.identifier import uuid
+from .utilities.identifier import uid
+from .utilities.iter_helper import chunker
 from datetime import datetime
-from collections import defaultdict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,72 +40,91 @@ class Message(object):
     Envelope for moving data
     """
     def __init__(self, payload):
-        self._id = uuid()
+        self._id = uid()
         self.payload = payload
         self.initiated = datetime.now()
 
     def __hash__(self):
         return self._id
 
+    def __iter__(self):
+        yield from self.payload
+
 
 class Journal(object):
     """
     Journal class for accounting messages
+
+    all operations protected with a multi threading lock
     """
     def __init__(self, database=None):
         self.db = database or {}
+        self.lock = threading.Lock()
 
     def push(self, message: Message):
-        self.db[message._id] = datetime.now()
+        """add journal entry"""
+        with self.lock:
+            self.db[message._id] = datetime.now()
 
     def pop(self, message: Message):
-        del self.db[message._id]
+        """remove item from journal"""
+        with self.lock:
+            del self.db[message._id]
+
+    def empty(self):
+        """return True when all items have been accounted for"""
+        return self.__len__() == 0
 
     def __len__(self):
-        return len(self.db)
+        with self.lock:
+            return len(self.db)
 
 
 class Pipeline(object):
     """
     multiprocessing framework
     """
-    def __init__(self,  workers: Dict, log_trigger: int = 10000,
-                 queue_size: int = 1000, journal: Journal = None):
+    def __init__(self,  workers: Dict, queue_size: int = 1_000, journal: Journal = None,
+                 chunk_size=100, queue_timeout=0.5, log_trigger=1000):
         self.workers = workers
         self.queue_size: int = queue_size
+        self.journal = journal or Journal()
+        self.chunk_size = chunk_size
+        self.queue_timeout = queue_timeout
         self.log_trigger: int = log_trigger
+
         self.shared_lock: multiprocessing.Lock = multiprocessing.Lock()
         self.queue_log = multiprocessing.Queue(self.queue_size)
         self.queues = []
-        self.instances = defaultdict(lambda: [])
+        self.instances = []
         self.counter_in = instrumentation.CounterLogger(self.__class__.__name__)
         self.counter_out = instrumentation.CounterLogger(self.__class__.__name__)
-        self.journal = journal or Journal()
-        self.done = multiprocessing.Event()
+        self.evt_stop = multiprocessing.Event()
+        self.evt_input_completed = multiprocessing.Event()
+        self.q_inbound = None
+        self.q_outbound = None
 
-    def __call__(Iterable: input):
-        pass
-
-    def __create_workers(self):
+    def _create_workers(self):
         """
         Create worker processes
         """
-        logger.info("Instantiating {} worker processes.".format(self.process_count))
+        logger.info("Instantiating worker processes.")
         self.q_inbound = q_in = multiprocessing.Queue(self.queue_size)
+        self.queues.append(self.q_inbound)
         for Worker, instances in self.workers.items():
             q_out = multiprocessing.Queue(self.queue_size)
-            for _ in range(self.process_count):
+            for _ in range(instances):
                 new_worker = Worker(
                     q_in,
                     q_out,
                     self.queue_log,
                     self.shared_lock,
-                    self.done
+                    self.evt_stop
                 )
-                self.instances[Worker].append(new_worker)
+                self.instances.append(new_worker)
                 self.queues.append(q_out)
-                q_in = q_out
                 new_worker.start()
+            q_in = q_out
         self.q_outbound = q_out
 
         self.counter_in.start()
@@ -116,57 +136,51 @@ class Pipeline(object):
         """
         iter_in = self.counter_in.value
         iter_out = self.counter_out.value
-        q_in = self.queue_in.qsize()
-        q_out = self.queue_out.qsize()
+        q_in = self.q_inbound.qsize()
+        q_out = self.q_outbound.qsize()
         msg = "ITER_IN: {}, ITER_OUT: {}, Q_IN: {}, Q_OUT: {}".format(
             iter_in, iter_out, q_in, q_out
         )
         logger.info(msg)
 
-    def __kill_processes(self):
-        """
-        Kill worker processes
-        """
-        logger.info("Killing {} worker processes".format(self.process_count))
-        for i in range(len(self.process_list)):
-            self.queue_in.put(SENTINEL)
+    def _feeder(self, data):
+        """separate thread to feed data into queues."""
 
-    def __iter__(self) -> Iterable:
+        for i, chunk in enumerate(chunker(data, size=self.chunk_size)):
+            batch = Message(list(chunk))
+            self.journal.push(batch)
+            self.q_inbound.put(batch)
+            # lock this....
+            self.counter_in.increment(len(batch.payload))
+        self.evt_input_completed.set()
+
+    def __call__(self, data) -> Iterable:
         """
         main iteration loop
         """
-        self.__instantiate_workers()
+        self._create_workers()
 
-        # Feed data
-        for row in self.the_iterator:
-            self.queue_in.put(row)
-            self.counter_in.increment()
+        # start feeding thread
+        feeder = threading.Thread(target=self._feeder, args=(data,))
+        feeder.start()
 
-            while self.queue_out.qsize() > 0:
+        # empty output
+        while (not self.evt_input_completed.is_set()) or (not self.journal.empty()):
+            while not self.q_outbound.empty():
+                batch = self.q_outbound.get(True, self.queue_timeout)
+                self.journal.pop(batch)
+                yield from batch.payload
+                self.counter_out.increment(len(batch.payload))
                 if self.counter_out.value % self.log_trigger == 0:
                     self._log_progress()
-                try:
-                    row = self.queue_out.get(False)
-                    yield row
-                    self.counter_out.increment()
-                except queue.Empty:
-                    pass
 
-        # Get the rest out as well..
-        # while self.counter_out.value < self.counter_in.value:
-        while (self.queue_in.qsize() > 0 or self.queue_out.qsize() > 0):
-            try:
-                if self.counter_out.value % self.log_trigger == 0:
-                    self._log_progress()
-                row = self.queue_out.get(True, 1)
-                yield row
-                self.counter_out.increment()
-            except queue.Empty:
-                pass
-
-        self.__kill_processes()
-        logger.debug("Joining queues.")
-        self.queue_in.join()
+        # shut down
+        self.evt_stop.set()   # signal processes to stop
+        logger.info("joining feeder thread")
+        feeder.join()   # should join immediately
+        for instance in self.instances:
+            logger.info(f"joining worker process {instance.pid}")
+            instance.join()
 
 
 class Worker(multiprocessing.Process):
@@ -181,47 +195,37 @@ class Worker(multiprocessing.Process):
         * self.lock: global lock
         * properties: shared data
     """
-    class Bootstrap:
-        """
-        Decorator to bootstrap parameters for the Worker class
-        """
-        def __call__(self, other_init):
-
-            def wrap(init_self, in_queue, out_queue, log_queue, lock, *args, **kwargs):
-                super(init_self.__class__, init_self).__init__(
-                    in_queue,
-                    out_queue,
-                    log_queue,
-                    lock
-                )
-                other_init(init_self, *args, **kwargs)
-
-            return wrap
-
-    def __init__(self, in_queue, out_queue, log_queue, lock):
+    def __init__(self, queue_in, queue_out, queue_log, lock, stop_event):
         super().__init__()
-        self.log_queue = log_queue
-        self.in_queue = in_queue
-        self.out_queue = out_queue
+        self.log_queue = queue_log
+        self.in_queue = queue_in
+        self.out_queue = queue_out
         self.lock = lock
+        self.stop = stop_event
+        self.timeout = 0.5  # seconds
 
     def run(self):
         """
         implement logic in this method
         """
-        raise NotImplementedError
+        for data in self.pull():
+            self.push(data)
 
-    def pull(self) -> Iterable:
+    def __get(self):
+        """get next item from queue"""
+        try:
+            return self.in_queue.get(timeout=self.timeout)
+        except queue.Empty:
+            return None
+
+    def pull(self) -> Iterable[Message]:
         """Iterator for inbound data"""
-        row = self.in_queue.get()
-        while row != SENTINEL:
-            yield row
-            self.in_queue.task_done()
-            row = self.in_queue.get()
+        data = self.__get()
+        while not self.stop.is_set():
+            if data:
+                yield data
+            data = self.__get()
 
-        # received poison pill. Stop
-        self.in_queue.task_done()  # For the poison pill
-
-    def push(self, row: MutableMapping):
+    def push(self, data: Message):
         """push data back"""
-        self.out_queue.put(row)
+        self.out_queue.put(data)
