@@ -25,6 +25,7 @@ import multiprocessing
 import threading
 import queue
 from typing import Iterable, Dict
+from .utilities import log_helper as lh
 from .utilities import instrumentation
 from .utilities.identifier import uid
 from .utilities.iter_helper import chunker
@@ -32,16 +33,16 @@ from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
-SENTINEL = StopIteration
 
 
 class Message(object):
     """
     Envelope for moving data
     """
-    def __init__(self, payload):
+    def __init__(self, payload, args=None):
         self._id = uid()
         self.payload = payload
+        self.args = args or {}
         self.initiated = datetime.now()
 
     def __hash__(self):
@@ -80,13 +81,80 @@ class Journal(object):
             return len(self.db)
 
 
+class Worker(multiprocessing.Process):
+    """
+    implements multiprocessing worker
+
+    Inherit from this class and implement the run method.
+
+    Interface:
+        * self.pull()
+        * self.push()
+        * self.lock: global lock
+        * args: shared data Dict
+    """
+    def __init__(self, args, queue_in, queue_out, queue_log, lock, stop_event):
+        super().__init__()
+        self.args = args
+        self.log_queue = queue_log
+        self.in_queue = queue_in
+        self.out_queue = queue_out
+        self.lock = lock
+        self.stop = stop_event
+        self.timeout = 0.5  # seconds
+        self.logger = lh.init_queue_logger(queue_log, self.name)
+
+    def start(self):
+        super().start()
+        self.logger.debug(f"Started process id {self.pid}")
+
+    def run(self):
+        """
+        implement logic in this method
+        """
+        for data in self.pull():
+            self.push(data)
+
+    def __get(self):
+        """retrieve next item from queue
+
+        return None in case of timeout
+        """
+        try:
+            return self.in_queue.get(timeout=self.timeout)
+        except queue.Empty:
+            return None
+
+    def pull(self) -> Iterable[Message]:
+        """Iterator for inbound data"""
+        data = self.__get()
+        while not self.stop.is_set():
+            if data:
+                yield data
+            data = self.__get()
+
+    def push(self, data: Message):
+        """push data back"""
+        self.out_queue.put(data)
+
+
 class Pipeline(object):
     """
-    multiprocessing framework
+    Multiprocessing Pipeline
+
+    workers: Dict with class as key and #processes as value
+    worker_args: Dict for static parameters passed to workers as argument
+    queue_size: Queue size
+    journal: Journal instance, default to in memory if not provided
+    chunk_size: group input in a list of this size
+    queue_timeout: timeout on queue
+    log_trigger: trigger for loggin
     """
-    def __init__(self,  workers: Dict, queue_size: int = 1_000, journal: Journal = None,
-                 chunk_size=100, queue_timeout=0.5, log_trigger=1000):
+    def __init__(self,  workers: Dict[Worker, int], worker_args: Dict = None,
+                 queue_size: int = 100, journal: Journal = None,
+                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000):
         self.workers = workers
+        self.args = worker_args or {}
         self.queue_size: int = queue_size
         self.journal = journal or Journal()
         self.chunk_size = chunk_size
@@ -115,6 +183,7 @@ class Pipeline(object):
             q_out = multiprocessing.Queue(self.queue_size)
             for _ in range(instances):
                 new_worker = Worker(
+                    self.args,
                     q_in,
                     q_out,
                     self.queue_log,
@@ -145,20 +214,22 @@ class Pipeline(object):
 
     def _feeder(self, data):
         """separate thread to feed data into queues."""
-
         for i, chunk in enumerate(chunker(data, size=self.chunk_size)):
             batch = Message(list(chunk))
             self.journal.push(batch)
             self.q_inbound.put(batch)
-            # lock this....
+            # only one feeder thread so no need to lock this
+            # line:
             self.counter_in.increment(len(batch.payload))
         self.evt_input_completed.set()
 
-    def __call__(self, data) -> Iterable:
+    def __call__(self, data: Iterable) -> Iterable:
         """
         main iteration loop
         """
+        log_listener = lh.init_queue_listener(self.queue_log)
         self._create_workers()
+        log_listener.start()
 
         # start feeding thread
         feeder = threading.Thread(target=self._feeder, args=(data,))
@@ -178,54 +249,7 @@ class Pipeline(object):
         self.evt_stop.set()   # signal processes to stop
         logger.info("joining feeder thread")
         feeder.join()   # should join immediately
-        for instance in self.instances:
-            logger.info(f"joining worker process {instance.pid}")
+        for i, instance in enumerate(self.instances):
+            logger.info(f"joining worker process {instance.pid}: {i+1}/{len(self.instances)}")
             instance.join()
-
-
-class Worker(multiprocessing.Process):
-    """
-    implements multiprocessing worker
-
-    Inherit from this class and implement the run method.
-
-    Interface:
-        * self.pull()
-        * self.push()
-        * self.lock: global lock
-        * properties: shared data
-    """
-    def __init__(self, queue_in, queue_out, queue_log, lock, stop_event):
-        super().__init__()
-        self.log_queue = queue_log
-        self.in_queue = queue_in
-        self.out_queue = queue_out
-        self.lock = lock
-        self.stop = stop_event
-        self.timeout = 0.5  # seconds
-
-    def run(self):
-        """
-        implement logic in this method
-        """
-        for data in self.pull():
-            self.push(data)
-
-    def __get(self):
-        """get next item from queue"""
-        try:
-            return self.in_queue.get(timeout=self.timeout)
-        except queue.Empty:
-            return None
-
-    def pull(self) -> Iterable[Message]:
-        """Iterator for inbound data"""
-        data = self.__get()
-        while not self.stop.is_set():
-            if data:
-                yield data
-            data = self.__get()
-
-    def push(self, data: Message):
-        """push data back"""
-        self.out_queue.put(data)
+        log_listener.stop()
