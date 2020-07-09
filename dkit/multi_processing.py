@@ -45,8 +45,9 @@ class Message(object):
         self.args = args or {}
         self.initiated = datetime.now()
 
-    def __hash__(self):
-        return self._id
+    def clear(self):
+        """set payload to empty list"""
+        self.payload = []
 
     def __iter__(self):
         yield from self.payload
@@ -221,6 +222,7 @@ class Pipeline(object):
             # only one feeder thread so no need to lock this
             # line:
             self.counter_in.increment(len(batch.payload))
+        logger.info("data feed comleted")
         self.evt_input_completed.set()
 
     def __call__(self, data: Iterable) -> Iterable:
