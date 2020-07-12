@@ -58,9 +58,9 @@ class HDFSWriter(writer.ClosedWriter):
     def open(self):
         from hdfs import InsecureClient
         if self.compression:
-            encoding = "wb"
+            encoding = None
         else:
-            encoding = "wt"
+            encoding = "utf-8"
         self.client = InsecureClient(self.uri, user=self.user)
         _client = self.client.write(
             self.path,
@@ -71,7 +71,7 @@ class HDFSWriter(writer.ClosedWriter):
         if self.compression:
             return self.compression.open(
                 _client,
-                self.encoding
+                "wt"
             )
         else:
             return _client
