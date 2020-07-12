@@ -24,6 +24,9 @@ Multiprocessing abstractions
 import multiprocessing
 import threading
 import queue
+import shelve
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Iterable, Dict
 from .utilities import log_helper as lh
 from .utilities import instrumentation
@@ -35,47 +38,108 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Message(object):
+class Message(ABC):
     """
     Envelope for moving data
     """
-    def __init__(self, payload, args=None):
-        self._id = uid()
-        self.payload = payload
-        self.args = args or {}
+
+    @abstractmethod
+    def _generate_id(self):
+        pass
+
+
+class ImmutableMessage(Message):
+    """
+    Message that has a hashable payload (that can be
+    used as a key to track progress)
+    """
+
+    def _generate_id(self):
+        return hash(self.args)
+
+    def __init__(self, args):
+        self.args = args
+        self.result = None
         self.initiated = datetime.now()
+        self._id = self._generate_id()
+
+
+class ListMessage(Message):
+    """
+    Message that has a list of items as payload
+    """
+    def __init__(self, payload):
+        self.payload = payload
+        self.initiated = datetime.now()
+        self._id = self._generate_id()
+
+    def _generate_id(self):
+        return uid()
 
     def clear(self):
         """set payload to empty list"""
         self.payload = []
-
-    def __iter__(self):
-        yield from self.payload
 
 
 class Journal(object):
     """
     Journal class for accounting messages
 
-    all operations protected with a multi threading lock
+    thread safe
+
+    args:
+        database: Dict like object
+        accounting:
     """
-    def __init__(self, database=None):
+    @dataclass
+    class Entry:
+        __slots__ = ("_id", "created", "completed")
+        _id: object
+        created: datetime
+        completed: datetime
+
+    def __init__(self, database=None, accounting: bool = False):
         self.db = database or {}
+        self.accounting = accounting
         self.lock = threading.Lock()
 
-    def push(self, message: Message):
+    def enter(self, message: Message):
         """add journal entry"""
         with self.lock:
-            self.db[message._id] = datetime.now()
+            self.db[message._id] = self.Entry(message._id, datetime.now(), None)
 
-    def pop(self, message: Message):
-        """remove item from journal"""
+    def complete(self, message: Message):
+        """complete entry
+
+        if accounting is disabled, the entry will be removed
+        otherwise it will me marked as complete
+        """
         with self.lock:
-            del self.db[message._id]
+            if self.accounting:
+                self.db[message._id] = datetime.now()
+            else:
+                del self.db[message._id]
+
+    def is_completed(self, message):
+        if message._id in self.db and self.db[message._id]:
+            return True
+        else:
+            return False
 
     def empty(self):
         """return True when all items have been accounted for"""
         return self.__len__() == 0
+
+    def sync(self):
+        """sync to file (where applicable)"""
+        if hasattr(self.db, "sync"):
+            self.db.sync()
+
+    @classmethod
+    def from_shelve(cls, file_name):
+        """constructor from shelve file"""
+        db = shelve.open(file_name)
+        return cls(db)
 
     def __len__(self):
         with self.lock:
@@ -139,7 +203,7 @@ class Worker(multiprocessing.Process):
         self.out_queue.put(data)
 
 
-class Pipeline(object):
+class AbstractPipeline(ABC):
     """
     Multiprocessing Pipeline
 
@@ -150,10 +214,12 @@ class Pipeline(object):
     chunk_size: group input in a list of this size
     queue_timeout: timeout on queue
     log_trigger: trigger for loggin
+    unique_messge:
     """
     def __init__(self,  workers: Dict[Worker, int], worker_args: Dict = None,
                  queue_size: int = 100, journal: Journal = None,
-                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000):
+                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000,
+                 unique_messages: bool = False):
         self.workers = workers
         self.args = worker_args or {}
         self.queue_size: int = queue_size
@@ -213,17 +279,13 @@ class Pipeline(object):
         )
         logger.info(msg)
 
+    @abstractmethod
+    def _yield_results(self, message):
+        pass
+
+    @abstractmethod
     def _feeder(self, data):
-        """separate thread to feed data into queues."""
-        for i, chunk in enumerate(chunker(data, size=self.chunk_size)):
-            batch = Message(list(chunk))
-            self.journal.push(batch)
-            self.q_inbound.put(batch)
-            # only one feeder thread so no need to lock this
-            # line:
-            self.counter_in.increment(len(batch.payload))
-        logger.info("data feed comleted")
-        self.evt_input_completed.set()
+        pass
 
     def __call__(self, data: Iterable) -> Iterable:
         """
@@ -240,10 +302,9 @@ class Pipeline(object):
         # empty output
         while (not self.evt_input_completed.is_set()) or (not self.journal.empty()):
             while not self.q_outbound.empty():
-                batch = self.q_outbound.get(True, self.queue_timeout)
-                self.journal.pop(batch)
-                yield from batch.payload
-                self.counter_out.increment(len(batch.payload))
+                message = self.q_outbound.get(True, self.queue_timeout)
+                self.journal.complete(message)
+                yield from self._yield_results(message)
                 if self.counter_out.value % self.log_trigger == 0:
                     self._log_progress()
 
@@ -255,3 +316,59 @@ class Pipeline(object):
             logger.info(f"joining worker process {instance.pid}: {i+1}/{len(self.instances)}")
             instance.join()
         log_listener.stop()
+
+
+class ListPipeline(AbstractPipeline):
+
+    def _feeder(self, data):
+        """separate thread to feed data into queues."""
+        for chunk in chunker(data, size=self.chunk_size):
+            batch = ListMessage(list(chunk))
+            self.journal.enter(batch)
+            self.q_inbound.put(batch)
+            # only one feeder thread so no need to lock this
+            # line:
+            self.counter_in.increment(len(batch.payload))
+        logger.info("data feed comleted")
+        self.evt_input_completed.set()
+
+    def _yield_results(self, message):
+        yield from message.payload
+        self.counter_out.increment(len(message.payload))
+
+
+class ImmutablePipeline(AbstractPipeline):
+
+    def __init__(self,  workers: Dict[Worker, int], worker_args: Dict = None,
+                 queue_size: int = 100, journal: Journal = None,
+                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000,
+                 unique_messages: bool = False, accounting=False):
+
+        super().__init__(workers, worker_args, queue_size, journal, chunk_size,
+                         queue_timeout, log_trigger, unique_messages)
+        self.enable_accounting = accounting
+
+    def _yield_results(self, message):
+        yield message.result
+        self.counter_out.increment()
+
+    def _feeder(self, data):
+        """separate thread to feed data into queues."""
+        if self.enable_accounting:
+            for entry in data:
+                msg = ImmutableMessage(entry)
+                if not self.journal.is_completed(msg):
+                    self.journal.enter(msg)
+                    self.q_inbound.put(msg)
+                    self.counter_in.increment()
+                else:
+                    logger.warning(f"message with id {msg.id} already completed")
+                # only one feeder thread so no need to lock this
+                # line:
+                self.counter_in.increment()
+        else:
+            for entry in data:
+                self.q_inbound.put(entry)
+
+        logger.info("data feed comleted")
+        self.evt_input_completed.set()
