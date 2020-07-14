@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 import unittest
 sys.path.insert(0, "..")  # noqa
-from boltons.dictutils import FrozenDict
 
 from dkit.multi_processing import (
     Worker,
@@ -15,6 +14,8 @@ from dkit.multi_processing import (
 )
 from dkit.utilities.log_helper import init_stderr_logger
 
+N = 1_00
+
 
 class ListWorker(Worker):
 
@@ -23,7 +24,7 @@ class ListWorker(Worker):
             self.logger.info(f"Processing batch {i}")
             for row in message.payload:
                 row["w1"] = self.args["value"]
-            time.sleep(random.triangular(0, 0.01))
+            time.sleep(random.triangular(0, 0.001))
             self.push(message)
 
 
@@ -56,14 +57,14 @@ class TestMultiprocessing(unittest.TestCase):
             queue_size=10
         )
 
-        result = list(pipeline({"a": 10} for i in range(1_000)))
+        result = list(pipeline({"a": 10} for i in range(N)))
         self.assertEqual(
             result[0],
             {'a': 10, 'w1': 10}
         )
         self.assertEqual(
             len(result),
-            1_000
+            N
         )
 
     def test_shelve_journal(self):
@@ -77,19 +78,19 @@ class TestMultiprocessing(unittest.TestCase):
             journal=Journal.from_shelve("data/journal.shelve")
         )
 
-        result = list(pipeline({"a": 10} for i in range(1_000)))
+        result = list(pipeline({"a": 10} for i in range(N)))
         self.assertEqual(
             result[0],
             {'a': 10, 'w1': 10}
         )
         self.assertEqual(
             len(result),
-            1_000
+            N
         )
 
     def test_immutable_accounting(self):
 
-        _input = [FrozenDict({"a": i}) for i in range(1_000)]
+        _input = [{"a": i} for i in range(N)]
         pipeline = ImmutablePipeline(
             {
                 ItemWorker: 10,
@@ -106,10 +107,10 @@ class TestMultiprocessing(unittest.TestCase):
         )
         self.assertEqual(
             len(result),
-            1_000
+            N
         )
 
 
 if __name__ == '__main__':
-    init_stderr_logger(level=logging.ERROR)
+    init_stderr_logger(level=logging.DEBUG)
     unittest.main()
