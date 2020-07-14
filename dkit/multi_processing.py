@@ -25,6 +25,7 @@ import multiprocessing
 import threading
 import queue
 import shelve
+from zlib import adler32
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Iterable, Dict
@@ -48,6 +49,10 @@ class Message(ABC):
         pass
 
 
+def adler_hash(obj):
+    return adler32(repr(obj).encode())
+
+
 class ImmutableMessage(Message):
     """
     Message that has a hashable payload (that can be
@@ -55,7 +60,7 @@ class ImmutableMessage(Message):
     """
 
     def _generate_id(self):
-        return hash(self.args)
+        return str(adler_hash(self.args))
 
     def __init__(self, args):
         self.args = args
@@ -98,37 +103,47 @@ class Journal(object):
         created: datetime
         completed: datetime
 
-    def __init__(self, database=None, accounting: bool = False):
-        self.db = database or {}
-        self.accounting = accounting
+    def __init__(self, database=None):
+        if database is not None:
+            self.db = database
+        else:
+            self.db = {}
         self.lock = threading.Lock()
+
+    def __del__(self):
+        if hasattr(self.db, "close"):
+            self.db.close()
 
     def enter(self, message: Message):
         """add journal entry"""
         with self.lock:
             self.db[message._id] = self.Entry(message._id, datetime.now(), None)
 
-    def complete(self, message: Message):
+    def complete(self, message: Message, accounting=False):
         """complete entry
 
         if accounting is disabled, the entry will be removed
         otherwise it will me marked as complete
         """
         with self.lock:
-            if self.accounting:
-                self.db[message._id] = datetime.now()
+            if accounting:
+                msg = self.db[message._id]
+                msg.completed = datetime.now()
+                self.db[message._id] = msg
+                self.sync()
             else:
                 del self.db[message._id]
 
     def is_completed(self, message):
-        if message._id in self.db and self.db[message._id]:
+        if message._id in self.db and self.db[message._id].completed:
             return True
         else:
             return False
 
     def empty(self):
         """return True when all items have been accounted for"""
-        return self.__len__() == 0
+        not_completed = [i for i in self.db.values() if not i.completed]
+        return len(not_completed) == 0
 
     def sync(self):
         """sync to file (where applicable)"""
@@ -223,7 +238,10 @@ class AbstractPipeline(ABC):
         self.workers = workers
         self.args = worker_args or {}
         self.queue_size: int = queue_size
-        self.journal = journal or Journal()
+        if journal is not None:
+            self.journal = journal
+        else:
+            self.journal = Journal()
         self.chunk_size = chunk_size
         self.queue_timeout = queue_timeout
         self.log_trigger: int = log_trigger
@@ -238,6 +256,7 @@ class AbstractPipeline(ABC):
         self.evt_input_completed = multiprocessing.Event()
         self.q_inbound = None
         self.q_outbound = None
+        self.enable_accounting = False
 
     def _create_workers(self):
         """
@@ -303,8 +322,8 @@ class AbstractPipeline(ABC):
         while (not self.evt_input_completed.is_set()) or (not self.journal.empty()):
             while not self.q_outbound.empty():
                 message = self.q_outbound.get(True, self.queue_timeout)
-                self.journal.complete(message)
                 yield from self._yield_results(message)
+                self.journal.complete(message, self.enable_accounting)
                 if self.counter_out.value % self.log_trigger == 0:
                     self._log_progress()
 
@@ -343,10 +362,10 @@ class ImmutablePipeline(AbstractPipeline):
                  queue_size: int = 100, journal: Journal = None,
                  chunk_size=100, queue_timeout=0.5, log_trigger=10_000,
                  unique_messages: bool = False, accounting=False):
-
         super().__init__(workers, worker_args, queue_size, journal, chunk_size,
                          queue_timeout, log_trigger, unique_messages)
         self.enable_accounting = accounting
+
 
     def _yield_results(self, message):
         yield message.result
@@ -360,9 +379,10 @@ class ImmutablePipeline(AbstractPipeline):
                 if not self.journal.is_completed(msg):
                     self.journal.enter(msg)
                     self.q_inbound.put(msg)
+                    self.journal.sync()
                     self.counter_in.increment()
                 else:
-                    logger.warning(f"message with id {msg.id} already completed")
+                    logger.warning(f"message with id {msg._id} already completed")
                 # only one feeder thread so no need to lock this
                 # line:
                 self.counter_in.increment()
