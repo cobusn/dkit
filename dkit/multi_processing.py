@@ -21,20 +21,22 @@
 """
 Multiprocessing abstractions
 """
+import logging
 import multiprocessing
-import threading
 import queue
 import shelve
-from zlib import adler32
+import threading
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from datetime import datetime
 from typing import Iterable, Dict
-from .utilities import log_helper as lh
-from .utilities import instrumentation
+from hashlib import md5
+
+from dataclasses import dataclass
+from .data.bencode import encode
+from .utilities import log_helper as lh, instrumentation
 from .utilities.identifier import uid
 from .utilities.iter_helper import chunker
-from datetime import datetime
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +51,8 @@ class Message(ABC):
         pass
 
 
-def adler_hash(obj):
-    return adler32(repr(obj).encode())
+def _md5_hash(obj):
+    return md5(encode(obj)).hexdigest()
 
 
 class ImmutableMessage(Message):
@@ -60,7 +62,7 @@ class ImmutableMessage(Message):
     """
 
     def _generate_id(self):
-        return str(adler_hash(self.args))
+        return str(_md5_hash(self.args))
 
     def __init__(self, args):
         self.args = args
@@ -365,7 +367,6 @@ class ImmutablePipeline(AbstractPipeline):
         super().__init__(workers, worker_args, queue_size, journal, chunk_size,
                          queue_timeout, log_trigger, unique_messages)
         self.enable_accounting = accounting
-
 
     def _yield_results(self, message):
         yield message.result
