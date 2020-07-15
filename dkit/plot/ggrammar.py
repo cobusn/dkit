@@ -192,7 +192,7 @@ class GeomFill(AbstractGeom):
     """
     Fill between two lines
     """
-    def __init__(self, title: str,  x_data: str, y_upper: str, y_lower: str,
+    def __init__(self, title: str, x_data: str, y_upper: str, y_lower: str,
                  color: str = "green", line_alpha: float = 0.8,
                  fill_alpha: float = 0.3, *args, **kwargs):
         self.primitive_type = "line"
