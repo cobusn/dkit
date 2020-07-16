@@ -239,7 +239,7 @@ class Module(object):
 
         # apply schema
         if hasattr(self.args, "entity") and self.args.entity is not None:
-            _schema = services.model.schemas[self.args.entity]
+            _schema = services.model.entities[self.args.entity]
             _iter_in = _schema(_iter_in)
 
         # apply filter
