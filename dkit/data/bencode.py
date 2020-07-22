@@ -29,6 +29,7 @@ This implementation support the following data types:
     * tuple (not part of standard)
     * int
     * string
+    * None
 
 References:
     * https://en.wikipedia.org/wiki/Bencode
@@ -46,6 +47,7 @@ __all__ = [
 def __encode(obj):
     """Encode to bencode"""
     enc_map = {
+        type(None): lambda x: 'i-0e',
         int: lambda x: 'i%se' % x,
         str: lambda x: '%s:%s' % (len(x), x),
         list: lambda x: 'l%se' % ''.join(__encode(i) for i in x),
@@ -83,7 +85,11 @@ def _tokenize(text, match=re.compile(r"([idelt])|(\d+):|(-?\d+)").match):
 def _decode_item(parser, token):
     if token == "i":
         # integer: "i" value "e"
-        data = int(next(parser))
+        data = next(parser)
+        if data == "-0":
+            data = None
+        else:
+            data = int(data)
         if next(parser) != "e":
             raise ValueError
     elif token == "s":
