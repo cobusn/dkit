@@ -175,6 +175,16 @@ class SQLAlchemyAccessor(object):
             echo=echo
         )
 
+    def iter_select(self, sql, log_trigger=DEFAULT_LOG_TRIGGER,
+                    chunk_size=CHUNK_SIZE) -> "SQLAlchemySelectSource":
+        """return iterator for select statement"""
+        return SQLAlchemySelectSource(
+            self,
+            sql,
+            log_trigger=log_trigger,
+            chunk_size=chunk_size
+        )
+
 
 class SQLAlchemyReflector(object):
     """
@@ -570,7 +580,7 @@ class SQLServices(model.ETLServices):
             i_entity.as_entity_validator()
         )
 
-    def get_sql_accessor(self, conn_name: str):
+    def get_sql_accessor(self, conn_name: str) -> SQLAlchemyAccessor:
         """
         return sqlalchemy extension accessor
 
