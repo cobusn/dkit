@@ -1,12 +1,31 @@
+# Copyright (c) 2019 Cobus Nel
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import sys; sys.path.insert(0, "..")  # noqa
 import unittest
 from pathlib import Path
-import sys; sys.path.insert(0, "..")  # noqa
+
 from dkit.plot import ggrammar
-from dkit.plot.matplotlib import MPLBackend
 from dkit.plot.gnuplot import BackendGnuPlot
-
-
-from sample_data import plot_data, scatter_data, histogram_data
+from dkit.plot.matplotlib import MPLBackend
+from sample_data import plot_data, scatter_data, histogram_data, control_chart_data
 
 
 class TestGnuplot(unittest.TestCase):
@@ -18,16 +37,6 @@ class TestGnuplot(unittest.TestCase):
             print("Creating plots folder")
             out_path.mkdir()
         cls.out_path = out_path
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def gen_plt(self, data):
         plt = ggrammar.Plot(data) \
@@ -80,6 +89,13 @@ class TestMatplotlib(TestGnuplot):
         plt = self.gen_plt(plot_data)
         plt += ggrammar.GeomLine("Revenue", "index", "revenue", alpha=0.6)
         self.render(plt, self.out_path / "example_line_plot.svg")
+
+    def test_fill_plot(self):
+        """test fill plot"""
+        plt = self.gen_plt(control_chart_data)
+        plt += ggrammar.GeomFill("Control Chart", x_data="index", y_upper="upper",
+                                 y_lower="lower")
+        self.render(plt, self.out_path / "example_fill_plot.svg")
 
     def render(self, plt, filename):
         MPLBackend(plt.as_dict(), "svg").render(

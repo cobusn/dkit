@@ -18,8 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .. import source, DEFAULT_LOG_TRIGGER
+import logging
+
 import xlrd
+
+from .. import source, DEFAULT_LOG_TRIGGER
+
+
+logger = logging.getLogger(__name__)
 
 
 class XLSSource(source.AbstractSource):
@@ -32,9 +38,8 @@ class XLSSource(source.AbstractSource):
     """
 
     def __init__(self, file_name_list, work_sheet=None,
-                 field_names=None, skip_lines=0, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER):
-        super().__init__(logger, log_template=log_template, log_trigger=log_trigger)
+                 field_names=None, skip_lines=0, log_trigger=DEFAULT_LOG_TRIGGER):
+        super().__init__(log_trigger=log_trigger)
         self.xlrd = xlrd
         # self.xlrd = __import__('xlrd')
         self.file_names = file_name_list
@@ -52,7 +57,7 @@ class XLSSource(source.AbstractSource):
     def __it(self):
         stats = self.stats.start()
         for file_name in self.file_names:
-            self.logger.info(file_name)
+            logger.info(file_name)
             wb = self.xlrd.open_workbook(file_name)
             if self.work_sheet is None:
                 ws = wb.sheet_by_index(0)

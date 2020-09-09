@@ -33,16 +33,10 @@ import decimal
 import html
 import os
 
-from ..utilities import log_helper
 from ..utilities import instrumentation
 from ..utilities import iff
 from ..data import json_utils as ju
 from ..utilities.iter_helper import chunker
-from ..utilities.cmd_helper import LazyLoad
-
-# Deferred modules
-# cryptography = LazyLoad("cryptography")
-import cryptography
 
 # CONSTANTS
 DATE_FMT = '%Y-%m-%d'
@@ -53,14 +47,8 @@ class Sink(object):
     """
     Abstract base class for sink objects
     """
-    def __init__(self, logger=None, log_template=None):
-        self.logger = logger if logger else log_helper.null_logger(self.__class__.__name__)
-        self.log_template = log_template if log_template else\
-            "Wrote ${counter} after ${seconds} seconds."
-        self.stats = instrumentation.CounterLogger(
-            logger=self.logger,
-            log_template=self.log_template
-        )
+    def __init__(self):
+        self.stats = instrumentation.CounterLogger(logger=self.__class__.__name__)
 
     def process(self, the_iterator):
         pass
@@ -73,8 +61,8 @@ class FileIteratorSink(Sink):
     """
     Abstract base class
     """
-    def __init__(self, writer, lineterminator="\n", logger=None, log_template=None):
-        super(FileIteratorSink, self).__init__(logger=logger, log_template=log_template)
+    def __init__(self, writer, lineterminator="\n"):
+        super(FileIteratorSink, self).__init__()
         self.writer = writer
         self.lineterminator = lineterminator
 
@@ -119,9 +107,8 @@ class CsvDictSink(FileIteratorSink):
     Serialize Dictionary Line format to CSV
     """
     def __init__(self, writer, field_names=None, delimiter=",", write_headings=True,
-                 lineterminator="\n", logger=None, log_template=None):
-        super(CsvDictSink, self).__init__(writer, lineterminator=lineterminator,
-                                          logger=logger, log_template=log_template)
+                 lineterminator="\n"):
+        super(CsvDictSink, self).__init__(writer, lineterminator=lineterminator)
         self.delimiter = delimiter
         self.field_names = field_names
         self.write_headings = write_headings
@@ -149,11 +136,10 @@ class HtmlTableSink(FileIteratorSink):
     """
     serialize dictionary like records to html tables
     """
-    def __init__(self, writer, field_names=None, logger=None, log_template=None,
-                 write_headings=True):
+    def __init__(self, writer, field_names=None, write_headings=True):
         self.write_headings = write_headings
         self.field_names = field_names
-        super().__init__(writer, logger=logger, log_template=log_template)
+        super().__init__(writer)
 
     def __write_headings(self, entry, out_stream):
         """write headings"""
@@ -212,8 +198,8 @@ class JsonlSink(FileIteratorSink):
 
     http://jsonlines.org/
     """
-    def __init__(self, writer, logger=None, log_template=None):
-        super().__init__(writer, logger=logger, log_template=log_template)
+    def __init__(self, writer):
+        super().__init__(writer)
         self.encoder = ju.JsonSerializer(
             ju.DateTimeCodec(),
             ju.DateCodec(),
@@ -234,8 +220,8 @@ class JsonlSafeSink(FileIteratorSink):
 
     convert unknown objects to str and decimal to float
     """
-    def __init__(self, writer, logger=None, log_template=None):
-        super().__init__(writer, logger=logger, log_template=log_template)
+    def __init__(self, writer):
+        super().__init__(writer)
         self.encoder = ju.JsonSerializer(
             ju.DateTimeStrCodec(),
             ju.DateStrCodec(),
@@ -254,8 +240,8 @@ class JsonSink(Sink):
     """
     Abstract base class
     """
-    def __init__(self, writer, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, writer):
+        super().__init__()
         self.writer = writer
 
     def process(self, the_iterator):
@@ -284,8 +270,8 @@ class PickleSink(Sink):
     """
     Serialize to Pickle
     """
-    def __init__(self, writer, chunk_size=5000, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, writer, chunk_size=5000):
+        super().__init__()
         self.writer = writer
         self.chunk_size = chunk_size
 
@@ -313,9 +299,8 @@ class EncryptSink(Sink):
     """
     Serialize to AES encrypted
     """
-    def __init__(self, file_name, key, compress=None, serde=None,
-                 chunk_size=5000, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, file_name, key, compress=None, serde=None, chunk_size=5000):
+        super().__init__()
         self.file_name = file_name
         self.chunk_size = chunk_size
         # [ser]ializer default to pickle
@@ -354,8 +339,8 @@ class NullSink(Sink):
     """
     write to /dev/null
     """
-    def __init__(self, logger=None, log_template=None):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self):
+        super().__init__()
         self.writer = os.devnull
 
     def process(self, the_iterator):
@@ -365,9 +350,9 @@ class NullSink(Sink):
         return self
 
 
-def load(uri: str, logger=None) -> Sink:
+def load(uri: str) -> Sink:
     """
     parse uri string and open + return sink
     """
     from . import utilities as etlu
-    return etlu.open_sink(uri, logger)
+    return etlu.open_sink(uri)

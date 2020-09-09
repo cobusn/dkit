@@ -20,29 +20,31 @@ Created on 17 May 2011
 '''
 import unittest
 import common
-import sys; sys.path.insert(0, "..")
+import sys; sys.path.insert(0, "..")  # noqa
 
 from dkit.utilities.instrumentation import CounterLogger
-from dkit.utilities import log_helper as log
+from dkit.utilities.log_helper import init_stderr_logger
 import time
+
+
+init_stderr_logger()
+
 
 class TestCounterLogger(common.TestBase):
     """Test the MSDateProcessor class"""
 
-    def setUp( self ):
+    def setUp(self):
         super(TestCounterLogger, self).setUp()
-        logger = log.file_logger("test_counter.log")
-        #logger = log.stderr_logger()
-        self.t_obj = CounterLogger(logger, trigger=10)
+        self.t_obj = CounterLogger(self.__class__.__name__, trigger=10)
 
     def test_loop(self):
         """Test CouterLogger() operation."""
         self.t_obj.start()
-        x=0
+        x = 0
         while x < 100:
             self.t_obj.increment()
             time.sleep(0.04)
-            x+=1
+            x += 1
         self.assertEqual(self.t_obj.value, 100)
         self.t_obj.stop()
 
@@ -81,9 +83,10 @@ class TestCounterLogger(common.TestBase):
         self.t_obj.error(s_test)
         self.t_obj.stop()
 
-    def tearDown( self ):
+    def tearDown(self):
         super(TestCounterLogger, self).tearDown()
         self.t_obj = None
+
 
 if __name__ == '__main__':
     unittest.main()

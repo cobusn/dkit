@@ -25,8 +25,8 @@ class BXRSink(sink.FileIteratorSink):
     """
     Serialize Dictionary Line to BXR
     """
-    def __init__(self, writer, field_names=None, logger=None, log_template=None):
-        super().__init__(writer, logger=logger, log_template=log_template)
+    def __init__(self, writer, field_names=None):
+        super().__init__(writer)
         self.field_names = field_names
         if field_names is not None:
             self.process_line = self.__process_line_selected_fields
@@ -50,15 +50,12 @@ class BXRSource(source.AbstractMultiReaderSource):
 
     :reader_list: list of reader objects
     :field_names: (optional) list of fields to extract
-    :logger: (optional) logger instance
-    :log_template: (optional) python log template
     :skip_lines: (optional) number of lines to skip at start of file
     """
 
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger)
+    def __init__(self, reader_list, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 skip_lines=0):
+        super().__init__(reader_list, field_names, log_trigger=log_trigger)
 
     def iter_field_names(self, field_names):
         """

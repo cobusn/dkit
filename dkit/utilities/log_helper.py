@@ -1,78 +1,107 @@
+# Copyright (c) 2019 Cobus Nel
 #
-# Copyright (C) 2016  Cobus Nel
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 #
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 """
 Convenience functions and classes dealing with logging
 """
 import logging
 import sys
+from logging.handlers import QueueHandler, QueueListener
 
-class LegacyNullHandler(logging.Handler):
+from .. import DEFAULT_LOG_MESSAGE
+
+
+def init_logger(message=None, name=None, level=logging.DEBUG, handler=None):
     """
-    Null Handler used included as this is not available in
-    Python versions < 2.7.
+    generic logger initialization function
     """
-    def handle(self, record):
-        pass
-
-    def emit(self, record):
-        pass
-
-    def createLock(self):
-        self.lock = None
-
-def null_logger(name='msutils.null_logger'):
-    """
-    Return logger that does nothing.
-    """
-    the_logger = logging.getLogger(name)
-    the_logger.addHandler(LegacyNullHandler())
-    return the_logger
-
-def _get_logger(handler, logger_name, template, level):
-    the_logger = logging.getLogger(logger_name)
-    formatter = logging.Formatter(template)
+    logger = logging.getLogger(name)
+    _message = message or DEFAULT_LOG_MESSAGE
+    formatter = logging.Formatter(_message)
+    handler = handler or logging.StreamHandler()
     handler.setFormatter(formatter)
-    the_logger.addHandler(handler)
-    the_logger.setLevel(level)
-    return the_logger
+    logger.addHandler(handler)
+    logger.setLevel(level)
+    return logger
 
-def file_logger(filename, logger_name='file_logger', template='%(created)f %(message)s', level=logging.INFO):
+
+def init_null_logger(message=None, name=None):
+    """
+    logger that does nothing
+    """
+    logger = logging.getLogger(name)
+    logger.addHandler(logging.NullHandler())
+    return logger
+
+
+def init_file_logger(filename, message=None, name=None, level=logging.DEBUG):
     """
     Return simple file logger
     """
     handler = logging.FileHandler(filename)
-    return _get_logger(handler, logger_name, template, level)
+    return init_logger(message, name, level, handler)
 
-def stream_logger(stream, logger_name='stream_logger', template="%(message)s", level=logging.INFO):
+
+def init_stream_logger(stream, message=None, name=None, level=logging.DEBUG):
     """
     Return stream logger
     """
     handler = logging.StreamHandler(stream)
-    return _get_logger(handler, logger_name, template, level)
+    return init_logger(message, name, level, handler)
 
-def stderr_logger(logger_name='stderr_logger', template="%(message)s", level=logging.INFO):
+
+def init_stderr_logger(message=None, name=None, level=logging.DEBUG):
     """
     Return stream logger to stderr
     """
-    return stream_logger(sys.stderr, logger_name, template, level)
+    return init_stream_logger(sys.stderr, message=None, name=None, level=level)
 
-def stdout_logger(logger_name='stdout_logger', template="%(message)s", level=logging.INFO):
+
+def init_stdout_logger(message=None, name=None, level=logging.DEBUG):
     """
-    Return stream logger to stdout
+    Return stream logger to stderr
     """
-    return stream_logger(sys.stdout, logger_name, template, level)
+    return init_stream_logger(sys.stdout, message=None, name=None, level=level)
+
+
+def init_queue_logger(queue, name, level=logging.DEBUG):
+    """
+    initialize queue logging for multi-processing
+    """
+    logger = logging.getLogger(name)
+    handler = QueueHandler(queue)
+    handler.setLevel(level)
+    logger.addHandler(handler)
+    return logger
+
+
+def init_queue_listener(queue):
+    """
+    init a queue listener
+
+    rememeber to start and stop
+    """
+    # _message = message or DEFAULT_LOG_MESSAGE
+    # _handler = handler or logging.StreamHandler(sys.stderr)
+    # _formatter = logging.Formatter(_message)
+    # _handler.setFormatter(_formatter)
+    # _handler.setLevel(level)
+    listener = QueueListener(queue, *logging.getLogger(__name__).handlers)
+    return listener

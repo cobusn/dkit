@@ -40,7 +40,7 @@ class XMLModule(module.CRUDModule):
         print statistics of xml file
         """
         with open(self.args.input[0]) as infile:
-            xml_counter = xh.XMLStat(self.logger, self.log_trigger)(infile)
+            xml_counter = xh.XMLStat(self.log_trigger)(infile)
 
         # output sorting
         if self.args.sort_output is True:

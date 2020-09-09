@@ -125,28 +125,11 @@ class ExploreModule(module.MultiCommandModule):
         from dkit.data import filters
         self.__do_regex(filters.match_filter)
 
-    def do_plot(self):
-        """generate data plot"""
-        from dkit.plot import ggrammar
-
-        x_field = self.args.xfield
-        y_field = self.args.yfield
-
-        # hack to only extract the required field
-        self.args.fields = [y_field]
-
-        data = self.input_stream(self.args.input)
-        geom = ggrammar.GEOM_MAP[self.args.plot_type]
-
-        p = ggrammar.Plot(data) \
-            + geom("mpg", y_data=y_field, x_data=x_field) \
-            + ggrammar.XAxis(x_field) \
-            + ggrammar.YAxis(y_field)
-
-        if self.args.title is not None:
-            p += ggrammar.Title(self.args.title)
-
     def __render_plot(self, grammar):
+        """
+        Render plot to terminal or to file depending on
+        options set
+        """
         from dkit.plot import gnuplot
         print(self.args.script)
         if self.args.output is not None:
@@ -160,6 +143,31 @@ class ExploreModule(module.MultiCommandModule):
                     grammar.as_dict(), "dumb"
                 ).render_str()
             )
+
+    def do_plot(self):
+        """generate plot grammar"""
+        from dkit.plot import ggrammar
+
+        x_field = self.args.xfield
+        y_field = self.args.yfield
+
+        # hack to only extract the required field
+        self.args.fields = [y_field]
+        if x_field != "_index":
+            self.args.fields.append(x_field)
+
+        data = self.input_stream(self.args.input)
+        geom = ggrammar.GEOM_MAP[self.args.plot_type]
+
+        p = ggrammar.Plot(data) \
+            + geom(y_field, y_data=y_field, x_data=x_field) \
+            + ggrammar.XAxis(x_field) \
+            + ggrammar.YAxis(y_field)
+
+        if self.args.title is not None:
+            p += ggrammar.Title(self.args.title)
+
+        self.__render_plot(p)
 
     def __do_regex(self, re_filter):
         flags = 0
@@ -263,7 +271,8 @@ class ExploreModule(module.MultiCommandModule):
         options.add_options_minimal_inputs(parser_plot)
         options.add_option_sort_fields(parser_plot)
         options.add_option_reversed(parser_plot)
-        parser_plot.add_argument("-x", "--xfield", help="x axis field name", required=True)
+        parser_plot.add_argument("-x", "--xfield", help="x axis field name",
+                                 default="_index")
         parser_plot.add_argument("-y", "--yfield", help="y field name", required=True)
         parser_plot.add_argument("--type", dest="plot_type",
                                  help="plot type.",

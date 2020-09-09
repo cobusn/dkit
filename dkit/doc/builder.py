@@ -21,6 +21,7 @@
 import functools
 import pathlib
 import subprocess
+import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
@@ -36,13 +37,15 @@ from string import Template
 from . import json_renderer, latex_renderer, schemas
 from ..etl import source
 from ..plot import matplotlib
-from ..utilities import log_helper as lh
 from ..data import json_utils as ju
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_in_notebook():
@@ -181,15 +184,14 @@ class BuilderProxy(object):
     Cannot render a report but useful for use with Jupyter notebooks
     """
 
-    def __init__(self, definition, logger=None):
+    def __init__(self, definition):
         self.definition = definition
         self.configuration = {}
         self.data = {}
         self.variables = {}
-        self.logger = logger or lh.stderr_logger(self.__class__.__name__)
-        self.logger.info("Validating report definition")
+        logger.info("Validating report definition")
         # validate defition
-        validator = schemas.SchemaValidator(schemas.report_schema, self.logger)
+        validator = schemas.SchemaValidator(schemas.report_schema)
         validator(self.definition)
         self.load_variables()
         self.load_data()
@@ -204,7 +206,7 @@ class BuilderProxy(object):
         """
         for k, v in self.definition["data"].items():
             filename = Template(v).safe_substitute(self.variables)
-            self.logger.info(f"loading data file: {filename}")
+            logger.info(f"loading data file: {filename}")
             with source.load(filename) as iter_in:
                 self.data[k] = list(iter_in)
 
@@ -232,8 +234,8 @@ class ReportBuilder(BuilderProxy):
 
     use a from_ .. method to initialize
     """
-    def __init__(self, definition, logger=None):
-        super().__init__(definition, logger)
+    def __init__(self, definition):
+        super().__init__(definition)
         self.code = {
             "len": len,
             "currency": self.__fmt_currency,
@@ -258,7 +260,7 @@ class ReportBuilder(BuilderProxy):
         load all code
         """
         for k, v in self.definition["code"].items():
-            self.logger.info(f"loading class: {v}")
+            logger.info(f"loading class: {v}")
             l_class = v.split(".")
             class_name = l_class[-1]
             module_name = ".".join(l_class[:-1])
@@ -271,7 +273,7 @@ class ReportBuilder(BuilderProxy):
         load stylesheets
         """
         for sheet in self.definition["styles"]:
-            self.logger.info(f"loading stylesheet: {sheet}")
+            logger.info(f"loading stylesheet: {sheet}")
             with open(sheet, "rt") as infile:
                 self.style_sheet.update(yaml.load(infile, Loader=Loader))
 
@@ -283,7 +285,7 @@ class ReportBuilder(BuilderProxy):
         loader = jinja2.FileSystemLoader(str(loader_path))
         self.environment = jinja2.Environment(loader=loader)
         for doc_name, template_name in self.definition["documents"].items():
-            self.logger.info(f"loading document template: {template_name}")
+            logger.info(f"loading document template: {template_name}")
             self.documents[doc_name] = self.environment.get_template(template_name)
 
     def load_presentations(self):
@@ -291,7 +293,7 @@ class ReportBuilder(BuilderProxy):
         load all slide templates
         """
         for k, v in self.definition["presentations"].items():
-            self.logger.info(f"loading presentation template: {v}")
+            logger.info(f"loading presentation template: {v}")
             template_name = pathlib.Path.cwd() / v
             with open(template_name) as tpl_data:
                 self.presentations[k] = jinja2.Template(tpl_data.read())
@@ -307,7 +309,7 @@ class ReportBuilder(BuilderProxy):
         """
         for _name, _template in documents.items():
             # create latex
-            self.logger.info(f"rendering template to {_name}")
+            logger.info(f"rendering template to {_name}")
             rendered = _template.render(**self.code)
 
             # create json cannonical format

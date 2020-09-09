@@ -28,14 +28,16 @@ Test cases for data matching routines
 import copy
 import random
 import unittest
-
-from dkit.utilities import log_helper as clog
+import logging
 from faker import Factory
 
-import sys; sys.path.insert(0, "..")
+import sys; sys.path.insert(0, "..")  # noqa
 from dkit.data import matching as mg
+from dkit.utilities.log_helper import init_stderr_logger
 
 
+init_stderr_logger()
+logger = logging.getLogger(__name__)
 ROWS = 500
 SEED_LENGTH = 10
 fake = Factory.create()
@@ -71,10 +73,9 @@ class TestMatching(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.logger = clog.stdout_logger()
-        cls.logger.info("Creating left hand data")
+        logger.info("Creating left hand data")
         l_data = list(left_data())
-        cls.logger.info("Creating right hand data")
+        logger.info("Creating right hand data")
         r_data = right_data(copy.deepcopy(l_data[0:SEED_LENGTH]))
         random.shuffle(l_data)
         cls.left_data = l_data
@@ -89,7 +90,6 @@ class TestMatching(unittest.TestCase):
             "id",
             "idr",
             [cls.f1, cls.f2],
-            logger=cls.logger,
             count_trigger=100
         )
 

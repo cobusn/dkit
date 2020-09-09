@@ -28,8 +28,6 @@ import textwrap
 from lib_dk import defaults
 
 from dkit import exceptions as dkit_exceptions, __version__
-from dkit.utilities import log_helper
-
 
 VERSION = __version__
 
@@ -64,7 +62,6 @@ class DataKit(object):
 
     def __init__(self, arguments):
         self.arguments = arguments
-        self.logger = log_helper.stderr_logger(logger_name="dk_logger")
 
     def print(self, string):
         print(string)
@@ -120,7 +117,6 @@ class DataKit(object):
         )
         parser.add_argument("module", help="module to execute")
         args = parser.parse_args(self.arguments[1:2])
-
         candidates = [i for i in self.modules if i.startswith(args.module.strip())]
         if len(candidates) == 1:
             return "do_{}".format(candidates[0])

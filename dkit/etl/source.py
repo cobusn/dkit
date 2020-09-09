@@ -35,7 +35,7 @@ from contextlib import contextmanager
 
 from . import MESSAGES
 from . import DEFAULT_LOG_TRIGGER
-from ..utilities import (instrumentation, log_helper, iff)
+from ..utilities import (instrumentation, iff)
 from ..parsers import uri_parser
 from ..data import json_utils as ju
 
@@ -48,20 +48,12 @@ from ..data import json_utils as ju
 class AbstractSource(object):
     """
     abstract source class
-
-    :param logger: (optional) logger instance
-    :param log_template: (optional) python logging template
     """
 
-    def __init__(self, logger=None, log_template: str = None,
-                 log_trigger: int = DEFAULT_LOG_TRIGGER, **kwargs):
-        self.logger = logger if logger else log_helper.null_logger()
-        if log_template is None:
-            log_template = "Read ${counter} after ${seconds} seconds."
-
-        # stats
+    def __init__(self, log_trigger: int = DEFAULT_LOG_TRIGGER, **kwargs):
+        log_template = "Read ${counter} after ${seconds} seconds."
         self.stats = instrumentation.CounterLogger(
-            self.logger,
+            self.__class__.__name__,
             log_template=log_template,
             trigger=log_trigger
         )
@@ -83,16 +75,13 @@ class FileListingSource(AbstractSource):
     file-name generator
 
     :param glob_list: list of globs
-    :logger: logger instance
-    :log_template: log template
     """
-    def __init__(self, glob_list, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER):
+    def __init__(self, glob_list, log_trigger=DEFAULT_LOG_TRIGGER):
         if not isinstance(glob_list, (list, set)):
             message = string.Template(MESSAGES.LIST_REQUIRED).substitute({"parameter": "glob_list"})
             raise ValueError(message)
         self.glob_list = glob_list
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger)
+        super().__init__(log_trigger=log_trigger)
 
     def __iter__(self):
         self.stats.start()
@@ -105,10 +94,9 @@ class FileListingSource(AbstractSource):
 
 class AbstractRowSource(AbstractSource):
 
-    def __init__(self, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0,
+    def __init__(self, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0,
                  encryption_type=None, **kwargs):
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger)
+        super().__init__(log_trigger=log_trigger)
         self.encryption_type = encryption_type
         self.field_names = field_names
         self.skip_lines = skip_lines
@@ -141,10 +129,9 @@ class AbstractMultiReaderSource(AbstractRowSource):
     """
     base class for sources that accept a list of readers.
     """
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger,
-                         field_names=field_names, skip_lines=skip_lines)
+    def __init__(self, reader_list, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 skip_lines=0, **kwargs):
+        super().__init__(log_trigger=log_trigger, field_names=field_names, skip_lines=skip_lines)
         self.reader_list = reader_list
 
     def reset(self):
@@ -168,13 +155,9 @@ class PickleSource(AbstractMultiReaderSource):
 
     :reader_list: list of reader objects
     :field_names: (optional) list of fields to extract
-    :logger: (optional) logger instance
-    :log_template: (optional) python log template
     """
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger, **kwargs)
+    def __init__(self, reader_list, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
+        super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
 
     def iter_chunk(self, open_reader):
         iff_stream = iff.IFFReader(open_reader)
@@ -212,10 +195,9 @@ class PickleSource(AbstractMultiReaderSource):
 
 class EncryptSource(AbstractRowSource):
 
-    def __init__(self, file_name, key, compression=None, serde=None,  field_names=None, logger=None,
-                 log_template=None, log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
-        super().__init__(field_names=field_names, logger=logger,
-                         log_template=log_template, log_trigger=log_trigger, **kwargs)
+    def __init__(self, file_name, key, compression=None, serde=None,  field_names=None,
+                 log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
+        super().__init__(field_names=field_names, log_trigger=log_trigger, **kwargs)
         self.file_name = file_name
         self.key = key
         self.serde = serde or _pickle
@@ -262,15 +244,12 @@ class JsonSource(AbstractMultiReaderSource):
     Args:
         * reader_list: list of reader objects
         * field_names: (optional) list of fields to extract
-        * logger: (optional) logger instance
-        * log_template: (optional) python log template
         * skip_lines: (optional) number of lines to skip at start of file
     """
 
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger, **kwargs)
+    def __init__(self, reader_list, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 skip_lines=0, **kwargs):
+        super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
         self.json = ju.JsonSerializer(
             ju.DateCodec(),
             ju.DateTimeCodec(),
@@ -320,15 +299,12 @@ class JsonlSource(AbstractMultiReaderSource):
         * reader_list: list of reader objects
         * chunk_size: bytes to read (hint for file.readlines)
         * field_names: (optional) list of fields to extract
-        * logger: (optional) logger instance
-        * log_template: (optional) python log template
         * skip_lines: (optional) number of lines to skip at start of file
     """
 
-    def __init__(self, reader_list, chunk_size=1024*1024*5, field_names=None, logger=None,
-                 log_template=None, log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger, **kwargs)
+    def __init__(self, reader_list, chunk_size=1024*1024*5, field_names=None,
+                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
+        super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
         self.json = ju.JsonSerializer(
             ju.DateCodec(),
             ju.DateTimeCodec(),
@@ -389,15 +365,12 @@ class deprecated_JsonlSource(AbstractMultiReaderSource):
     Args:
         * reader_list: list of reader objects
         * field_names: (optional) list of fields to extract
-        * logger: (optional) logger instance
-        * log_template: (optional) python log template
         * skip_lines: (optional) number of lines to skip at start of file
     """
 
-    def __init__(self, reader_list, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0):
-        super().__init__(reader_list, field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger)
+    def __init__(self, reader_list, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 skip_lines=0):
+        super().__init__(reader_list, field_names, log_trigger=log_trigger)
         self.json = json
 
     def iter_some_fields(self, field_names):
@@ -448,20 +421,15 @@ class CsvDictSource(AbstractMultiReaderSource):
         * headings: (optional) specify headers separately if data without headings
         * field_names: (optional) list of fields to extract
         * delimiter: (optional) defaults to ","
-        * logger: (optional) logger instance
-        * log_template: (optional) python log template
         * skip_lines: (optional) number of lines to skip at start of file
 
     """
     def __init__(self, reader_list, field_names=None, delimiter=",",
-                 headings=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
+                 headings=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 skip_lines=0, **kwargs):
         self.delimiter = delimiter
         self.headings = headings
-        super().__init__(
-            reader_list, field_names, logger=logger, log_template=log_template,
-            log_trigger=log_trigger, **kwargs
-        )
+        super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
 
     def iter_all_fields(self):
         """return all columns"""
@@ -502,11 +470,9 @@ class CsvDictSource(AbstractMultiReaderSource):
 
 class XmlRpcSource(AbstractRowSource):
 
-    def __init__(self, server, method, params, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
+    def __init__(self, server, method, params, log_trigger=DEFAULT_LOG_TRIGGER, **kwargs):
         from xmlrpc import client
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger,
-                         **kwargs)
+        super().__init__(log_trigger=log_trigger, **kwargs)
         self.server = server
         self.method = method
         self.params = params
@@ -527,14 +493,14 @@ class XmlRpcSource(AbstractRowSource):
 
 
 @contextmanager
-def load(uri: str, skip_lines=0, field_names=None, logger=None, delimiter=","):
+def load(uri: str, skip_lines=0, field_names=None, delimiter=","):
     """
     helper function to open a source
     """
     from . import utilities
     try:
         factory = utilities._SourceIterFactory(
-            uri_parser.parse(uri), skip_lines, field_names, logger, delimiter
+            uri_parser.parse(uri), skip_lines, field_names, delimiter
         )
         yield factory
     finally:

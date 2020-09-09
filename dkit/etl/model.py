@@ -39,6 +39,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from typing import List, Dict
+from typing import Type, TypeVar
 
 import jinja2
 from jinja2 import meta
@@ -57,6 +58,7 @@ CONFIG_SECTION = "DEFAULT"
 DEFAULT_MODEL_FILE = "model.yml"
 GLOBAL_CONFIG_FILE = "~/.dk.ini"
 LOCAL_CONFIG_FILE = "dk.ini"
+T = TypeVar('T', bound='A')
 
 
 class Entity(containers.DictionaryEmulator):
@@ -524,7 +526,7 @@ class ModelManager(map_db.FileObjectMapDB):
 
         return new_rel
 
-    def get_connection(self, conn_name):
+    def get_connection(self, conn_name) -> Connection:
         """retrieve connection with encrypted password"""
         conn = self.connections[conn_name]
         if conn.password is not None:
@@ -558,7 +560,7 @@ class ModelManager(map_db.FileObjectMapDB):
             return uri_parser.parse(uri)
 
     @contextmanager
-    def sink(self, uri, logger=None):
+    def sink(self, uri):
         """
         Instantiate a sink object from uri
         """
@@ -566,7 +568,7 @@ class ModelManager(map_db.FileObjectMapDB):
         from . import utilities
         uri_struct = self.get_uri(uri)
         cleanup, factory = utilities._sink_factory(
-            uri_struct, logger, key=self.encryption_key
+            uri_struct, key=self.encryption_key
         )
         try:
             yield factory
@@ -575,7 +577,7 @@ class ModelManager(map_db.FileObjectMapDB):
                 obj.close()
 
     @contextmanager
-    def source(self, uri: str, skip_lines: int = 0, field_names=None, logger=None, delimiter=",",
+    def source(self, uri: str, skip_lines: int = 0, field_names=None, delimiter=",",
                where_clause=None, headings=None):
         """
         open context manager for source
@@ -584,7 +586,6 @@ class ModelManager(map_db.FileObjectMapDB):
             - uri: uri (use ::endpoint_name for endpoint)
             - skip_lines (number of lines to skip)
             - field names: list of fields to yield
-            - logger
             - delimitier (",")
 
         returns:
@@ -598,7 +599,6 @@ class ModelManager(map_db.FileObjectMapDB):
                 parsed,
                 skip_lines,
                 field_names=field_names,
-                logger=logger,
                 delimiter=delimiter,
                 key=self.encryption_key,
                 where_clause=where_clause,
@@ -650,7 +650,7 @@ class ETLServices(object):
 
     # constructors
     @classmethod
-    def from_file(cls, model_filename=None, config_filename=None) -> "ETLServices":
+    def from_file(cls: Type[T], model_filename=None, config_filename=None) -> T:
         """instantiate services object from file
 
         args:
