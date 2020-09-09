@@ -32,7 +32,7 @@ from dkit.etl.utilities import Dumper
 from datetime import datetime
 
 
-ITERATIONS = 10_000
+ITERATIONS = 100000
 
 
 class TestSinkPerformance(unittest.TestCase):
@@ -103,12 +103,18 @@ class TestSinkPerformance(unittest.TestCase):
         self.add_record("jsonl gzip", obj.process(self.gen).stats)
 
     def test_bxr(self):
-        obj = BXRSink(FileWriter("output/speed.bxr"))
-        self.add_record("bxr sink", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = BXRSink(FileWriter("output/speed.bxr"))
+            self.add_record("bxr sink", obj.process(self.gen).stats)
+        else:
+            print("skipping BXR tests")
 
     def test_bxr_bz2(self):
-        obj = BXRSink(Bz2Writer("output/speed.bxr.bz2"))
-        self.add_record("bxr bz2 sink", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = BXRSink(Bz2Writer("output/speed.bxr.bz2"))
+            self.add_record("bxr bz2 sink", obj.process(self.gen).stats)
+        else:
+            print("skipping BXR tests")
 
     def test_bxr_lzma(self):
         obj = BXRSink(LzmaWriter("output/speed.bxr.xz"))

@@ -141,11 +141,12 @@ class Journal(object):
 
     def complete(self, message: Message):
         """complete entry """
-        with self.lock:
-            msg = self.db[message._id]
-            msg.completed = datetime.now()
-            self.db[message._id] = msg
-            self.sync()
+            with self.lock:
+                msg = self.db[message._id]
+                msg.completed = datetime.now()
+                self.db[message._id] = msg
+                self.sync()
+
 
     def is_completed(self, message):
         if message._id in self.db and self.db[message._id].completed:

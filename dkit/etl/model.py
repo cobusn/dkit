@@ -39,6 +39,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from typing import List, Dict
+from typing import Type, TypeVar
 
 import jinja2
 from jinja2 import meta
@@ -57,6 +58,7 @@ CONFIG_SECTION = "DEFAULT"
 DEFAULT_MODEL_FILE = "model.yml"
 GLOBAL_CONFIG_FILE = "~/.dk.ini"
 LOCAL_CONFIG_FILE = "dk.ini"
+T = TypeVar('T', bound='A')
 
 
 class Entity(containers.DictionaryEmulator):
@@ -524,7 +526,7 @@ class ModelManager(map_db.FileObjectMapDB):
 
         return new_rel
 
-    def get_connection(self, conn_name):
+    def get_connection(self, conn_name) -> Connection:
         """retrieve connection with encrypted password"""
         conn = self.connections[conn_name]
         if conn.password is not None:
@@ -648,7 +650,7 @@ class ETLServices(object):
 
     # constructors
     @classmethod
-    def from_file(cls, model_filename=None, config_filename=None) -> "ETLServices":
+    def from_file(cls: Type[T], model_filename=None, config_filename=None) -> T:
         """instantiate services object from file
 
         args:
