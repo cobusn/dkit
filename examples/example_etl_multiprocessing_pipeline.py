@@ -1,15 +1,13 @@
 """
-Multiprocessing example
+Multiprocessing pipeline example
 """
-import sys
-sys.path.insert(0, "..") # noqa
 import socket
 import time
 from itertools import repeat, chain
+
 from dkit.etl.multi_processing import Coordinator, Worker
 from dkit.etl.sink import CsvDictSink
 from dkit.etl.writer import FileWriter
-from dkit.utilities.log_helper import init_stderr_logger
 
 
 class LookupWorker(Worker):
@@ -30,7 +28,6 @@ class LookupWorker(Worker):
 
 
 if __name__ == "__main__":
-    init_stderr_logger()
     hosts = [
         {"host": "slashdot.org"},
         {"host": "google.com"},

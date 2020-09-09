@@ -25,10 +25,13 @@ Data matching classes and routines
 =========== =========== =================================================
 """
 import string
-
+import logging
 from Levenshtein import ratio
 from dkit.data import manipulate as cm
-from dkit.utilities import instrumentation as ci, log_helper as clog
+from dkit.utilities import instrumentation as ci
+
+
+logger = logging.getLogger(__name__)
 
 
 class FieldSpec(object):
@@ -50,8 +53,8 @@ class FieldSpec(object):
     common_punctuation = string.punctuation
     common_whitespace = string.whitespace
 
-    def __init__(self, left: str, right: str, contribution=1, case_sensitive: bool=False,
-                 punctuation: str=common_punctuation, whitespace=common_whitespace,
+    def __init__(self, left: str, right: str, contribution=1, case_sensitive: bool = False,
+                 punctuation: str = common_punctuation, whitespace=common_whitespace,
                  stop_words=None, skip=[None]):
         self.left = left
         self.right = right
@@ -148,14 +151,13 @@ class DictMatcher(object):
         right_key: key for right hand iterable
         field_spec: list of FieldSpec instances
         threshold: only return matches above this value (0-100)
-        logger: logger instance
         count_trigger: period for triggering a log entry
 
     Yields:
         dicts with fields "left", "right", "probability"
     """
     def __init__(self, left, right, left_key, right_key, field_spec,
-                 threshold: float=92.0, logger=None, count_trigger: int=1000):
+                 threshold: float = 92.0, count_trigger: int = 1000):
         self.left = left
         self.right = right
         self.left_key = left_key
@@ -163,8 +165,7 @@ class DictMatcher(object):
         self.field_spec = field_spec
         self.threshold = threshold
         self.right_data = {}
-        self.logger = logger if logger else clog.null_logger()
-        self.stats = ci.CounterLogger(logger=self.logger, trigger=count_trigger)
+        self.stats = ci.CounterLogger(logger=__name__, trigger=count_trigger)
         self.__cached = None
 
     @property
@@ -182,7 +183,7 @@ class DictMatcher(object):
         """
         initialize data and prepare right hand data
         """
-        self.logger.info("Preparing right hand data for matching..")
+        logger.info("Preparing right hand data for matching..")
         # set index and contribution for each field spec:
         total_contribution = sum([i.contribution for i in self.field_spec])
         for i, field_spec in enumerate(self.field_spec):
@@ -193,12 +194,12 @@ class DictMatcher(object):
         for row in self.right:
             self.right_data[row[self.right_key]] =\
                 [i.prep_right(row) for i in self.field_spec]
-        self.logger.info("Preparation complete")
+        logger.info("Preparation complete")
 
     def __iter__(self):
         """iter"""
         self.__initialize()
-        self.logger.info("Start matching")
+        logger.info("Start matching")
         self.stats.start()
         for left_row in self.left:
             candidates = []

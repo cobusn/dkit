@@ -2,7 +2,7 @@
 # Makefile for dkit project 
 #
 all: 
-	nosetests --with-coverage --cover-erase --cover-package=dkit --cover-html test_*.py
+	nosetests --logging-clear-handlers --with-coverage --cover-erase --cover-package=dkit --cover-html test_*.py
 
 clean:
 	rm -f *.pyc

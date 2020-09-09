@@ -1,9 +1,11 @@
 import zmq
 import pickle
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from dkit.utilities import log_helper
 from collections import MutableMapping
+
+logger = logging.getLogger(__name__)
 
 
 class BaseRequest(object):
@@ -175,7 +177,6 @@ class BaseServer(object):
     def __init__(self, conn, port_list=None, verbose=False):
         self.conn = conn
         self.data = None
-        self.log = log_helper.stderr_logger()
         self.load()
         self.dispatch_map = {
             RequestLookup: self.resp_lookup,
@@ -198,14 +199,14 @@ class BaseServer(object):
         pass
 
     def connect(self):
-        self.log.info("starting {} using {}".format(
+        logger.info("starting {} using {}".format(
             self.__class__.__name__,
             self.socket_type
         ))
         self.context = zmq.Context()
         self.sock = self.context.socket(self.socket_type)
         for port in self.ports:
-            self.log.info(f"binding to port [{port}]")
+            logger.info(f"binding to port [{port}]")
             self.sock.bind(port)
 
     @abstractmethod
@@ -233,7 +234,7 @@ class BaseServer(object):
         """
         set kill flag
         """
-        self.log.info("Received kill request")
+        logger.info("Received kill request")
         self.kill = True
         return Response("Ok")
 
@@ -242,7 +243,7 @@ class BaseServer(object):
         return Response(0)
 
     def serve(self):
-        self.log.info("server operational")
+        logger.info("server operational")
         dispatch_map = self.dispatch_map
         while not self.kill:
             try:
@@ -251,7 +252,7 @@ class BaseServer(object):
                 response = dispatcher(request)
                 self.sock.send(pickle.dumps(response))
             except Exception as e:
-                    self.log.error(str(e))
+                logger.error(str(e))
 
 
 class PickleServer(BaseServer):
@@ -259,10 +260,10 @@ class PickleServer(BaseServer):
     ZMQDB implementation that use pickle as a backend
     """
     def load(self):
-        self.log.info("Loading pickle file: '{}'".format(self.conn))
+        logger.info("Loading pickle file: '{}'".format(self.conn))
         with open(self.conn, "rb") as infile:
             self.data = pickle.load(infile)
-        self.log.info("File loading completed")
+        logger.info("File loading completed")
 
     def resp_data(self, request):
         """

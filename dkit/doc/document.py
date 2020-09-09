@@ -354,6 +354,7 @@ class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
     GeomBar = ggrammar.GeomBar
     GeomCumulative = ggrammar.GeomCumulative
     GeomDelta = ggrammar.GeomDelta
+    GeomFill = ggrammar.GeomFill
     GeomHistogram = ggrammar.GeomHistogram
     GeomImpulse = ggrammar.GeomImpulse
     GeomLine = ggrammar.GeomLine

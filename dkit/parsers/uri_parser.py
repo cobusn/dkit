@@ -32,9 +32,10 @@ FILE_DIALECTS = [
 ]
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]
-NETWORK_DIALECTS = ["mysql", "oracle", "mssql", "postgres", "impala"]
+NETWORK_DIALECTS = ["sybase", "mysql", "oracle", "mssql", "postgres", "impala"]
 SQL_DRIVERS = {
     "firebird": "firebird+fdb",
+    "sybase": "sqlalchemy_sqlany",
     "hdf5": "hdf5",
     "impala": "impala",
     "mssql": "mssql+pymssql",

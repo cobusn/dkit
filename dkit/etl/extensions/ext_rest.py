@@ -3,11 +3,11 @@ from ...exceptions import CkitETLException
 
 import requests
 
+
 class RESTSource(source.AbstractSource):
 
-    def __init__(self, url, parameters, headers=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER):
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger)
+    def __init__(self, url, parameters, headers=None, log_trigger=DEFAULT_LOG_TRIGGER):
+        super().__init__(log_trigger=log_trigger)
         self.url = url
         self.headers = {}
         self.parameters = parameters
@@ -38,4 +38,3 @@ class RESTSource(source.AbstractSource):
             yield from response.json()
         else:
             raise CkitETLException("Status code {}".format(response.status_code))
-

@@ -5,7 +5,7 @@ quickly with reports.
 import statistics
 import string
 from functools import lru_cache
-
+from ..plot import ggrammar as gg
 from ..data import window as win
 from ..data.containers import OrderedSet
 from ..data.histogram import binner
@@ -19,9 +19,31 @@ NWDT = 1.5  # width of numeric column
 
 __all__ = [
     "BostonMatrix",
+    "control_chart_plot",
     "histogram_plot",
     "pareto_plot",
 ]
+
+
+def control_chart_plot(data, x="x", y=None, y_hat=None, ucl="ucl", lcl="lcl", title=None,
+                       x_title=None, y_title=None, file_name=None, float_format=None,
+                       time_format=None, width=None, height=None):
+    """
+    plot a control chart with upper control and lower control limits
+    """
+    g = Figure(data, filename=file_name) \
+        + Figure.Title(title) \
+        + Figure.XAxis(x_title, rotation=80, time_format=time_format) \
+        + Figure.YAxis(y_title, float_format=float_format) \
+        + gg.Aesthetic(width=width, height=height) \
+        + Figure.GeomFill("Limits", x, ucl, lcl, color="green", fill_alpha=0.2) \
+        + Figure.GeomLine("Expected", x, y_hat, color="black", line_style="--")
+    if y:
+        g += Figure.GeomScatter("Value", "_index", y, color="red",
+                                _filter=f'${{{y}}}<${{{lcl}}} | ${{{y}}}>${{{ucl}}}')
+        g += Figure.GeomScatter("Value", "_index", y, color="green",
+                                _filter=f'${{{y}}}<=${{{ucl}}} & ${{{y}}}>=${{{lcl}}}')
+    return g
 
 
 @is_plot

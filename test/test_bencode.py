@@ -1,4 +1,5 @@
-# Copyright (c) 2018 Cobus Nel
+
+# Copyright (c) 2019 Cobus Nel
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,23 +19,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
+
+import unittest
+import sys
+sys.path.insert(0, "..")  # noqa
+from dkit.data.bencode import encode, decode
+
+cases = [
+    1,
+    "abc",
+    "&",
+    [1, 2],
+    (1, 2),
+    {1: 1},
+    [{("a"): 100}],
+]
 
 
-VALID_TERMINALS = ["dumb", "png", "jpeg", "svg", "pdf", "ps", "eps"]
+class TestBencode(unittest.TestCase):
+
+    def test_1(self):
+
+        for case in cases:
+            e = encode(case)
+            d = decode(e)
+            self.assertEqual(case, d)
 
 
-class Backend(ABC):
-    """base class for plot backends"""
-
-    def __init__(self, grammar, terminal="pdf", style_sheet=None):
-        self.grammar = grammar
-        self.terminal = terminal
-        self.style_sheet = style_sheet if style_sheet else {}
-        self.data = grammar["data"]
-        for i, row in enumerate(self.data):
-            row["_index"] = i
-
-    @abstractmethod
-    def render(self, file_name):
-        pass
+if __name__ == '__main__':
+    unittest.main()

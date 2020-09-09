@@ -20,11 +20,11 @@
 - Created on 11 Feb 2012
 - Cythonised on 7 Sept 2018
 """
+import logging
 import string
 import time
 from enum import Enum
 from . import time_helper
-from . import log_helper as log
 
 TIMEFN = time.perf_counter
 
@@ -301,13 +301,13 @@ class CounterLogger(Counter, Timer):
       .. include:: ../../examples/example_counter_logger.out
         :literal:
 
-    :param logger: logger instance
+    :param logger: logger name
     :param trigger: log trigger
     :param log_method: logging method (error, warning, info, debug)
     :param log_template: template, see above for variables
     """
 
-    def __init__(self, logger=log.null_logger(), trigger=10000, log_method="info",
+    def __init__(self, logger=None, trigger=10000, log_method="info",
                  value: int = 1, log_template="Processed: ${counter} after ${seconds} seconds.",
                  **kwds):
         """
@@ -321,7 +321,7 @@ class CounterLogger(Counter, Timer):
             "debug": self.debug
             }
         self.__current_log_method = None
-        self.logger = logger
+        self.logger = logging.getLogger(logger)
         self.__next_trigger = self.__trigger = trigger
         self.__log_template = log_template
         self.__log_method = None

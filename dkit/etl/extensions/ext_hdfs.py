@@ -28,6 +28,7 @@ from .. import writer, reader
 
 # hdfs imported in class to save startup times
 
+
 class HDFSWriter(writer.ClosedWriter):
     """
     HDFS Writer
@@ -44,23 +45,36 @@ class HDFSWriter(writer.ClosedWriter):
         * overwrite: overwrite existing file
         * append: append to existing file when True
     """
-    def __init__(self, resource_uri, user, path, encoding='utf-8', overwrite=False, append=False):
+    def __init__(self, path, user, resource_uri, encoding='utf-8', overwrite=False,
+                 append=False, compression=None):
         self.uri = resource_uri
         self.user = user
         self.path = path
         self.append = append
         self.overwrite = overwrite
         self.encoding = encoding
+        self.compression = compression
 
     def open(self):
         from hdfs import InsecureClient
+        if self.compression:
+            encoding = None
+        else:
+            encoding = "utf-8"
         self.client = InsecureClient(self.uri, user=self.user)
-        return self.client.write(
+        with self.client.write(
             self.path,
-            encoding=self.encoding,
+            encoding=encoding,
             overwrite=self.overwrite,
             append=self.append
-        )
+        ) as _client:
+            if self.compression:
+                return self.compression.open(
+                    _client,
+                    "wt"
+                )
+            else:
+                return _client
 
 
 class HDFSReader(reader.ClosedReader):

@@ -15,9 +15,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# =========== =============== =================================================
+# 27 Nov 2019 Cobus Nel       Added facility for options in URL
+# =========== =============== =================================================
 import importlib
+import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...utilities import iter_helper, log_helper
+from ...utilities import iter_helper
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import CkitETLException
@@ -26,9 +30,8 @@ from datetime import datetime
 from typing import Dict
 import re
 
-# =========== =============== =================================================
-# 27 Nov 2019 Cobus Nel       Added facility for options in URL
-# =========== =============== =================================================
+
+logger = logging.getLogger(__name__)
 
 
 def _rfc_1738_quote(text):
@@ -99,9 +102,10 @@ class SQLAlchemyAccessor(object):
                 http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
         echo:   Echo SQL statements (Default is False)
     """
-    def __init__(self, url: str, echo: bool = False, logger=None):
+    def __init__(self, url: str, echo: bool = False, ):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.url = url
+        logger.debug("Accessing database with url: {self.url}")
         self.engine = self.sqlalchemy.create_engine(
             url,
             echo=echo,
@@ -109,7 +113,6 @@ class SQLAlchemyAccessor(object):
         )
         self.metadata = self.sqlalchemy.MetaData(bind=self.engine)
         self.__inspect = None
-        self.logger = logger or log_helper.null_logger()
 
     def __del__(self):
         self.close()
@@ -120,7 +123,7 @@ class SQLAlchemyAccessor(object):
             if self.engine:
                 self.engine.dispose()
         except Exception as E:
-            self.logger.error(E)
+            logger.error(E)
         finally:
             self.engine = None
             self.__inspect = None
@@ -170,6 +173,16 @@ class SQLAlchemyAccessor(object):
         return cls(
             as_sqla_url(connection_instance.as_dict()),
             echo=echo
+        )
+
+    def iter_select(self, sql, log_trigger=DEFAULT_LOG_TRIGGER,
+                    chunk_size=CHUNK_SIZE) -> "SQLAlchemySelectSource":
+        """return iterator for select statement"""
+        return SQLAlchemySelectSource(
+            self,
+            sql,
+            log_trigger=log_trigger,
+            chunk_size=chunk_size
         )
 
 
@@ -419,10 +432,9 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
 
 class SQLAlchemyAbstractSource(source.AbstractRowSource):
 
-    def __init__(self, accessor, field_names=None, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, chunk_size=CHUNK_SIZE):
-        super().__init__(field_names=field_names, logger=logger, log_template=log_template,
-                         log_trigger=log_trigger)
+    def __init__(self, accessor, field_names=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 chunk_size=CHUNK_SIZE):
+        super().__init__(field_names=field_names, log_trigger=log_trigger)
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.accessor = accessor
         self.chunk_size = chunk_size
@@ -450,17 +462,15 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
         table_name: name of table in database
         where_clause: SQL Where clause
         field_names: return only these fields
-        logger: logger instance
-        log_template: log template
         log_trigger: trigger a log event every n rows
     """
     def __init__(self, accessor, table_name, where_clause=None, field_names=None,
-                 logger=None, log_template=None, log_trigger=DEFAULT_LOG_TRIGGER,
+                 log_trigger=DEFAULT_LOG_TRIGGER,
                  chunk_size=CHUNK_SIZE):
-        super().__init__(accessor, field_names=field_names, logger=logger,
-                         log_template=log_template, log_trigger=log_trigger, chunk_size=chunk_size)
+        super().__init__(accessor, field_names=field_names, log_trigger=log_trigger,
+                         chunk_size=chunk_size)
         self.table_name = table_name
-        self.where_clause = where_clause if where_clause else ""
+        self.where_clause = where_clause or ""
 
     def iter_some_fields(self, field_names):
         the_table = self.sqlalchemy.Table(
@@ -491,14 +501,11 @@ class SQLAlchemySelectSource(SQLAlchemyAbstractSource):
     Args:
         accessor: SQLAlchemyAccessor instance
         select_stmt:  SQL select Statement
-        logger: logger instance
-        log_template: log template
         log_trigger: trigger a log event every n rows
     """
-    def __init__(self, accessor, select_stmt, logger=None, log_template=None,
-                 log_trigger=DEFAULT_LOG_TRIGGER, chunk_size=CHUNK_SIZE):
-        super().__init__(accessor, logger=None, log_template=None, log_trigger=log_trigger,
-                         chunk_size=chunk_size)
+    def __init__(self, accessor, select_stmt, log_trigger=DEFAULT_LOG_TRIGGER,
+                 chunk_size=CHUNK_SIZE):
+        super().__init__(accessor, log_trigger=log_trigger, chunk_size=chunk_size)
         self.sqlo = importlib.import_module("sqlalchemy.sql")
         self.select_stmt = select_stmt
 
@@ -514,13 +521,10 @@ class SQLAlchemySink(sink.Sink):
     Args:
         accessor: SQlAlchemyAccessor instance
         table_name: datbase table name
-        logger: Logger instance
-        log_template: log template
         commit_rate: database commit occur every n times
     """
-    def __init__(self, accessor, table_name, logger=None,
-                 log_template=None, chunk_size=CHUNK_SIZE):
-        super().__init__(logger=logger, log_template=log_template)
+    def __init__(self, accessor, table_name, chunk_size=CHUNK_SIZE):
+        super().__init__()
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.accessor = accessor
         self.table_name = table_name
@@ -576,7 +580,7 @@ class SQLServices(model.ETLServices):
             i_entity.as_entity_validator()
         )
 
-    def get_sql_accessor(self, conn_name: str):
+    def get_sql_accessor(self, conn_name: str) -> SQLAlchemyAccessor:
         """
         return sqlalchemy extension accessor
 
@@ -629,12 +633,11 @@ class SQLServices(model.ETLServices):
                 self.model.relations[name] = relation
         return _relations
 
-    def run_query(self, connection: model.Connection, query: str, logger=None):
+    def run_query(self, connection: model.Connection, query: str):
         """execute query"""
         accessor = SQLAlchemyAccessor(as_sqla_url(connection.as_dict(True)))
         yield from SQLAlchemySelectSource(
             accessor,
             query,
-            logger=logger
         )
         accessor.close()

@@ -28,6 +28,7 @@ Jul 2019    Cobus Nel       added list tables and reflect capability
 """
 from os import path
 import datetime
+import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
 from ... import exceptions
 from ... import messages
@@ -37,6 +38,7 @@ from ... import CHUNK_SIZE
 
 MISSING_DATE_FLOAT = datetime.datetime(1970, 1, 2).timestamp()
 MISSING_DATE_INT = datetime.date(1970, 1, 2).strftime("%s")
+logger = logging.getLogger(__name__)
 
 
 def convert_time64(x):
@@ -204,15 +206,13 @@ class PyTablesSource(source.AbstractRowSource):
         full_path: full path to node
         where_clause: in core where clause
         field_names: list of field names to extract
-        logger: logger instance
-        log_template: log template
         log_trigger: trigger on multiples of this number
     """
     def __init__(self, accessor: PyTablesAccessor, full_path: str,
                  where_clause: str = None, field_names: list = None,
-                 logger=None, log_template: str = None, log_trigger: int = DEFAULT_LOG_TRIGGER,
+                 log_trigger: int = DEFAULT_LOG_TRIGGER,
                  chunk_size: int = CHUNK_SIZE):
-        super().__init__(logger=logger, log_template=log_template, log_trigger=log_trigger)
+        super().__init__(log_trigger=log_trigger)
         self.accessor = accessor
         self.node_path, self.node_name = parse_fullpath(full_path)
         self.where_clause = where_clause
@@ -345,12 +345,11 @@ class PyTablesSink(sink.Sink):
     - node_path: folder path to node
     - node: node to access
     - field_names: limit extract to these field names
-    - logger: logger instance
     - commit_rate: commit at these intervals
     """
     def __init__(self, accessor: PyTablesAccessor, full_path: str, field_names: list = None,
-                 logger=None, log_template: str = None, commit_rate: int = 1000):
-        super().__init__(logger=logger, log_template=log_template)
+                 commit_rate: int = 1000):
+        super().__init__()
         self.accessor = accessor
         self.field_names = field_names
         self.path, self.node = parse_fullpath(full_path)
@@ -393,14 +392,14 @@ class PyTablesSink(sink.Sink):
             except (OSError, AttributeError) as E:
                 # Avoid errors with timestamp 0
                 h5row[key] = self.err_timestamp
-                self.logger.error("Error {} on key {} for row {}".format(E, key, row))
+                logger.error("Error {} on key {} for row {}".format(E, key, row))
 
         # string
         for key in self.map_str:
             try:
                 h5row[key] = bytes(str(row[key]), "ascii", errors="ignore")
             except Exception as E:
-                self.logger.error("Error {} on key {} for row {}".format(E, key, row))
+                logger.error("Error {} on key {} for row {}".format(E, key, row))
                 h5row[key] = b''
         h5row.append()
 

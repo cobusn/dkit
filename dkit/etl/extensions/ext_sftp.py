@@ -19,19 +19,22 @@
 # SOFTWARE.
 import paramiko
 from os import path
-from ...utilities.log_helper import null_logger
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class Transport():
     """
     Base class for transport objects
     """
-    def __init__(self, host, port, user, password, logger=None):
+    def __init__(self, host, port, user, password):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.transport = None
-        self.logger = null_logger() if not logger else logger
 
     def connect():
         pass
@@ -51,11 +54,11 @@ class SFTPPasswordTransport(Transport):
     Secure ftp transport with username, password
     """
     def connect(self):
-        self.logger.info("Connecting to host: {}".format(self.host))
+        logger.info("Connecting to host: {}".format(self.host))
         self.transport = paramiko.Transport((self.host, self.port))
         self.transport.connect(username=self.user, password=self.password)
         self.sftp = paramiko.SFTPClient.from_transport(self.transport)
-        self.logger.info("Successfully connected to: {}:{}".format(self.host, self.port))
+        logger.info("Successfully connected to: {}:{}".format(self.host, self.port))
 
     def get_files(self, remote_files, local_path):
         """
@@ -67,7 +70,7 @@ class SFTPPasswordTransport(Transport):
 
     def get_file(self, remote_file, local_name):
         self.sftp.get(remote_file, local_name)
-        self.logger.info("retrieving: {}".format(remote_file))
+        logger.info("retrieving: {}".format(remote_file))
 
     def list_dir(self, remote_path):
         """

@@ -18,9 +18,12 @@
 import os
 import argparse
 import configparser
+import logging
 
-from .utilities import log_helper
 from . import exceptions
+
+
+logger = logging.getLogger(__name__)
 
 
 class Repository(object):
@@ -33,12 +36,10 @@ class Repository(object):
 
     * configuration
     * arguments
-    * logger information
     * custom data
     """
-    def __init__(self, config=None, arguments=None, logger=None, properties=None, data=None):
+    def __init__(self, config=None, arguments=None, properties=None, data=None):
         self.__config = config
-        self.__logger = logger
         self.__arguments = arguments
         if properties is None:
             self._properties = {}
@@ -62,14 +63,6 @@ class Repository(object):
 
     config = property(__get_config, __set_config, None, None)
 
-    def __get_logger(self):
-        return self.__logger
-
-    def __set_logger(self, value):
-        self.__logger = value
-
-    logger = property(__get_logger, __set_logger, None, None)
-
     def __get_properties(self):
         return self._properties
 
@@ -87,41 +80,6 @@ class Repository(object):
         self.__data = value
 
     data = property(__get_data, __set_data, None, None)
-
-
-class LoggingMixin(object):
-    """
-    Mixin a logger but do not initialize.
-
-    :param logger: logger instance
-    """
-    def __init__(self, logger=None, **kwds):
-        if logger is None:
-            self.repository.logger = log_helper.null_logger()
-        else:
-            self.repository.logger = logger
-        super().__init__(**kwds)
-
-    def __get_logger(self):
-        """Return Logger instance."""
-        return self.repository.logger
-
-    def __set_logger(self, logger):
-        self.repository.logger = logger
-
-    logger = property(__get_logger, __set_logger)
-
-
-class InitLoggingMixin(LoggingMixin):
-    """
-    Mixin that initialize a logger to stderr if no logger is specified.
-
-    :param logger: logger instance
-    """
-    def __init__(self, logger=None, **kwds):
-        if logger is None:
-            logger = log_helper.stderr_logger()
-        super().__init__(logger, **kwds)
 
 
 class ArgumentsMixin(object):
@@ -297,7 +255,7 @@ class InitConfigMixin(ConfigMixin):
 
 
 class ConfiguredObject(object):
-    "Base class which implements the logger and config reader"
+    "Base class which implements the config reader"
 
     def __init__(self, repository=None, **kwds):
         if repository is None:
@@ -355,7 +313,7 @@ class ConfiguredApplication(ConfiguredObject):
         super().__init__(repository, **kwds)
 
 
-class ConsoleArgumentsApplication(ConfiguredApplication, InitArgumentsMixin, InitLoggingMixin):
+class ConsoleArgumentsApplication(ConfiguredApplication, InitArgumentsMixin):
     """
     Command line application with:
 
@@ -365,6 +323,5 @@ class ConsoleArgumentsApplication(ConfiguredApplication, InitArgumentsMixin, Ini
     pass
 
 
-class ConsoleApplication(ConfiguredApplication, InitArgumentsMixin,
-                         InitConfigMixin, InitLoggingMixin):
+class ConsoleApplication(ConfiguredApplication, InitArgumentsMixin, InitConfigMixin):
     pass

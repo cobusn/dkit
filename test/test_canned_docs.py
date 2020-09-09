@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Cobus Nel
+# Copyright (c) 2020, Cobus Nel
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,23 +18,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
+import unittest
+import sys
+sys.path.insert(0, "..")  # noqa
+from dkit.plot.matplotlib import MPLBackend
+from dkit.doc.canned import (
+    control_chart_plot,
+)
+
+from sample_data import control_chart_data
+import json
 
 
-VALID_TERMINALS = ["dumb", "png", "jpeg", "svg", "pdf", "ps", "eps"]
+class TestCanned(unittest.TestCase):
+
+    def test_control_chart_plot(self):
+        plt = control_chart_plot(
+            control_chart_data,
+            x="index",
+            y="sales",
+            y_hat="mean",
+            ucl="upper",
+            lcl="lower",
+            title="Monthly Sales",
+            file_name="cc_plot.svg",
+            x_title="months",
+            y_title="sales",
+            width=15,
+            height=6
+
+        )
+        MPLBackend(plt.as_dict(), "svg").render("plots/cc_plot.svg")
 
 
-class Backend(ABC):
-    """base class for plot backends"""
-
-    def __init__(self, grammar, terminal="pdf", style_sheet=None):
-        self.grammar = grammar
-        self.terminal = terminal
-        self.style_sheet = style_sheet if style_sheet else {}
-        self.data = grammar["data"]
-        for i, row in enumerate(self.data):
-            row["_index"] = i
-
-    @abstractmethod
-    def render(self, file_name):
-        pass
+if __name__ == '__main__':
+    unittest.main()
