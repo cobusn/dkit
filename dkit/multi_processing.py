@@ -29,10 +29,9 @@ import threading
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Iterable, Dict
-from hashlib import md5
 
 from dataclasses import dataclass
-from .data.bencode import encode
+from .data.bencode import md5_hash
 from .utilities import log_helper as lh, instrumentation
 from .utilities.identifier import uid
 from .utilities.iter_helper import chunker
@@ -49,10 +48,6 @@ class Message(ABC):
     @abstractmethod
     def _generate_id(self):
         pass
-
-
-def _md5_hash(obj):
-    return md5(encode(obj)).hexdigest()
 
 
 class JobMessage(Message):
@@ -75,7 +70,7 @@ class MD5Message(JobMessage):
     """
 
     def _generate_id(self):
-        return str(_md5_hash(self.args))
+        return str(md5_hash(self.args))
 
 
 class UIDMessage(JobMessage):
@@ -141,12 +136,11 @@ class Journal(object):
 
     def complete(self, message: Message):
         """complete entry """
-            with self.lock:
-                msg = self.db[message._id]
-                msg.completed = datetime.now()
-                self.db[message._id] = msg
-                self.sync()
-
+        with self.lock:
+            msg = self.db[message._id]
+            msg.completed = datetime.now()
+            self.db[message._id] = msg
+            self.sync()
 
     def is_completed(self, message):
         if message._id in self.db and self.db[message._id].completed:

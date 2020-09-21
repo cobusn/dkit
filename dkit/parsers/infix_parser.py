@@ -66,7 +66,7 @@ from ..data.containers import ReusableStack
 from ..exceptions import CkitParseException
 from ..utilities import time_helper
 from .helpers import rex_match_closure
-from .. import _missing_value_
+from .. import NA_VALUE
 
 
 # def cmp(a, b):
@@ -403,7 +403,7 @@ class AbstractFieldParser(InfixParser):
     Parser that can be used as base class for more
     advanced parsers.
     """
-    def __init__(self, expression="0", none_value=_missing_value_):
+    def __init__(self, expression="0", none_value=NA_VALUE):
         self.none_value = none_value
         super().__init__(expression, none_value)
 
