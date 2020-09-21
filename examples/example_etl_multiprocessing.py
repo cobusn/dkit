@@ -38,9 +38,8 @@ if __name__ == "__main__":
         {"host": "ibm.com"},
     ]
 
-    iter_hosts = chain.from_iterable(repeat(hosts, 1000))
+    iter_hosts = chain.from_iterable(repeat(hosts, 100))
     lookups = Coordinator(
-        iter_hosts,
         LookupWorker,
         process_count=20,
         log_trigger=5,
@@ -49,4 +48,4 @@ if __name__ == "__main__":
 
     CsvDictSink(
         FileWriter("data/hosts.csv"),
-    ).process(lookups)
+    ).process(lookups(iter_hosts))
