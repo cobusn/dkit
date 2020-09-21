@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ALGORITHMS =    TDigest.svg
-CORE      =     Repository.svg LoggingMixin.svg InitLoggingMixin.svg ArgumentsMixin.svg\
+CORE      =     Repository.svg ArgumentsMixin.svg\
                 InitArgumentsMixin.svg ConfigMixin.svg InitConfigMixin.svg ConfiguredObject.svg\
                 ConfiguredApplication.svg ConsoleApplication.svg 
 UTILITIES =     Counter.svg CounterLogger.svg Timer.svg ClassDocumenter.svg ModuleDocumenter.svg \
@@ -73,17 +73,11 @@ ConfiguredObject.svg: $(CLASSROOT)/base.py
 Repository.svg: $(CLASSROOT)/base.py 
 		$(PYREVERSE) $(OPTSINGLE) -c Repository $(CLASSROOT)/base.py
 
-LoggingMixin.svg: $(CLASSROOT)/base.py 
-		$(PYREVERSE) $(OPTSINGLE) -c LoggingMixin $(CLASSROOT)/base.py
-
 InitArgumentsMixin.svg: $(CLASSROOT)/base.py 
 		$(PYREVERSE) $(OPTSINGLE) -c InitArgumentsMixin $(CLASSROOT)/base.py
 
 InitConfigMixin.svg: $(CLASSROOT)/base.py 
 		$(PYREVERSE) $(OPTSINGLE) -c InitConfigMixin $(CLASSROOT)/base.py
-
-InitLoggingMixin.svg: $(CLASSROOT)/base.py 
-		$(PYREVERSE) $(OPTSINGLE) -c InitLoggingMixin $(CLASSROOT)/base.py
 
 ConsoleApplication.svg: $(CLASSROOT)/base.py 
 		$(PYREVERSE) $(OPTSINGLE) -c ConsoleApplication $(CLASSROOT)/base.py

@@ -112,7 +112,7 @@ class Compare(object):
             try:
                 a = db_a[k]
             except KeyError:
-                next
+                continue
             if any([a[field] != b[field] for field in fields]):
                 yield (k, a, b)
 

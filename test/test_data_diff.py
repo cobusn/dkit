@@ -43,24 +43,27 @@ class TestDataDiff(unittest.TestCase):
         return random.sample(pop, n)
 
     def sample_changed(self, n):
-        a = [dict(x) for x in self.a[1:]]
+        a = [dict(x) for x in self.a[:]]
         b = [dict(x) for x in self.a[:]]
+        del a[0]
         changes = self.sample_ids(a, n)
         for i in changes:
             b[i]["name"] = "changed"
-        return self.a, b
+        return a, b
 
     def sample_delta(self, n):
         changes = self.sample_ids(self.a, n)
+        a = [dict(x) for x in self.a[:]]
         b = [dict(x) for x in self.a[:]]
         for i in changes:
             b[i]["score"] = b[i]["score"] - 10
-        return self.a, b
+        return a, b
 
     def sample_deleted(self, n):
         changes = self.sample_ids(self.a, n)
+        a = [dict(x) for x in self.a[:]]
         b = [self.a[i] for i in range(len(self.a)) if i not in changes]
-        return self.a, b
+        return a, b
 
     def test_deleted(self):
         a, b = self.sample_deleted(N)
