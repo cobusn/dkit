@@ -18,8 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # from math import isnan
-from .. import _missing_value_
-
+from .. import NA_VALUE
+import pickle
+from hashlib import md5
 
 BOOL_MAPPING = {
     1:    True,
@@ -50,7 +51,7 @@ def scale(values):
 def sub_nan(value, substitute=0.0):
     """return value while substituting nan values with replacement"""
 #   if not isinstance(value, str) and isnan(value):
-    if not isinstance(value, str) and value == _missing_value_:
+    if not isinstance(value, str) and value == NA_VALUE:
         return substitute
     else:
         return value
@@ -73,6 +74,14 @@ def to_boolean(value):
     :param value: string value
     """
     return BOOL_MAPPING.get(value.lower(), False)
+
+
+def md5_obj_hash(obj) -> str:
+    """md5 hash of any object
+
+    hexdigest of md5 hash of pickle of object
+    """
+    return md5(pickle.dumps(obj)).hexdigest()
 
 
 def luhn_hash(number):

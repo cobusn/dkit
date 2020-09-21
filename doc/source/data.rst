@@ -202,6 +202,12 @@ OrderedSet
    :undoc-members:
    :inherited-members:
 
+diff
+====
+
+.. automodule:: dkit.data.diff
+   :members:
+   :undoc-members:
 
 fake
 ====

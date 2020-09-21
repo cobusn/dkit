@@ -41,7 +41,7 @@ Data manipulation routines.
 # 21 Nov 2019 Cobus nel       Added distinct and rename
 # 12 Dec 2019 Cobus Nel       Added Substitute
 # =========== =============== =================================================
-from .. import _missing_value_
+from .. import NA_VALUE
 from ..decorators import deprecated
 from ..utilities.introspection import is_list
 from .stats import quantile_bins
@@ -92,6 +92,8 @@ PIVOT_FUNCTIONS = {
     "std": statistics.stdev,
 }
 
+# exploit more accurate aggregation functions for python version 3.8
+# and better
 if sys.version_info >= (3, 8):
     PIVOT_FUNCTIONS["mean"] = statistics.fmean
     PIVOT_FUNCTIONS["sum"] = statistics.fsum
@@ -243,7 +245,7 @@ class _Merge(object):
     implement merge logic
     """
     def __init__(self, left, right, by_l, by_r, all_l=False, all_r=False, backend=None,
-                 null=_missing_value_):
+                 null=NA_VALUE):
         self.by_l = by_l
         self.by_r = by_r
         self.all_l = all_l
@@ -342,7 +344,7 @@ class _Merge(object):
 
 
 def merge(left, right, by_l, by_r, all_l=False, all_r=False, backend=None,
-          null=_missing_value_):
+          null=NA_VALUE):
     """
     merge datasets similar to SQL joins.
 
