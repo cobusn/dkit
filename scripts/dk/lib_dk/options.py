@@ -262,6 +262,23 @@ def add_option_relation_name(parser):
     parser.add_argument("-r", "--relation", default=None,
                         help=add_option_relation_name.__doc__)
 
+def add_options_diff_fields(parser):
+    parser.add_argument("--value", dest="values", action="append",default=[],
+                            help="add value field (can be added multiple times)")
+
+def add_options_diff(parser):
+    # input options
+    add_options_csv(parser)
+    add_option_entity_optional(parser)
+    add_option_transform_name(parser)
+    add_option_filter(parser)
+
+    parser.add_argument("-a", required=True, help="uri for dataset a")
+    parser.add_argument("-b", required=True, help="uri for dataset b")
+    parser.add_argument("-k", "--key", dest="keys", action="append",
+                            default=[], help="add key field (can be added multiple times)")
+    parser.add_argument("--huge", default=False, action="store_true",
+                        help="process files too big for memory")
 
 def add_options_join(parser):
     """add relation options"""
