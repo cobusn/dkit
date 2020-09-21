@@ -48,6 +48,7 @@ class DataKit(object):
         XML          maintain XML rules
 
     action modules:
+        diff         find differences between two similar datasets
         run          run etl or query
         xplore       explore data
 
@@ -57,7 +58,7 @@ class DataKit(object):
     (use dk MODULE -h for details)
     """
 
-    modules = sorted(["admin", "connections", "endpoints", "run", "queries",
+    modules = sorted(["admin", "connections", "diff", "endpoints", "run", "queries",
                       "mapping", "schemas", "transforms", "xplore", "XML"])
 
     def __init__(self, arguments):
@@ -73,6 +74,10 @@ class DataKit(object):
     def do_connections(self):
         from lib_dk import connections_module
         connections_module.ConnectionsModule(self.arguments[2:]).run()
+
+    def do_diff(self):
+        from lib_dk import diff_module
+        diff_module.DiffModule(self.arguments[2:]).run()
 
     def do_endpoints(self):
         from lib_dk import endpoints_module

@@ -108,13 +108,24 @@ class Compare(object):
     def __modified(self, fields):
         """yields modified rows"""
         db_a = self.db_a                    # optimize lookup
-        for k, b in self.db_b.items():
-            try:
-                a = db_a[k]
-            except KeyError:
-                continue
-            if any([a[field] != b[field] for field in fields]):
-                yield (k, a, b)
+        if len(fields) > 0:
+            for k, b in self.db_b.items():
+                try:
+                    a = db_a[k]
+                except KeyError:
+                    continue
+                if any([a[field] != b[field] for field in fields]):
+                    yield (k, a, b)
+        else:
+            for k, b in self.db_b.items():
+                try:
+                    a = db_a[k]
+                except KeyError:
+                    continue
+                a_hash = md5_obj_hash(a)
+                b_hash = md5_obj_hash(b)
+                if a != b:
+                    yield (k, a, b)
 
     def deltas(self, *fields):
         if not self.keys:  # pragma: no cover
