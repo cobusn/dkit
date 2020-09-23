@@ -39,6 +39,7 @@ from dkit.data.manipulate import (
     aggregate,
     aggregates,
     infer_type,
+    duplicates,
     iter_sample,
     merge,
     reduce_aggregate,
@@ -47,6 +48,50 @@ from dkit.data.manipulate import (
 from dkit.etl.reader import FileReader
 from dkit.etl.source import CsvDictSource
 from dkit.data.containers import FlexShelve
+
+
+class TestDuplicates(unittest.TestCase):
+
+    def setUp(self):
+        # note there are three copies of the first row, though
+        # duplicates must be reported once only
+        self.data = [
+            {'Year': '1920', 'Month': 'Jan', 'Temp': '40.6'},
+            {'Year': '1920', 'Month': 'Jan', 'Temp': '40.6'},
+            {'Year': '1920', 'Month': 'Jan', 'Temp': '40.6'},
+            {'Year': '1920', 'Month': 'Feb', 'Temp': '40.8'},
+            {'Year': '1920', 'Month': 'Mar', 'Temp': '44.4'},
+            {'Year': '1920', 'Month': 'Apr', 'Temp': '46.7'},
+            {'Year': '1920', 'Month': 'May', 'Temp': '54.1'},
+            {'Year': '1920', 'Month': 'Jun', 'Temp': '58.5'},
+            {'Year': '1920', 'Month': 'Jul', 'Temp': '57.7'},
+            {'Year': '1920', 'Month': 'Aug', 'Temp': '56.4'},
+            {'Year': '1920', 'Month': 'Sep', 'Temp': '54.3'},
+            {'Year': '1920', 'Month': 'Oct', 'Temp': '50.5'},
+            {'Year': '1920', 'Month': 'Nov', 'Temp': '42.9'},
+            {'Year': '1920', 'Month': 'Dec', 'Temp': '39.8'},
+        ]
+
+    def test_one_key(self):
+        test = list(duplicates(self.data, "Year"))
+        self.assertEqual(
+            test,
+            [{'Year': '1920'}]
+        )
+
+    def test_two_keys(self):
+        test = list(duplicates(self.data, "Year", "Month"))
+        self.assertEqual(
+            test,
+            [{'Year': '1920', 'Month': 'Jan'}]
+        )
+
+    def test_no_keys(self):
+        test = list(duplicates(self.data))
+        self.assertEqual(
+            test,
+            [{'Year': '1920', 'Month': 'Jan', 'Temp': '40.6'}]
+        )
 
 
 class TestMelt(unittest.TestCase):
