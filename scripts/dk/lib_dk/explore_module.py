@@ -54,7 +54,7 @@ class ExploreModule(module.MultiCommandModule):
         """print distinct values for keys specified"""
         distinct_rows = mp.distinct(
             self.input_stream(self.args.input),
-            self.args.select_fields
+            *self.args.select_fields
         )
 
         if self.args.sort_output is True:
@@ -69,6 +69,27 @@ class ExploreModule(module.MultiCommandModule):
             self.push_to_uri(
                 self.args.output,
                 distinct_rows
+            )
+
+    def do_duplicates(self):
+        """print duplicate values for keys specified (each only once)"""
+        duplicate_rows = mp.duplicates(
+            self.input_stream(self.args.input),
+            *self.args.select_fields
+        )
+
+        if self.args.sort_output is True:
+            duplicate_rows = sorted(duplicate_rows, reverse=self.args.reversed)
+
+        if self.args.table:
+            self.tabulate(duplicate_rows)
+        elif self.args.long is True:
+            for row in duplicate_rows:
+                self.print(", ".join(row.values()))
+        else:
+            self.push_to_uri(
+                self.args.output,
+                duplicate_rows
             )
 
     def do_fields(self):
@@ -229,6 +250,20 @@ class ExploreModule(module.MultiCommandModule):
         options.add_option_tabulate(parser_distinct)
         options.add_option_long_format(parser_distinct)
         options.add_option_output_uri(parser_distinct)
+
+        # duplicates
+        parser_duplicates = self.sub_parser.add_parser(
+            "duplicates",
+            help=self.do_duplicates.__doc__
+        )
+        options.add_option_defaults(parser_duplicates)
+        options.add_options_minimal_inputs(parser_duplicates)
+        options.add_option_field_names(parser_duplicates)
+        options.add_option_sort_output(parser_duplicates)
+        options.add_option_reversed(parser_duplicates)
+        options.add_option_tabulate(parser_duplicates)
+        options.add_option_long_format(parser_duplicates)
+        options.add_option_output_uri(parser_duplicates)
 
         # fields
         parser_fields = self.sub_parser.add_parser("fields", help=self.do_fields.__doc__)
