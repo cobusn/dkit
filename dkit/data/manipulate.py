@@ -40,11 +40,13 @@ Data manipulation routines.
 # 18 Nov 2019 Cobus Nel       Added reshape
 # 21 Nov 2019 Cobus nel       Added distinct and rename
 # 12 Dec 2019 Cobus Nel       Added Substitute
+# 23 Sep 2020 Cobus Nel       Added duplicates
 # =========== =============== =================================================
 from .. import NA_VALUE
 from ..decorators import deprecated
 from ..utilities.introspection import is_list
 from .stats import quantile_bins
+from .helpers import md5_obj_hash
 import collections
 import datetime
 import dateutil.parser
@@ -72,6 +74,7 @@ __all__ = [
         "aggregate",
         "aggregates",
         "distinct",
+        "duplicates",
         "index",
         "infer_type",
         "iter_add_id",
@@ -133,6 +136,44 @@ def distinct(iter_input, key_list):
         tuple(r[i] for i in key_list) for r in iter_input
     )
     yield from (dict(zip(key_list, r)) for r in _distinct)
+
+
+def duplicates(iter_input, *keys):
+    """extract duplicate rows from an iterable
+
+    Use `*keys` to identify keys to track. If
+    keys are omitted, a hash of the row is used.
+
+    each duplicate are reported *only* once.
+
+    record keeping is in memory, not suited for
+    extremely huge datasets
+
+    Args:
+        iter_input: iterable of dictionary rows
+        key: list of keys required
+
+    Yields:
+        dict
+    """
+    if len(keys) > 0:
+        counts = collections.Counter(
+            tuple(r[i] for i in keys) for r in iter_input
+        )
+        yield from (dict(zip(keys, k)) for k, c in counts.items() if c > 1)
+    else:
+        # no keys specified so use the entire row to
+        # test for duplicates
+        uniq = set({})
+        duplicates = set({})
+        for row in iter_input:
+            _hash = md5_obj_hash(row)
+            if _hash not in uniq:
+                uniq.add(_hash)
+            else:
+                if _hash not in duplicates:
+                    yield row
+                duplicates.add(_hash)
 
 
 def distinct_values(iter_input, field) -> set:
