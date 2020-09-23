@@ -119,20 +119,20 @@ def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
             yield retval
 
 
-def distinct(iter_input, field_list):
+def distinct(iter_input, key_list):
     """extract distinct rows from iterable
 
     Args:
         iter_input: iterable of dictionary rows
-        field_list: fields required
+        key_list: list of keys required
 
     Yields:
         Dictionaries
     """
     _distinct = set(
-        tuple(r[i] for i in field_list) for r in iter_input
+        tuple(r[i] for i in key_list) for r in iter_input
     )
-    yield from (dict(zip(field_list, r)) for r in _distinct)
+    yield from (dict(zip(key_list, r)) for r in _distinct)
 
 
 def distinct_values(iter_input, field) -> set:
