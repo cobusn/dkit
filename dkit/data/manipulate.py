@@ -122,20 +122,29 @@ def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
             yield retval
 
 
-def distinct(iter_input, key_list):
+def distinct(iter_input, *keys):
     """extract distinct rows from iterable
+
+    Items are mapped in memory, not suitable for
+    huge datasets
 
     Args:
         iter_input: iterable of dictionary rows
-        key_list: list of keys required
+        keys: list of keys required
 
     Yields:
         Dictionaries
     """
-    _distinct = set(
-        tuple(r[i] for i in key_list) for r in iter_input
-    )
-    yield from (dict(zip(key_list, r)) for r in _distinct)
+    if len(keys) > 0:
+        _distinct = set(
+            tuple(r[i] for i in keys) for r in iter_input
+        )
+        yield from (dict(zip(keys, r)) for r in _distinct)
+    else:
+        _distinct = set(
+            tuple(r.items()) for r in iter_input
+        )
+        yield from (dict(i) for i in _distinct)
 
 
 def duplicates(iter_input, *keys):
