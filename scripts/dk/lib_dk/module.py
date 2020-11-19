@@ -202,7 +202,7 @@ class Module(object):
         # load CSV headings if specified
         if hasattr(self.args, "headings") and self.args.headings:
             with open(self.args.headings, "rt") as infile:
-                headings = list(infile)
+                headings = [i.strip() for i in list(infile)]
         else:
             headings = None
 
@@ -216,6 +216,7 @@ class Module(object):
                 where_clause=where_clause,
                 headings=headings,
                 delimiter=delimiter,
+                work_sheet=self.args.work_sheet
             ) as in_data:
                 yield from in_data
 

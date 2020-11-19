@@ -79,6 +79,8 @@ __all__ = [
         "infer_type",
         "iter_add_id",
         "iter_drop",
+        "iter_keep",
+        "iter_take",
         "iter_rename",
         "iter_sample",
         "melt",
@@ -770,6 +772,22 @@ def iter_drop(the_iterator, fields):
     """Drop specified fields from each row """
     return (
         {k: v for k, v in row.items() if k not in fields}
+        for row in the_iterator
+    )
+
+
+def iter_keep(the_iterator, fields):
+    """Keep specified fields from each row """
+    return (
+        {k: v for k, v in row.items() if k in fields}
+        for row in the_iterator
+    )
+
+
+def iter_take(the_iterator, fields):
+    """Take only specified fields from each row """
+    return (
+        {k: v for k, v in row.items() if k in fields}
         for row in the_iterator
     )
 
