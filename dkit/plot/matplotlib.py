@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib import cycler
-from matplotlib.ticker import StrMethodFormatter, PercentFormatter
+from matplotlib.ticker import StrMethodFormatter, PercentFormatter, MaxNLocator, FuncFormatter
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import squarify
@@ -140,22 +140,23 @@ class MPLBackend(Backend):
         x_labels = self.get_x_values(series_0)
         x_vals = np.arange(len(x_labels)) + width
 
-        # apply float format
-        if "float_format" in axes and axes["float_format"]:
-            fmt = axes["float_format"]
-            x_labels = [fmt.format(i) for i in x_labels]
-
-        if "time_format" in axes and axes["time_format"]:
-            fmt = axes["time_format"]
-            x_labels = [i.strftime(fmt) for i in x_labels]
-
         if hist:  # remove leftmost label for histograms
             x_labels[0] = ""
 
+        def x_format_fn(tick_val, tick_pos):
+            """return correctly formatted for position"""
+            i = int(tick_val)
+            if 0 <= i <= len(x_labels):
+                return x_labels[i]
+            else:
+                return ""
+
         # so not draw if suppress is specified
         if ("defeat" not in axes) or ("defeat" in axes and not axes["defeat"]):
-            ax.set_xticklabels(x_labels, minor=False)
             ax.set_xticks(x_vals)
+            ax.xaxis.set_major_locator(MaxNLocator(36, integer=True))
+            ax.set_xticklabels(x_labels, minor=False)
+            ax.xaxis.set_major_formatter(FuncFormatter(x_format_fn))
 
             # rotate labels
             if "rotation" in axes and axes["rotation"]:
@@ -288,6 +289,7 @@ class MPLBackend(Backend):
             x_pos = [i + 0.5 for i, _ in enumerate(y_vals)]
         else:
             x_pos = [i for i, _ in enumerate(y_vals)]
+
         ax.bar(
             x_pos,
             y_vals,
