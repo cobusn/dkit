@@ -98,7 +98,6 @@ class TestMultiprocessing(unittest.TestCase):
             worker_args={"value": 10},
             queue_size=10,
             journal=Journal.from_shelve("data/journal.shelve"),
-            accounting=True
         )
 
         result = list(pipeline(_input))

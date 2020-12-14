@@ -80,40 +80,6 @@ Members
    :private-members:
 
 
-
-LoggingMixin
-=============
-
-Class Diagram
--------------
-.. image:: ../images/LoggingMixin.svg
-	:align: center
-
-Members
--------
-.. autoclass:: dkit.base.LoggingMixin
-   :members:
-   :undoc-members:
-   :private-members:
-
-
-InitLoggingMixin
-================
-
-Class Diagram
--------------
-.. image:: ../images/InitLoggingMixin.svg
-	:align: center
-
-Members
--------
-.. autoclass:: dkit.base.InitLoggingMixin
-   :members: logger
-   :undoc-members:
-   :private-members:
-   :inherited-members:
-
-
 ConfiguredObject
 ================
 

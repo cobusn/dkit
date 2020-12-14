@@ -32,7 +32,7 @@ from dkit.etl.utilities import Dumper
 from datetime import datetime
 
 
-ITERATIONS = 100000
+ITERATIONS = 1000
 
 
 class TestSinkPerformance(unittest.TestCase):
