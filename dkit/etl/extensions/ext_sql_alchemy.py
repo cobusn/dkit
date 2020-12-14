@@ -239,6 +239,7 @@ class SQLAlchemyReflector(object):
             "TEXT": "string",
             "TIMESTAMP":  "datetime",
             "TINYINT": "int8",              # MYSQL specific
+            "TINYTEXT": "string",           # MYSQL specific
             "Time": "time",
             "Unicode": "string",
             "VARBINARY": "binary",
