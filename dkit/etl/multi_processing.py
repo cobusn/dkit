@@ -47,6 +47,7 @@ class Coordinator(source.AbstractSource):
         self.worker_args = worker_args
         self.worker_kwargs = worker_kwargs
 
+        self.log_trigger = log_trigger
         self.queue_in = multiprocessing.JoinableQueue(self.queue_size)
         self.queue_out = multiprocessing.Queue(self.queue_size)
         self.queue_log = multiprocessing.Queue(self.queue_size)
@@ -54,8 +55,8 @@ class Coordinator(source.AbstractSource):
         self.counter_in = instrumentation.CounterLogger(__name__)
         self.counter_out = instrumentation.CounterLogger(__name__)
 
-    def __call__(Iterable: input):
-        pass
+    def __call__(self, rows: Iterable):
+        yield from self.__iter(rows)
 
     def __instantiate_workers(self):
         """
@@ -101,14 +102,14 @@ class Coordinator(source.AbstractSource):
         for i in range(len(self.process_list)):
             self.queue_in.put(SENTINEL)
 
-    def __iter__(self) -> Iterable:
+    def __iter(self, the_iterator) -> Iterable:
         """
         main iteration loop
         """
         self.__instantiate_workers()
 
         # Feed data
-        for row in self.the_iterator:
+        for row in the_iterator:
             self.queue_in.put(row)
             self.counter_in.increment()
 

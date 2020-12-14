@@ -40,11 +40,13 @@ Data manipulation routines.
 # 18 Nov 2019 Cobus Nel       Added reshape
 # 21 Nov 2019 Cobus nel       Added distinct and rename
 # 12 Dec 2019 Cobus Nel       Added Substitute
+# 23 Sep 2020 Cobus Nel       Added duplicates
 # =========== =============== =================================================
-from .. import _missing_value_
+from .. import NA_VALUE
 from ..decorators import deprecated
 from ..utilities.introspection import is_list
 from .stats import quantile_bins
+from .helpers import md5_obj_hash
 import collections
 import datetime
 import dateutil.parser
@@ -72,10 +74,13 @@ __all__ = [
         "aggregate",
         "aggregates",
         "distinct",
+        "duplicates",
         "index",
         "infer_type",
         "iter_add_id",
         "iter_drop",
+        "iter_keep",
+        "iter_take",
         "iter_rename",
         "iter_sample",
         "melt",
@@ -92,6 +97,8 @@ PIVOT_FUNCTIONS = {
     "std": statistics.stdev,
 }
 
+# exploit more accurate aggregation functions for python version 3.8
+# and better
 if sys.version_info >= (3, 8):
     PIVOT_FUNCTIONS["mean"] = statistics.fmean
     PIVOT_FUNCTIONS["sum"] = statistics.fsum
@@ -117,20 +124,67 @@ def melt(the_iterable, id_fields: typing.List[str],  var_name: str = "variable",
             yield retval
 
 
-def distinct(iter_input, field_list):
+def distinct(iter_input, *keys):
     """extract distinct rows from iterable
+
+    Items are mapped in memory, not suitable for
+    huge datasets
 
     Args:
         iter_input: iterable of dictionary rows
-        field_list: fields required
+        keys: list of keys required
 
     Yields:
         Dictionaries
     """
-    _distinct = set(
-        tuple(r[i] for i in field_list) for r in iter_input
-    )
-    yield from (dict(zip(field_list, r)) for r in _distinct)
+    if len(keys) > 0:
+        _distinct = set(
+            tuple(r[i] for i in keys) for r in iter_input
+        )
+        yield from (dict(zip(keys, r)) for r in _distinct)
+    else:
+        _distinct = set(
+            tuple(r.items()) for r in iter_input
+        )
+        yield from (dict(i) for i in _distinct)
+
+
+def duplicates(iter_input, *keys):
+    """extract duplicate rows from an iterable
+
+    Use `*keys` to identify keys to track. If
+    keys are omitted, a hash of the row is used.
+
+    each duplicate are reported *only* once.
+
+    record keeping is in memory, not suited for
+    extremely huge datasets
+
+    Args:
+        iter_input: iterable of dictionary rows
+        key: list of keys required
+
+    Yields:
+        dict
+    """
+    if len(keys) > 0:
+        counts = collections.Counter(
+            tuple(r[i] for i in keys) for r in iter_input
+        )
+        yield from (dict(zip(keys, k)) for k, c in counts.items() if c > 1)
+    else:
+        # no keys specified so use the entire row to
+        # test for duplicates
+        uniq = set({})
+        duplicates = set({})
+        for row in iter_input:
+            _hash = md5_obj_hash(row)
+            if _hash not in uniq:
+                uniq.add(_hash)
+            else:
+                if _hash not in duplicates:
+                    yield row
+                duplicates.add(_hash)
 
 
 def distinct_values(iter_input, field) -> set:
@@ -243,7 +297,7 @@ class _Merge(object):
     implement merge logic
     """
     def __init__(self, left, right, by_l, by_r, all_l=False, all_r=False, backend=None,
-                 null=_missing_value_):
+                 null=NA_VALUE):
         self.by_l = by_l
         self.by_r = by_r
         self.all_l = all_l
@@ -342,7 +396,7 @@ class _Merge(object):
 
 
 def merge(left, right, by_l, by_r, all_l=False, all_r=False, backend=None,
-          null=_missing_value_):
+          null=NA_VALUE):
     """
     merge datasets similar to SQL joins.
 
@@ -718,6 +772,22 @@ def iter_drop(the_iterator, fields):
     """Drop specified fields from each row """
     return (
         {k: v for k, v in row.items() if k not in fields}
+        for row in the_iterator
+    )
+
+
+def iter_keep(the_iterator, fields):
+    """Keep specified fields from each row """
+    return (
+        {k: v for k, v in row.items() if k in fields}
+        for row in the_iterator
+    )
+
+
+def iter_take(the_iterator, fields):
+    """Take only specified fields from each row """
+    return (
+        {k: v for k, v in row.items() if k in fields}
         for row in the_iterator
     )
 

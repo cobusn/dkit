@@ -37,10 +37,12 @@ References:
 
 """
 import re
+from hashlib import md5
 
 __all__ = [
     "encode",
     "decode",
+    "md5_hash",
 ]
 
 
@@ -121,3 +123,11 @@ def decode(text):
     except (AttributeError, ValueError, StopIteration):
         raise SyntaxError("syntax error")
     return data
+
+
+def md5_hash(obj) -> str:
+    """
+    Helper to create md5 hashes from the bencode
+    of an object
+    """
+    return md5(encode(obj)).hexdigest()

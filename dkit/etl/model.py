@@ -578,7 +578,7 @@ class ModelManager(map_db.FileObjectMapDB):
 
     @contextmanager
     def source(self, uri: str, skip_lines: int = 0, field_names=None, delimiter=",",
-               where_clause=None, headings=None):
+               where_clause=None, headings=None, work_sheet=None):
         """
         open context manager for source
 
@@ -602,7 +602,8 @@ class ModelManager(map_db.FileObjectMapDB):
                 delimiter=delimiter,
                 key=self.encryption_key,
                 where_clause=where_clause,
-                headings=headings
+                headings=headings,
+                work_sheet=work_sheet
             )
             yield factory
         finally:

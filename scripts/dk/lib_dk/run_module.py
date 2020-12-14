@@ -253,7 +253,7 @@ class RunModule(module.MultiCommandModule):
         # join
         parser_join = self.sub_parser.add_parser("join", help=self.do_join.__doc__)
         options.add_option_defaults(parser_join)
-        options.add_options_csv(parser_join)
+        options.add_options_extension(parser_join)
         options.add_option_backend_map(parser_join)
         options.add_options_join(parser_join)
         options.add_option_output_uri(parser_join)
@@ -314,7 +314,7 @@ class RunModule(module.MultiCommandModule):
         # template
         parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
         options.add_option_model(parser_template)
-        options.add_options_csv(parser_template)
+        options.add_options_extension(parser_template)
         options.add_option_uri_dict(parser_template)
         options.add_option_template(parser_template)
         options.add_option_output_uri(parser_template)

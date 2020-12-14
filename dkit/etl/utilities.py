@@ -255,7 +255,7 @@ class _SourceIterFactory(object):
         delimiter: (optional) csv delimiter
     """
     def __init__(self, uri_struct, skip_lines=0, field_names=None, delimiter=",",
-                 where_clause=None, headings=None, key=None):
+                 where_clause=None, headings=None, key=None, work_sheet=None):
         self.uri_struct = uri_struct
         self.skip_lines = skip_lines
         self.field_names = field_names
@@ -264,6 +264,7 @@ class _SourceIterFactory(object):
         self.where_clause = where_clause
         self.headings = headings
         self.key = key
+        self.work_sheet = work_sheet  # For xlsx
 
     def __make_source(self, uri_struct):
         """
@@ -322,11 +323,14 @@ class _SourceIterFactory(object):
         """make a file based reader"""
 
         the_source = SOURCE_MAP[uri_struct["dialect"]]
+
+        # Excel Only
         if uri_struct["dialect"] in ["xlsx", "xls"]:
             src = the_source(
                 [uri_struct["database"]],
                 field_names=self.field_names,
-                skip_lines=self.skip_lines
+                skip_lines=self.skip_lines,
+                work_sheet=self.work_sheet
             )
             self.cleanup.append(src)
             return src

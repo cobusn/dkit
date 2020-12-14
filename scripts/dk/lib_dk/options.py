@@ -263,6 +263,26 @@ def add_option_relation_name(parser):
                         help=add_option_relation_name.__doc__)
 
 
+def add_options_diff_fields(parser):
+    parser.add_argument("--value", dest="values", action="append", default=[],
+                        help="add value field (can be added multiple times)")
+
+
+def add_options_diff(parser):
+    # input options
+    add_options_extension(parser)
+    add_option_entity_optional(parser)
+    add_option_transform_name(parser)
+    add_option_filter(parser)
+
+    parser.add_argument("-a", required=True, help="uri for dataset a")
+    parser.add_argument("-b", required=True, help="uri for dataset b")
+    parser.add_argument("-k", "--key", dest="keys", action="append",
+                        default=[], help="add key field (can be added multiple times)")
+    parser.add_argument("--huge", default=False, action="store_true",
+                        help="process files too big for memory")
+
+
 def add_options_join(parser):
     """add relation options"""
     parser.add_argument("-L", "--left", required=True,
@@ -292,7 +312,7 @@ def add_option_relation_add(parser):
 def add_option_regex(parser):
     add_option_config(parser)
     add_option_model(parser)
-    add_options_csv(parser)
+    add_options_extension(parser)
     add_option_cut(parser)
     add_option_n(parser)
     add_option_output_uri(parser)
@@ -377,11 +397,11 @@ def add_option_logging(parser):
     """add option for transform name"""
     me_group = parser.add_mutually_exclusive_group()
     me_group.add_argument('-v', '--verbose', dest="verbose", default=False, action="store_true",
-                        help="display informational messages")
+                          help="display informational messages")
     me_group.add_argument('--warning', default=False, action="store_true",
-                        help="display warning messages")
+                          help="display warning messages")
     me_group.add_argument('--debug', default=False, action="store_true",
-                        help="display debug messages")
+                          help="display debug messages")
     parser.add_argument('--trigger', dest="log_trigger", default=None, type=int,
                         help="Trigger log action on this number of records")
 
@@ -431,7 +451,7 @@ def add_options_sampling_input(parser, k=defaults.DEFAULT_SAMPLE_SIZE):
     add_options_inputs(parser)
 
 
-def add_options_csv(parser):
+def add_options_extension(parser):
     """Add CSV Options to parsser"""
     parser.add_argument('--skip', dest="skip_lines",
                         help="[CSV only] skip number of lines in input file",
@@ -442,6 +462,9 @@ def add_options_csv(parser):
     parser.add_argument('--delimiter', dest="delimiter",
                         help="[CSV only] field delimiter",
                         default=",")
+    parser.add_argument('--sheet', dest="work_sheet",
+                        help="[XLSX only] worksheet name",
+                        default=None)
 
 
 def add_option_where(parser):
@@ -454,12 +477,12 @@ def add_options_raw_input(parser):
     add all input option
     """
     add_option_model(parser)
-    add_options_csv(parser)
+    add_options_extension(parser)
 
 
 def add_options_minimal_inputs(parser):
     """minimal input options"""
-    add_options_csv(parser)
+    add_options_extension(parser)
     add_option_entity_optional(parser)
     add_option_transform_name(parser)
     add_option_filter(parser)
@@ -474,7 +497,7 @@ def add_options_inputs(parser):
     add_option_entity_optional(parser)
     add_option_transform_name(parser)
     add_option_filter(parser)
-    add_options_csv(parser)
+    add_options_extension(parser)
     add_option_cut(parser)
     add_option_sort_fields(parser)
     add_option_reversed(parser)

@@ -30,7 +30,7 @@ from xml import sax
 from ..utilities.instrumentation import CounterLogger
 from ..exceptions import CkitParseException
 import typing
-from .. import _missing_value_
+from .. import NA_VALUE
 #
 # NOTE
 #
@@ -93,7 +93,7 @@ class XmlFieldParser(AbstractFieldParser):
     Used interanally by XmlTransformer and not part
     of published API
     """
-    def __init__(self, template, all_fields, none_value=_missing_value_):
+    def __init__(self, template, all_fields, none_value=NA_VALUE):
         super().__init__(none_value=none_value)
         self._functions["xpath"] = self.__xpath_closure_fn
         self.all_fields = all_fields
