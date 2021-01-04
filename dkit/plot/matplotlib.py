@@ -111,14 +111,17 @@ class MPLBackend(Backend):
             return ""
 
     def set_x_label(self, ax):
+        """set x axis label"""
         axes = self.grammar["axes"]["0"]
         if "title" in axes:
             ax.set_xlabel(axes["title"])
 
     def set_y_label(self, ax):
+        """set y axis label"""
         axes = self.grammar["axes"]["1"]
         if "title" in axes:
             ax.set_ylabel(self.grammar["axes"]['1']["title"])
+
         # string formatter
         if "float_format" in axes and axes["float_format"]:
             ax.yaxis.set_major_formatter(
@@ -126,6 +129,7 @@ class MPLBackend(Backend):
             )
 
     def set_labels(self, ax):
+        """convenience function to set both axis labels"""
         self.set_x_label(ax)
         self.set_y_label(ax)
 
@@ -146,12 +150,12 @@ class MPLBackend(Backend):
         def x_format_fn(tick_val, tick_pos):
             """return correctly formatted for position"""
             i = int(tick_val)
-            if 0 <= i <= len(x_labels):
+            if 0 <= i < len(x_labels):
                 return x_labels[i]
             else:
                 return ""
 
-        # so not draw if suppress is specified
+        # do not draw if suppress is specified
         if ("defeat" not in axes) or ("defeat" in axes and not axes["defeat"]):
             ax.set_xticks(x_vals)
             ax.xaxis.set_major_locator(MaxNLocator(36, integer=True))
