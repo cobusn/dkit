@@ -171,10 +171,10 @@ FlexShelve
 FastFlexShelve
 --------------
 
-.. image:: ../images/FlexShelve.svg
+.. image:: ../images/FastFlexShelve.svg
    :align: center
 
-.. autoclass:: dkit.data.containers.FlexShelve
+.. autoclass:: dkit.data.containers.FastFlexShelve
    :members:
    :undoc-members:
    :inherited-members:
@@ -467,8 +467,6 @@ xml
 
 XmlTransformer
 --------------
-
-.. autoclass:: dkit.data.xml_helper.XmlTransformer
 
 Class Diagram
 ~~~~~~~~~~~~~
