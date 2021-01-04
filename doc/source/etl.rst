@@ -124,8 +124,6 @@ functions
 AbstractSource
 --------------
 
-.. autoclass:: dkit.etl.source.AbstractSource
-
 .. image:: ../images/AbstractSource.svg
 	:align: center
 
@@ -138,8 +136,6 @@ AbstractSource
 FileListingSource
 -----------------
 
-.. autoclass:: dkit.etl.source.FileListingSource
-
 .. image:: ../images/FileListingSource.svg
 	:align: center
 
@@ -150,8 +146,6 @@ FileListingSource
 
 AbstractMultiReaderSource
 -------------------------
-
-.. autoclass:: dkit.etl.source.AbstractMultiReaderSource
 
 .. image:: ../images/AbstractMultiReaderSource.svg
 	:align: center

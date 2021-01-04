@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, "..")  # noqa
-from dkit.multi_processing import Worker, ImmutablePipeline
+from dkit.multi_processing import Worker, ListPipeline
 from dkit.utilities.log_helper import init_stderr_logger
 import time
 import random
@@ -22,6 +22,7 @@ class Worker2(Worker):
 
     def run(self):
         for batch in self.pull():
+            print(batch)
             for row in batch:
                 row["w2"] = 2
             time.sleep(random.triangular(0, 0.4))
@@ -30,7 +31,7 @@ class Worker2(Worker):
 
 if __name__ == "__main__":
     init_stderr_logger(level=logging.INFO)
-    pipeline = ImmutablePipeline(
+    pipeline = ListPipeline(
         {
             Worker1: 10,
             Worker2: 10,

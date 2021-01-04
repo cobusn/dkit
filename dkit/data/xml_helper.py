@@ -160,6 +160,7 @@ class XmlTransformer(object):
 
     :param boundary: "path for xml boundary tag"
     :param fields_dict: dictionary with field specification
+
     """
     def __init__(self, boundary, fields_dict=None):
         self.boundary = boundary

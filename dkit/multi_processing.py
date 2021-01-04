@@ -100,6 +100,9 @@ class ListMessage(Message):
         """set payload to empty list"""
         self.payload = []
 
+    def __iter__(self):
+        yield from self.payload
+
 
 class Journal(object):
     """
