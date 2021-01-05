@@ -22,7 +22,6 @@ class Worker2(Worker):
 
     def run(self):
         for batch in self.pull():
-            print(batch)
             for row in batch:
                 row["w2"] = 2
             time.sleep(random.triangular(0, 0.4))

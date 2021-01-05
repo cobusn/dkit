@@ -19,7 +19,14 @@
 # SOFTWARE.
 
 """
-Multiprocessing abstractions
+Utilities to assist with running multiprocessing applications.
+
+This library provides for two types of multiprocessing applications:
+
+    * **list oriented** pipelines where operations are completed on lists of similar objectsgt
+    * **task oriented** pipelines where a task is performed based on the parameters of
+      each entry and the result stored in the `result` property
+
 """
 import logging
 import multiprocessing
@@ -40,17 +47,17 @@ from .utilities.iter_helper import chunker
 logger = logging.getLogger(__name__)
 
 
-class Message(ABC):
+class AbstractMessage(ABC):
     """
     Envelope for moving data
     """
 
     @abstractmethod
     def _generate_id(self):
-        pass
+        """implement this to generate a message id"""
 
 
-class JobMessage(Message):
+class AbstractTaskMessage(AbstractMessage):
 
     def __init__(self, args):
         self.args = args
@@ -58,35 +65,48 @@ class JobMessage(Message):
         self.initiated = datetime.now()
         self._id = self._generate_id()
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(args={self.args}, _id={self._id})"
 
-class MD5Message(JobMessage):
+
+class MD5TaskMessage(AbstractTaskMessage):
     """
     Message that has a hashable payload (that can be
     used as a key to track progress)
 
     Payload is the hash of the bencode of its payload
 
-    Will ignore duplicates
+    .. warning:
+        Note that the pipeline will only process
+        unique messages.  Messages with the same
+        parameters as previous messages will be
+        discarded
+
+    :ivar args: arguments for comutation
+    :ivar result: result of computation
     """
 
     def _generate_id(self):
         return str(md5_hash(self.args))
 
 
-class UIDMessage(JobMessage):
+class UIDTaskMessage(AbstractTaskMessage):
     """
-    Message that has a hashable payload (that can be
-    used as a key to track progress)
+    Message ID is a randomly generated uuid
 
-    Payload is the hash of the bencode of its payload
+    :ivar args: arguments for comutation
+    :ivar result: result of computation
     """
     def _generate_id(self):
         return uid()
 
 
-class ListMessage(Message):
+class ListMessage(AbstractMessage):
     """
-    A unique ID is generated for each job
+    Message that contain a list of items to be processed
+    as a batch.
+
+    :ivar payload: message payload (normally a batch portion of list)
     """
     def __init__(self, payload):
         self.payload = payload
@@ -96,26 +116,26 @@ class ListMessage(Message):
     def _generate_id(self):
         return uid()
 
-    def clear(self):
-        """set payload to empty list"""
-        self.payload = []
-
     def __iter__(self):
+        """iterate through payload"""
         yield from self.payload
 
 
 class Journal(object):
     """
-    Journal class for accounting messages
-    unique ID is generated for each job"
+    Journal class for accounting for messages using the unique ID
+    of a message
 
-    thread safe
+    This class is protected with locks
+
+    A `dict` like object is used as database, this can be replaced
+    with a `shelve` (see the from_shelve method)
 
     args:
-        database: Dict like object
+        database: Dict like object. This can be a shelve
     """
     @dataclass
-    class Entry:
+    class JournalEntry:
         __slots__ = ("_id", "created", "completed")
         _id: object
         created: datetime
@@ -132,12 +152,12 @@ class Journal(object):
         if hasattr(self.db, "close"):
             self.db.close()
 
-    def enter(self, message: Message):
+    def enter(self, message: AbstractMessage):
         """add journal entry"""
         with self.lock:
-            self.db[message._id] = self.Entry(message._id, datetime.now(), None)
+            self.db[message._id] = self.JournalEntry(message._id, datetime.now(), None)
 
-    def complete(self, message: Message):
+    def complete(self, message: AbstractMessage):
         """complete entry """
         with self.lock:
             msg = self.db[message._id]
@@ -146,6 +166,7 @@ class Journal(object):
             self.sync()
 
     def is_completed(self, message):
+        """test if a message has been completed"""
         if message._id in self.db and self.db[message._id].completed:
             return True
         else:
@@ -166,6 +187,10 @@ class Journal(object):
         """constructor from shelve file"""
         db = shelve.open(file_name)
         return cls(db)
+
+    def __contains__(self, message):
+        with self.lock:
+            return message._id in self.db
 
     def __len__(self):
         with self.lock:
@@ -216,7 +241,7 @@ class Worker(multiprocessing.Process):
         except queue.Empty:
             return None
 
-    def pull(self) -> Iterable[Message]:
+    def pull(self) -> Iterable[AbstractMessage]:
         """Iterator for inbound data"""
         data = self.__get()
         while not self.stop.is_set():
@@ -224,7 +249,7 @@ class Worker(multiprocessing.Process):
                 yield data
             data = self.__get()
 
-    def push(self, data: Message):
+    def push(self, data: AbstractMessage):
         """push data back"""
         self.out_queue.put(data)
 
@@ -349,13 +374,26 @@ class AbstractPipeline(ABC):
 
 
 class ListPipeline(AbstractPipeline):
+    """
+    Pipeline for processing chunks of data
+
+    Args:
+        * workers: dict of worker classes with number of instances
+        * message_type: kind of worker messages
+        * worker_args: additional arguments for workers
+        * queue_size: size for queues (all queues)
+        * journal: journal class
+        * chunk_size: number of jobs to chunk in a batch
+        * queue_timeout: queue timeout duration
+        * log_trigger: update on this trigger
+        * unique_messages: only process messages with unique parameters
+    """
 
     def __init__(self,  workers: Dict[Worker, int], worker_args: Dict = None,
                  queue_size: int = 100, journal: Journal = None,
-                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000,
-                 unique_messages: bool = False):
+                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000):
         super().__init__(workers, ListMessage, worker_args, queue_size, journal,
-                         chunk_size, queue_timeout, log_trigger, unique_messages)
+                         chunk_size, queue_timeout, log_trigger)
 
     def _feeder(self, data):
         """separate thread to feed data into queues."""
@@ -366,7 +404,7 @@ class ListPipeline(AbstractPipeline):
             # only one feeder thread so no need to lock this
             # line:
             self.counter_in.increment(len(batch.payload))
-        logger.info("data feed comleted")
+        logger.info("data feed completed")
         self.evt_input_completed.set()
 
     def _yield_results(self, message):
@@ -374,15 +412,30 @@ class ListPipeline(AbstractPipeline):
         self.counter_out.increment(len(message.payload))
 
 
-class ImmutablePipeline(AbstractPipeline):
+class TaskPipeline(AbstractPipeline):
+    """
+    Pipeline for processing task messages.
 
-    def __init__(self,  workers: Dict[Worker, int], message_type=MD5Message,
-                 worker_args: Dict = None,
-                 queue_size: int = 100, journal: Journal = None,
-                 chunk_size=100, queue_timeout=0.5, log_trigger=10_000,
-                 unique_messages: bool = False):
+    With task Messages, a worker will process a single task
+    at a time (based on the parameters sent with the message).
+
+    Args:
+        * workers: dict of worker classes with number of instances
+        * worker_args: additional arguments for workers
+        * queue_size: size for queues (all queues)
+        * chunk_size: number of jobs to chunk in a batch
+        * journal: journal class
+        * queue_timeout: queue timeout duration
+        * log_trigger: update on this trigger
+        * message_type: kind of worker messages
+
+    """
+    def __init__(self, workers: Dict[Worker, int], worker_args: Dict = None,
+                 chunk_size=100, queue_size: int = 100, journal: Journal = None,
+                 queue_timeout=0.5, log_trigger=10_000,
+                 message_type=UIDTaskMessage):
         super().__init__(workers, message_type, worker_args, queue_size, journal,
-                         chunk_size, queue_timeout, log_trigger, unique_messages)
+                         chunk_size, queue_timeout, log_trigger)
 
     def _yield_results(self, message):
         yield message.result
@@ -392,7 +445,7 @@ class ImmutablePipeline(AbstractPipeline):
         """separate thread to feed data into queues."""
         for entry in data:
             msg = self.message_type(entry)
-            if not self.journal.is_completed(msg):
+            if msg not in self.journal:
                 self.journal.enter(msg)
                 self.q_inbound.put(msg)
                 self.journal.sync()

@@ -14,6 +14,7 @@ Contents:
    base.rst
    data.rst
    etl.rst
+   multiprocessing.rst
    parsers.rst
    plot.rst
    utilities.rst
