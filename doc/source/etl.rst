@@ -388,37 +388,7 @@ XmlSource
 * :ref:`modindex`
 * :ref:`search`
 
-multi_processing
-================
-Abstraction of the MultiProcessing API that assist in running transforms
-in multiple processes.
-
-Sample usage:
-
-.. include:: ../../examples/example_etl_multiprocessing.py
-    :literal:
-
-Coordinator
------------
-.. image:: ../images/Coordinator.svg
-	:align: center
-
-.. autoclass:: dkit.etl.multi_processing.Coordinator
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-Worker
-------
-.. image:: ../images/Worker.svg
-	:align: center
-
-.. autoclass:: dkit.etl.multi_processing.Worker
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-verifier
+Verifier
 ========
 
 ShelveVerifier
