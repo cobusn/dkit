@@ -30,6 +30,13 @@ Aug 2019    Cobus Nel       Added uuid_key function
 =========== =============== =================================================
 """
 
+__all__ = [
+    "chunker",
+    "glob_list",
+    "add_uuid_key",
+    "add_key"
+]
+
 
 def add_uuid_key(iterable, name="uuid"):
     """
@@ -89,6 +96,3 @@ def glob_list(iterable, glob_list, key=lambda x: x):
     for obj in iterable:
         if any(fnmatch.fnmatch(key(obj), i) for i in glob_list):
             yield obj
-
-
-__all__ = [chunker, glob_list, add_uuid_key, add_key]

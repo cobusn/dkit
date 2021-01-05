@@ -30,7 +30,7 @@ DATA      =     AttrDict.svg Pivot.svg ReducePivot.svg Proxy.svg XmlTransformer.
 ETLSOURCE =     AbstractSource.svg FileListingSource.svg AbstractMultiReaderSource.svg PickleSource.svg\
 				JsonlSource.svg CsvDictSource.svg XmlRpcSource.svg EntityValidator.svg\
 				Entity.svg Transform.svg ModelManager.svg ExpressionFilter.svg Connection.svg\
-				Query.svg Endpoint.svg Coordinator.svg Worker.svg ShelveVerifier.svg Relation.svg\
+				Query.svg Endpoint.svg ShelveVerifier.svg Relation.svg\
 				ETLServices.svg 
 SQL_ALCHEMY_SOURCE = SQLAlchemyAccessor.svg SQLAlchemyTableSource.svg SQLAlchemySink.svg \
 					 SQLAlchemyModelFactory.svg SQLAlchemyReflector SQLAlchemySelectSource.svg
@@ -42,8 +42,13 @@ PARSERS   = 	URIStruct.svg SearchScanner.svg MatchScanner.svg InfixParser.svg HT
 PLOT      =     classes_plot.svg Plot.svg GeomLine.svg GeomArea.svg GeomScatter.svg GeomBar.svg AbstractGeom.svg\
 				BackendGnuPlot.svg Aesthetic.svg YAxis.svg XAxis.svg Title.svg GeomHistogram.svg
 
+MULTIPROCESSING = classes_multiprocessing.svg ListPipeline.svg TaskPipeline.svg ListMessage.svg \
+				  MD5TaskMessage.svg UIDTaskMessage.svg Journal.svg Worker.svg
 
-OUTFILES  = 	Makefile $(ALGORITHMS) $(UTILITIES) $(DATA) $(CORE) $(SECURITY) $(ETL) $(PARSERS) $(PLOT)
+
+OUTFILES  = 	Makefile $(ALGORITHMS) $(UTILITIES) $(DATA) $(CORE) $(SECURITY) $(ETL) \
+				$(PARSERS) $(PLOT) $(MULTIPROCESSING)
+
 CLASSROOT = 	../../dkit
 PYREVERSE = 	pyreverse
 OPTIONS   = 	-A -s0 -m n -o svg
@@ -51,8 +56,33 @@ OPTSINGLE = 	-A -s0 -a1 -m n -o svg
 
 all:		$(OUTFILES) 
 
+# multiprocessing
+classes_multiprocessing.svg: $(CLASSROOT)/multi_processing.py
+	$(PYREVERSE) -p multiprocessing -k -o svg $(CLASSROOT)/multi_processing.py
+
+ListPipeline.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c ListPipeline $(CLASSROOT)/multi_processing.py
+
+TaskPipeline.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c TaskPipeline $(CLASSROOT)/multi_processing.py
+
+ListMessage.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c ListMessage $(CLASSROOT)/multi_processing.py
+
+MD5TaskMessage.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c MD5TaskMessage $(CLASSROOT)/multi_processing.py
+
+UIDTaskMessage.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c UIDTaskMessage $(CLASSROOT)/multi_processing.py
+
+Journal.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c Journal $(CLASSROOT)/multi_processing.py
+
+Worker.svg: $(CLASSROOT)/multi_processing.py
+		$(PYREVERSE) $(OPTSINGLE) -c Worker $(CLASSROOT)/multi_processing.py
+
+
 # Algorithms
-#
 TDigest.svg: $(CLASSROOT)/algorithms/tdigest.py 
 		$(PYREVERSE) $(OPTSINGLE) -c TDigest $(CLASSROOT)/algorithms/tdigest.py
 
@@ -258,12 +288,6 @@ Query.svg: $(CLASSROOT)/etl/model.py
 
 Endpoint.svg: $(CLASSROOT)/etl/model.py 
 		$(PYREVERSE) $(OPTSINGLE) -c Endpoint $(CLASSROOT)/etl/model.py
-
-Coordinator.svg: $(CLASSROOT)/etl/multi_processing.py 
-		$(PYREVERSE) $(OPTSINGLE) -c Coordinator $(CLASSROOT)/etl/multi_processing.py
-
-Worker.svg: $(CLASSROOT)/etl/model.py 
-		$(PYREVERSE) $(OPTSINGLE) -c Worker $(CLASSROOT)/etl/multi_processing.py
 
 ShelveVerifier.svg: $(CLASSROOT)/etl/verifier.py 
 		$(PYREVERSE) $(OPTSINGLE) -c ShelveVerifier $(CLASSROOT)/etl/verifier.py

@@ -9,8 +9,9 @@ sys.path.insert(0, "..")  # noqa
 from dkit.multi_processing import (
     Worker,
     ListPipeline,
-    ImmutablePipeline,
+    TaskPipeline,
     Journal,
+    MD5TaskMessage,
 )
 from dkit.utilities.log_helper import init_stderr_logger
 
@@ -22,18 +23,18 @@ class ListWorker(Worker):
     def run(self):
         for i, message in enumerate(self.pull()):
             self.logger.info(f"Processing batch {i}")
-            for row in message.payload:
+            for row in message:
                 row["w1"] = self.args["value"]
             time.sleep(random.triangular(0, 0.001))
             self.push(message)
 
 
-class ItemWorker(Worker):
+class TaskWorker(Worker):
 
     def run(self):
         for i, message in enumerate(self.pull()):
             self.logger.info(f"Processing batch {i}")
-            message.result = self.args["value"]
+            message.result = self.args["value"] * message.args["a"]
             time.sleep(random.triangular(0, 0.01))
             self.push(message)
 
@@ -47,7 +48,8 @@ class TestMultiprocessing(unittest.TestCase):
         if j.exists():
             j.unlink()
 
-    def test_pipeline(self):
+    def test_list_pipeline(self):
+        """list pipeline with two workers in series"""
         pipeline = ListPipeline(
             {
                 ListWorker: 10,
@@ -68,6 +70,7 @@ class TestMultiprocessing(unittest.TestCase):
         )
 
     def test_shelve_journal(self):
+        """test using shelve as journal functionality"""
         pipeline = ListPipeline(
             {
                 ListWorker: 10,
@@ -90,23 +93,33 @@ class TestMultiprocessing(unittest.TestCase):
 
     def test_immutable_accounting(self):
 
-        _input = [{"a": i} for i in range(N)]
-        pipeline = ImmutablePipeline(
+        _input = [{"a": 1} for i in range(N)]
+        pipeline = TaskPipeline(
             {
-                ItemWorker: 10,
+                TaskWorker: 10,
             },
             worker_args={"value": 10},
             queue_size=10,
             journal=Journal.from_shelve("data/journal.shelve"),
+            message_type=MD5TaskMessage
         )
 
         result = list(pipeline(_input))
+        print(result)
         self.assertEqual(
-            result[0], 10
+            sum(result), 10
         )
         self.assertEqual(
             len(result),
-            N
+            1
+        )
+
+    def test_message_repr(self):
+        msg = MD5TaskMessage(10)
+        r = repr(msg)
+        self.assertEqual(
+            r,
+            "MD5TaskMessage(args=10, _id=c1ecf43a95efdf7cc8b0ec6533492ca4)"
         )
 
 
