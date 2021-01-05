@@ -64,8 +64,6 @@ Timer
    :members:
    :undoc-members:
 
-.. autoclass:: dkit.utilities.instrumentation.TimerException
-
 security
 ========
 .. automodule:: dkit.utilities.security
@@ -115,14 +113,15 @@ iter_helper
 log_helper
 ==========
 .. automodule:: dkit.utilities.log_helper
+    :members:
 
 functions
 ---------
-.. autofunction:: dkit.utilities.log_helper.file_logger
-.. autofunction:: dkit.utilities.log_helper.null_logger
-.. autofunction:: dkit.utilities.log_helper.stream_logger
-.. autofunction:: dkit.utilities.log_helper.stdout_logger
-.. autofunction:: dkit.utilities.log_helper.stderr_logger
+# .. autofunction:: dkit.utilities.log_helper.init_file_logger
+# .. autofunction:: dkit.utilities.log_helper.init_null_logger
+# .. autofunction:: dkit.utilities.log_helper.init_stream_logger
+# .. autofunction:: dkit.utilities.log_helper.init_stdout_logger
+# .. autofunction:: dkit.utilities.log_helper.init_stderr_logger
 
 intervals
 =========

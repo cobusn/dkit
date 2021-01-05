@@ -124,7 +124,7 @@ class Compare(object):
                     continue
                 a_hash = md5_obj_hash(a)
                 b_hash = md5_obj_hash(b)
-                if a != b:
+                if a_hash != b_hash:
                     yield (k, a, b)
 
     def deltas(self, *fields):
@@ -148,7 +148,7 @@ class Compare(object):
         this method ignores new or missing rowsa
 
         params:
-            - *fields: list of fields to verify
+            - *fields*: list of fields to verify
 
         yields:
             - rows in
