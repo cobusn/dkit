@@ -8,6 +8,7 @@ from itertools import accumulate
 from . import Backend
 from . import ggrammar
 from ..data.filters import ExpressionFilter
+from io import BytesIO
 # from ..exceptions import CkitGrammarException
 
 import pprint
@@ -212,18 +213,34 @@ class MPLBackend(Backend):
         # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
         ax.add_artist(at)
 
-    def render(self, file_name):
+    def _render_fig(self):
         self.fig, ax = self.initialise()
         for serie in self.grammar["series"]:
             renderer = self.render_map[serie["~>"]]
             renderer(ax, serie)
         self.apply_aesthetics()
         self.set_title(ax)
-        self.save(self.fig, file_name)
+        return self.fig
+
+    def render(self, file_name):
+        fig = self._render_fig()
+        self.save(fig, file_name)
 
         # release memory used by plot
         plt.close(self.fig)
-        return self.fig
+        return fig
+
+    def render_mem(self, _format="PDF"):
+        """
+        render plot as BytesObject and return
+        """
+        imgdata = BytesIO()
+        fig = self._render_fig()
+        fig.savefig(imgdata, format=_format)
+
+        # release memory used by plot
+        plt.close(self.fig)
+        return imgdata
 
     def r_cumulative_series(self, ax, serie):
         # ax2.plot(df.index, "], color="C1", marker="D", ms=7)
