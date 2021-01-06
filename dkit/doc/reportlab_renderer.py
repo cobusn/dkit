@@ -1,27 +1,98 @@
 # from reportlab.lib.enums import TA_JUSTIFY
+import mistune
+from pdfrw import PdfReader
+from pdfrw.buildxobj import pagexobj
+from pdfrw.toreportlab import makerl
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
 from reportlab.platypus import (
-    Image,
-    ListFlowable,
-    ListItem,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
+    Image, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer, Flowable
 )
 from svglib.svglib import svg2rlg
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from .document import AbstractRenderer
-from ..utilities.introspection import is_list
-# from ..plot import matplotlib as mpl
-import mistune
-from .json_renderer import JSONRenderer
+
 from ..data.containers import AttrDict
-from ..utilities.file_helper import temp_filename
 from ..plot import matplotlib as mpl
+from ..utilities.file_helper import temp_filename
+from ..utilities.introspection import is_list
+from .document import AbstractRenderer
+from .json_renderer import JSONRenderer
+
+
+# from ..plot import matplotlib as mpl
+
+
+class PdfImage(Flowable):
+    """
+    PdfImage wraps the first page from a PDF file as a Flowable which can
+    be included into a ReportLab Platypus document.
+    Based on the vectorpdf extension in rst2pdf (http://code.google.com/p/rst2pdf/)
+    """
+
+    def __init__(self, filename_or_object, width=None, height=None, kind='direct'):
+        # from reportlab.lib.units import inch
+        # If using StringIO buffer, set pointer to begining
+        if hasattr(filename_or_object, 'read'):
+            filename_or_object.seek(0)
+        page = PdfReader(filename_or_object, decompress=False).pages[0]
+        self.xobj = pagexobj(page)
+        self.imageWidth = width
+        self.imageHeight = height
+        x1, y1, x2, y2 = self.xobj.BBox
+
+        self._w, self._h = x2 - x1, y2 - y1
+        if not self.imageWidth:
+            self.imageWidth = self._w
+        if not self.imageHeight:
+            self.imageHeight = self._h
+        self.__ratio = float(self.imageWidth)/self.imageHeight
+        if kind in ['direct', 'absolute'] or (width is None) or (height is None):
+            self.drawWidth = width or self.imageWidth
+            self.drawHeight = height or self.imageHeight
+        elif kind in ['bound', 'proportional']:
+            factor = min(float(width)/self._w, float(height)/self._h)
+            self.drawWidth = self._w*factor
+            self.drawHeight = self._h*factor
+
+    def wrap(self, aW, aH):
+        return self.drawWidth, self.drawHeight
+
+    def drawOn(self, canv, x, y, _sW=0):
+        if _sW > 0 and hasattr(self, 'hAlign'):
+            a = self.hAlign
+            if a in ('CENTER', 'CENTRE', TA_CENTER):
+                x += 0.5*_sW
+            elif a in ('RIGHT', TA_RIGHT):
+                x += _sW
+            elif a not in ('LEFT', TA_LEFT):
+                raise ValueError("Bad hAlign value " + str(a))
+
+        xobj = self.xobj
+        xobj_name = makerl(canv._doc, xobj)
+
+        xscale = self.drawWidth/self._w
+        yscale = self.drawHeight/self._h
+
+        x -= xobj.BBox[0] * xscale
+        y -= xobj.BBox[1] * yscale
+
+        canv.saveState()
+        canv.translate(x, y)
+        canv.scale(xscale, yscale)
+        canv.doForm(xobj_name)
+        canv.restoreState()
 
 
 class ReportlabDocRenderer(AbstractRenderer):
+    """
+    Render a cannonical json like formatted document
+    to pdf using the Reportlab library.
+
+    Although the Latex version will produce better
+    layouts, this version is useful for generating
+    pdf documents without littering the filesystem
+    with tex files.
+    """
 
     def __init__(self, data, stylesheet, plot_stylesheet):
         super().__init__(data)
@@ -40,6 +111,7 @@ class ReportlabDocRenderer(AbstractRenderer):
         return f"<i>{content}</i>"
 
     def make_figure(self, data):
+        """format a plot"""
         filename = str(temp_filename(suffix="svg"))
         be = self.plot_backend(
             data,
@@ -58,12 +130,23 @@ class ReportlabDocRenderer(AbstractRenderer):
             self.style[f"Heading{level}"]
         )
 
+    def _is_pdf(self, name):
+        """test if filename end with .pdf"""
+        n = name.lower()
+        if n.endswith(".pdf"):
+            return True
+        else:
+            return False
+
     def make_image(self, element):
         """image"""
         e = AttrDict(element)
         _w = e.width * cm if e.width else None
         _h = e.height * cm if e.height else None
-        img = Image(e.data, width=_w, height=_h)
+        if self._is_pdf(e.data):
+            img = PdfImage(e.data, width=_w, height=_h)
+        else:
+            img = Image(e.data, width=_w, height=_h)
         img.hAlign = e.align.upper()
         return img
 
