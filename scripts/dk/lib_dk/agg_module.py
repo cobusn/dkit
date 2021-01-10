@@ -30,7 +30,7 @@ class AggModule(module.UniCommandModule):
 
         # Check that at least one operation has been specified
         if not hasattr(self.args, "group_by_operations"):
-            raise exceptions.CkitApplicationException("No group by operation specified")
+            raise exceptions.DKitApplicationException("No group by operation specified")
 
         # set group by keys
         aggregator = aggregator + agg.GroupBy(*self.args.group_by)

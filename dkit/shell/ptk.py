@@ -27,7 +27,7 @@ from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
 from .. import base
-from ..exceptions import CkitApplicationException, CkitArgumentException, CkitShellException
+from ..exceptions import DKitApplicationException, DKitArgumentException, DKitShellException
 from .console import echo
 
 
@@ -162,9 +162,9 @@ class CmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
                 try:
                     with patch_stdout():
                         self._process_line()
-                except CkitApplicationException as E:
+                except DKitApplicationException as E:
                     print(E)
-                except CkitShellException as E:
+                except DKitShellException as E:
                     print(E)
                 except IndexError as E:
                     print(E)
@@ -174,7 +174,7 @@ class CmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
                     print(E)
                 except(EOFError, KeyboardInterrupt):
                     return
-                except(CkitArgumentException) as E:
+                except(DKitArgumentException) as E:
                     print(E)
                 except argparse.ArgumentError as E:
                     print(E)

@@ -4,7 +4,7 @@ import os
 
 from . import VALID_TERMINALS
 from ..utilities.mixins import SerDeMixin
-from ..exceptions import CkitPlotException, CkitArgumentException
+from ..exceptions import DKitPlotException, DKitArgumentException
 
 
 Num = Union[int, float]
@@ -48,7 +48,7 @@ class PlotBase(ABC, SerDeMixin):
         if extension in VALID_TERMINALS:
             return extension
         else:
-            raise CkitPlotException(f"Invalid plot Extension {extension}.")
+            raise DKitPlotException(f"Invalid plot Extension {extension}.")
 
     def __add__(self, other):
         """modify metadata"""
@@ -283,14 +283,14 @@ class _Axis(PlotModifier):
         self.max_val = max
         self.rotation = rotation
         if all([time_format, float_format]):
-            raise CkitArgumentException("float_format and time_format is mutually exclusive")
+            raise DKitArgumentException("float_format and time_format is mutually exclusive")
         self.float_format = float_format
         self.time_format = time_format
         self.defeat = defeat
         if str(which) in ["0", "1", "2"]:
             self.which = str(which)
         else:
-            raise CkitPlotException("Axis number can only be 0, 1 or 2")
+            raise DKitPlotException("Axis number can only be 0, 1 or 2")
 
     def modify(self, plot):
         plot.axes[self.which] = self

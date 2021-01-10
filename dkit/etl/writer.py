@@ -26,7 +26,7 @@ import gzip
 import posix_ipc
 import io
 import mmap
-from ..exceptions import CkitETLException
+from ..exceptions import DKitETLException
 
 
 class Writer(object):
@@ -100,7 +100,7 @@ class SharedMemoryWriter(OpenWriter):
 
     def flush(self):
         if self.flushed:
-            raise CkitETLException(
+            raise DKitETLException(
                 f"{self.__class__.__name__} data can only be flushed once."
             )
         self.flushed = True

@@ -24,7 +24,7 @@ sys.path.insert(0, "..")  # noqa
 from dkit.etl import source
 from dkit.parsers.uri_parser import parse
 from dkit.parsers import uri_parser
-from dkit.exceptions import CkitParseException
+from dkit.exceptions import DKitParseException
 
 
 class TestEndpointFactory(unittest.TestCase):
@@ -165,9 +165,9 @@ class TestEndpointFactory(unittest.TestCase):
             self.assertEqual(r, test[1])
 
     def test_exception(self):
-        with self.assertRaises(CkitParseException):
+        with self.assertRaises(DKitParseException):
             parse("file.noname")
-        with self.assertRaises(CkitParseException):
+        with self.assertRaises(DKitParseException):
             parse("jso:///filename")
 
 

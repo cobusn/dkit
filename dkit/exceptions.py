@@ -24,51 +24,55 @@ library exceptions
 """
 
 
-class CkitException(Exception):
+class DKitException(Exception):
     pass
 
 
-class CkitPlotException(CkitException):
+class DKitDocumentException(DKitException):
     pass
 
 
-class CkitGrammarException(CkitException):
+class DKitPlotException(DKitException):
     pass
 
 
-class CkitShellException(Exception):
+class DkitGrammarException(DKitException):
     pass
 
 
-class CkitArgumentException(Exception):
+class DKitShellException(Exception):
     pass
 
 
-class CkitApplicationException(CkitException):
+class DKitArgumentException(Exception):
     pass
 
 
-class CkitConfigException(CkitException):
+class DKitApplicationException(DKitException):
     pass
 
 
-class CkitDataException(CkitException):
+class DKitConfigException(DKitException):
     pass
 
 
-class CkitETLException(CkitException):
+class DKitDataException(DKitException):
     pass
 
 
-class CkitParseException(CkitException):
+class DKitETLException(DKitException):
     pass
 
 
-class CkitTimeoutException(CkitException):
+class DKitParseException(DKitException):
     pass
 
 
-class CkitValidationException(CkitException):
+class DKitTimeoutException(DKitException):
+    pass
+
+
+class DKitValidationException(DKitException):
     """
     exception related to schema validation
     """

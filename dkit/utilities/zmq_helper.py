@@ -1,7 +1,7 @@
 import zmq
 import msgpack
 from abc import ABC
-from ..exceptions import CkitTimeoutException
+from ..exceptions import DKitTimeoutException
 from .introspection import is_list
 from typing import List, Union
 
@@ -42,7 +42,7 @@ class _ZMQ_Receiver(_ZMQ_Interface):
             data = self.socket.recv()
             return msgpack.unpackb(data, raw=False)
         else:
-            raise CkitTimeoutException(f"Timed out after {timeout}.")
+            raise DKitTimeoutException(f"Timed out after {timeout}.")
 
 
 class _ZMQ_Sender(_ZMQ_Interface):
@@ -75,7 +75,7 @@ class Requester(_ZMQ_Interface):
             data = self.socket.recv()
             return msgpack.unpackb(data, raw=False)
         else:
-            raise CkitTimeoutException(f"Timed out after {timeout}")
+            raise DKitTimeoutException(f"Timed out after {timeout}")
 
 
 class Puller(_ZMQ_Receiver):
@@ -108,7 +108,7 @@ class Responder(_ZMQ_Sender):
             data = self.socket.recv()
             return msgpack.unpackb(data, raw=False)
         else:
-            raise CkitTimeoutException(f"Timed out after {timeout}")
+            raise DKitTimeoutException(f"Timed out after {timeout}")
 
 
 class Router(Responder):

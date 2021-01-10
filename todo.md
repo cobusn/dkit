@@ -1,5 +1,18 @@
 # Todo
 
+## Reportlab
+### NB
+* Front Page
+* Header / Footer
+* Normal Theme
+* Dimension Data theme
+* keep-together
+
+### Later
+* table of contents
+* in-line graphs
+* title numbering
+
 ## fixes
 * fix context manager for etl source and sink
 * allow source and sink to load from lists as well as

@@ -66,7 +66,7 @@ class Aggregate(object):
     def __add__(self, other):
         # test for correct lineage
         if not isinstance(other, AbstractModifier):
-            raise exceptions.CkitDataException(messages.MSG_0016)
+            raise exceptions.DKitDataException(messages.MSG_0016)
 
         other._modify(self)
         return self
@@ -140,7 +140,7 @@ class OrderBy(AbstractModifier):
     def _modify(self, other):
         # Sort order can only be defined once
         if other.sorter is not None:
-            raise exceptions.CkitDataException(messages.MSG_0017)
+            raise exceptions.DKitDataException(messages.MSG_0017)
         other.sorter = self
 
     def reverse(self):

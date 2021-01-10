@@ -75,7 +75,7 @@ class RunModule(module.MultiCommandModule):
 
             # Check that at least one operation has been specified
             if not hasattr(self.args, "group_by_operations"):
-                raise exceptions.CkitApplicationException("No group by operation specified")
+                raise exceptions.DKitApplicationException("No group by operation specified")
 
             # set group by keys
             aggregator = aggregator + agg.GroupBy(*self.args.group_by)
@@ -120,7 +120,7 @@ class RunModule(module.MultiCommandModule):
         elif self.args.database_uri is not None and len(self.args.database_uri) > 0:
             connection = model.Connection.from_uri(self.args.database_uri)
         else:
-            raise exceptions.CkitApplicationException("Connection or Input URI required")
+            raise exceptions.DKitApplicationException("Connection or Input URI required")
 
         # get SQL query
         if self.args.query is not None:

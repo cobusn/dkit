@@ -1,31 +1,40 @@
-# from reportlab.lib.enums import TA_JUSTIFY
+import warnings
+from abc import ABC, abstractmethod
+from importlib.resources import open_binary
+
 import mistune
 from pdfrw import PdfReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from pdfrw.buildxobj import pagexobj
 from pdfrw.toreportlab import makerl
+from reportlab.lib import colors, pagesizes
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    Image, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer, Flowable
+    Image, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer, Flowable,
+    Table, TableStyle, Preformatted, PageBreak
 )
-from svglib.svglib import svg2rlg
 
 from ..data.containers import AttrDict
+from ..exceptions import DKitDocumentException
 from ..plot import matplotlib as mpl
-from ..utilities.file_helper import temp_filename
 from ..utilities.introspection import is_list
 from .document import AbstractRenderer
 from .json_renderer import JSONRenderer
+from .. import messages
 
 
-# from ..plot import matplotlib as mpl
+# from ..utilities.file_helper import temp_filename
 
 
 class PdfImage(Flowable):
     """
     PdfImage wraps the first page from a PDF file as a Flowable which can
-    be included into a ReportLab Platypus document.
+    ty
     Based on the vectorpdf extension in rst2pdf (http://code.google.com/p/rst2pdf/)
     """
 
@@ -83,6 +92,256 @@ class PdfImage(Flowable):
         canv.restoreState()
 
 
+class Formatter(ABC):
+
+    def __init__(self, field):
+        self.field = field
+
+    @abstractmethod
+    def __call__(self, row):
+        """to be implemented"""
+
+
+class FieldFormatter(Formatter):
+
+    def __call__(self, row):
+        data = row[self.field["name"]]
+        fmt = self.field["format_"]
+        return fmt.format(data)
+
+
+class TableHelper(object):
+    """Helper functions for formatting tables"""
+
+    def __init__(self, table, stylesheet):
+        self.table = table
+        self.data = table["data"]
+        self.lstyle = stylesheet
+        self.fields = table["fields"]
+        self.format_map = {"field": FieldFormatter, }
+
+    def formaters(self):
+        return [self.format_map[f["~>"]](f) for f in self.fields]
+
+    def col_alignments(self):
+        aligns = []
+        for i, field in enumerate(self.fields):
+            align = field["align"].upper()
+            aligns.append(('ALIGN', (i, 0), (i, -1), align))
+        return aligns
+
+    def head_alignments(self):
+        aligns = []
+        for i, field in enumerate(self.fields):
+            align = field["heading_align"].upper()
+            aligns.append(('ALIGN', (i, 0), (i, 0), align))
+        return aligns
+
+    def heading_color(self):
+        color = colors.HexColor(self.lstyle["table"]["heading_color"])
+        return [("BACKGROUND", (0, 0), (-1, 0), color)]
+
+    def table_style(self):
+        """generate TableStyle instance"""
+        styles = self.col_alignments() + self.head_alignments() + \
+            self.heading_color()
+
+        return TableStyle(styles)
+
+    def extract_data(self):
+        """extract relevant fields from supplied data"""
+        formatters = self.formaters()
+        titles = [f["title"] for f in self.fields]
+        tdata = [[f(row) for f in formatters] for row in self.data]
+        return [titles] + tdata
+
+    def widths(self):
+        return [f["width"] * cm for f in self.fields]
+
+
+class RLStyler(object):
+
+    def __init__(self, local_style, document):
+        self.local_style = local_style
+        self.doc = document
+        self.style = getSampleStyleSheet()
+        self.unit = cm
+        self.register_fonts()
+        self.update_styles()
+
+    def __getitem__(self, key):
+        return self.style[key]
+
+    @property
+    def title_date(self):
+        fmt = self.local_style["page"]["title_date_format"]
+        return fmt.format(self.doc.date)
+
+    @property
+    def left_margin(self):
+        return self.local_style["page"]["left"] / 10 * self.unit
+
+    @property
+    def right_margin(self):
+        return self.local_style["page"]["right"] / 10 * self.unit
+
+    @property
+    def top_margin(self):
+        return self.local_style["page"]["top"] / 10 * self.unit
+
+    @property
+    def bottom_margin(self):
+        return self.local_style["page"]["bottom"] / 10 * self.unit
+
+    @property
+    def page_size(self):
+        size_map = {
+            "A4": pagesizes.A4,
+            "A5": pagesizes.A5,
+            "LETTER": pagesizes.LETTER
+        }
+        return size_map[self.local_style["page"]["size"].upper()]
+
+    @property
+    def page_width(self):
+        return self.page_size[0]
+
+    @property
+    def page_height(self):
+        return self.page_size[1]
+
+    @property
+    def title_font_name(self):
+        return self["Heading1"].fontName
+
+    @property
+    def author_font_name(self):
+        return self["Heading3"].fontName
+
+    @property
+    def text_color(self):
+        """primary text color"""
+        return self.style["Normal"].textColor
+
+    def register_fonts(self):
+        """load additional fonts"""
+        normal = "../resources/SourceSansPro-Regular.ttf"
+        bold = "../resources/SourceSansPro-Bold.ttf"
+        italic = "../resources/SourceSansPro-Italic.ttf"
+        bold_italic = "../resources/SourceSansPro-BoldItalic.ttf"
+        pdfmetrics.registerFont(TTFont('SourceSansPro', normal))
+        pdfmetrics.registerFont(TTFont('SourceSansPro-Bold', bold))
+        pdfmetrics.registerFont(TTFont('SourceSansProi-Ital', italic))
+        pdfmetrics.registerFont(TTFont('SourceSansPro-BoldItalic', bold_italic))
+        pdfmetrics.registerFontFamily("SourceSansPro", "SourceSansPro", "SourceSansPro-Bold",
+                                      "SourceSansPro-Ital", "SourceSansPro-BoldItalic")
+
+    def __print_style(self, style):
+        """helper to print style info"""
+        for k, v in sorted(style.__dict__.items(), key=lambda x: x[0]):
+            print(k, v)
+
+    def update_styles(self):
+        # Create Verbatim style
+        print(list(self.style.byName.keys()))
+        h1 = dict(self.style.byName)["Heading1"]
+        self.__print_style(h1)
+        self.style.byName['Verbatim'] = ParagraphStyle(
+            'Verbatim',
+            parent=self.style['Normal'],
+            fontName="Times-Roman"
+        )
+
+        # BlockQuote
+        self.style.byName['BlockQuote'] = ParagraphStyle(
+            'BlockQuote',
+            parent=self.style['Normal'],
+            firstLineIndent=10,
+            leftIndent=10,
+            spaceBefore=10,
+            spaceAfter=10,
+        )
+
+        # Update Code style
+        code = self.style.byName["Code"]
+        code.spaceBefore = 10
+        code.spaceAfter = 10
+
+        # Update style /provided local stylesheet
+        for style, updates in self.local_style["reportlab"]["styles"].items():
+            this = self.style.byName[style]
+            for k, v in updates.items():
+                if "Color" in k:
+                    setattr(this, k, colors.HexColor(v))
+                else:
+                    setattr(this, k,  v)
+
+    def later_pages(self, canvas: Canvas, style_sheet):
+        canvas.saveState()
+        ty = self.page_height - self.top_margin
+        tl = self.left_margin
+        tr = self.page_width - self.right_margin
+        by = self.bottom_margin
+
+        # lines
+        canvas.setStrokeColor(self.text_color)
+        canvas.setFillColor(self.text_color)
+        canvas.setLineWidth(0.1)
+
+        canvas.line(tl, ty, tr, ty)   # top line
+        canvas.line(tl, by, tr, by)   # bottom line
+
+        # text
+
+        # title
+        canvas.setFont(self.title_font_name, 8)
+        canvas.drawString(tl, ty + 12, self.doc.title)
+
+        # subtitle
+        canvas.setFont(self.author_font_name, 8)
+        canvas.drawString(tl, ty + 2, self.doc.sub_title)
+
+        # date
+        canvas.setFont(self.author_font_name, 8)
+        tw = stringWidth(self.title_date, self.author_font_name, 8)
+        canvas.drawString(tr - tw, ty + 6, self.title_date)
+
+        # author
+        canvas.drawString(tl, by - 10, self.doc.author)
+        tw = stringWidth(self.title_date, self.author_font_name, 8)
+
+        # page number
+        n = canvas.getPageNumber()
+        page_num = str(f"Page: {n}")
+        tw = stringWidth(page_num, self.author_font_name, 8)
+        canvas.drawString(tr - tw, by - 10, page_num)
+
+        canvas.restoreState()
+
+    def first_page(self, canvas: Canvas, style_sheet):
+        """default function for first pages"""
+        canvas.saveState()
+        canvas.setFont('Times-Bold', 16)
+
+        # image
+        with open_binary("dkit.resources", "background.pdf") as infile:
+            pdf = PdfImage(infile, self.page_width, self.page_height)
+            pdf.drawOn(canvas, 0, 0)
+
+        title_x = self.page_width/15
+        title_y = 2.2 * self.page_height / 3
+        canvas.setFont(self.title_font_name, 22)
+        canvas.setFillColor(colors.white)
+        canvas.drawString(title_x, title_y, self.doc.title)
+        canvas.setFont(self.title_font_name, 16)
+        canvas.drawString(title_x, title_y - 22, self.doc.sub_title)
+        canvas.setFont(self.author_font_name, 14)
+        canvas.drawString(title_x, title_y - 44, f"by: {self.doc.author}")
+        canvas.setFont(self.author_font_name, 10)
+        canvas.drawString(title_x, 160,  self.title_date)
+        canvas.restoreState()
+
+
 class ReportlabDocRenderer(AbstractRenderer):
     """
     Render a cannonical json like formatted document
@@ -94,11 +353,11 @@ class ReportlabDocRenderer(AbstractRenderer):
     with tex files.
     """
 
-    def __init__(self, data, stylesheet, plot_stylesheet):
+    def __init__(self, data, styler):
         super().__init__(data)
-        self.style = stylesheet
         self.plot_backend = mpl.MPLBackend
-        self.plot_style = plot_stylesheet
+        self.styler = styler
+        self.in_paragraph = False
 
     def make_bold(self, element):
         """format bold"""
@@ -112,23 +371,28 @@ class ReportlabDocRenderer(AbstractRenderer):
 
     def make_figure(self, data):
         """format a plot"""
-        filename = str(temp_filename(suffix="svg"))
+        # filename = str(temp_filename(suffix="svg"))
         be = self.plot_backend(
             data,
-            terminal="svg",
-            style_sheet=self.plot_style
+            terminal="pdf",
+            style_sheet=self.styler.local_style
         )
-        be.render(filename)
-        drawing = svg2rlg(filename)
-        return drawing
+        pdf_data = be.render_mem()
+        flowable = PdfImage(pdf_data)
+
+        # This should be an option in the data provided..
+        flowable.hAlign = "CENTER"
+        return flowable
 
     def make_heading(self, element):
         """format heading"""
         level = element["level"]
-        return Paragraph(
+        heading = Paragraph(
             self._make(element["data"]),
-            self.style[f"Heading{level}"]
+            self.styler[f"Heading{level}"]
         )
+        heading.keepWithNext = True
+        return heading
 
     def _is_pdf(self, name):
         """test if filename end with .pdf"""
@@ -151,10 +415,14 @@ class ReportlabDocRenderer(AbstractRenderer):
         return img
 
     def make_inline(self, element):
-        pass
+        """inline elements"""
+        font = self.styler["Verbatim"].fontName
+        return f"<font face='{font}'>{element['data']}</font>"
 
-    def make_latex(self, data):
-        pass
+    def make_latex(self, element):
+        """inline latex instructions"""
+        warnings.warn(messages.MSG_0026)
+        return Preformatted(element["data"], self.styler["Normal"])
 
     def make_line_break(self, element):
         """line break '<br/>'"""
@@ -168,50 +436,77 @@ class ReportlabDocRenderer(AbstractRenderer):
         if isinstance(element["data"], dict) and element["data"]["~>"] == "list":
             return self.make_list(element["data"])
         else:
-            return ListItem(self.make_paragraph(element))
+            # return ListItem(self.make_paragraph(element))
+            return ListItem(
+                Paragraph(
+                    self._make(element["data"]),
+                    style=self.styler["Normal"]
+                )
+            )
 
     def make_list(self, element):
         """ordered and unordered lists"""
         if element["ordered"]:
             bt = "1"
+            _style = "OrderedList"
         else:
             bt = "bullet"
+            _style = "UnorderedList"
         items = [
             self.make_entry(i)
             for i in element["data"]
         ]
-        return ListFlowable(
+        lf = ListFlowable(
             items,
-            bulletType=bt
+            bulletType=bt,
+            style=self.styler[_style],
         )
+        return lf
 
     def make_link(self, element):
-        pass
+        if not self.in_paragraph:
+            raise DKitDocumentException(messages.MSG_0027, str(element))
+        display = self._make(element["data"])
+        address = f"<link href={element['url']}><u>{display}</u></link>"
+        return address
 
     def make_block_quote(self, element):
-        pass
+        """block quotes"""
+        t = self._make(element["data"][0]["data"])
+        self.in_paragraph = True
+        retval = Paragraph(t, self.styler["BlockQuote"])
+        self.in_paragraph = False
+        return retval
 
     def make_listing(self, element):
-        pass
+        """code listings"""
+        return Preformatted(element["data"], self.styler["Code"])
 
     def make_markdown(self, element):
         """convert from markdown"""
         transform = mistune.Markdown(renderer=JSONRenderer())
-        return [self._make(e) for e in transform(element["data"])]
+        content = transform(element["data"])
+        return [self._make(e) for e in content]
 
     def make_paragraph(self, element):
         """paragraph"""
-        return Paragraph(self._make(element["data"]), self.style["Normal"])
+        self.in_paragraph = True
+        retval = Paragraph(self._make(element["data"]), self.styler["BodyText"])
+        self.in_paragraph = False
+        return retval
 
     def make_text(self, element):
         """text"""
         return element["data"]
 
     def make_table(self, data):
-        pass
+        t = TableHelper(data, self.styler.local_style)
+        table = Table(t.extract_data(), colWidths=t.widths(), repeatRows=1)
+        table.setStyle(t.table_style())
+        return table
 
-    def make_verbatim(self, data):
-        pass
+    def make_verbatim(self, element):
+        return Preformatted(element["data"], self.styler["Verbatim"])
 
     def _make(self, item):
         if is_list(item):
@@ -222,6 +517,7 @@ class ReportlabDocRenderer(AbstractRenderer):
             return self.callbacks[item["~>"]](item)
 
     def _make_all(self):
+        yield PageBreak()
         for c in self.data.as_dict()["elements"]:
             i = self.callbacks[c["~>"]](c)
             if is_list(i):
@@ -235,21 +531,22 @@ class ReportlabDocRenderer(AbstractRenderer):
 
 class ReportLabBuilder(object):
 
-    def __init__(self, pagesize=A4, left_margin=25, right_margin=25,
-                 top_margin=25, bottom_margin=25):
-        self.pagesize = pagesize
-        self.left_margin = left_margin
-        self.right_margin = right_margin
-        self.top_margin = top_margin
-        self.bottom_margin = bottom_margin
+    def __init__(self, local_style):
+        self.local_style = local_style
 
-    def run(self, file_name, content):
-        doc = SimpleDocTemplate(
+    def run(self, file_name, doc):
+        self.styler = RLStyler(self.local_style, doc)
+        content = list(ReportlabDocRenderer(doc, self.styler))
+        renderer = SimpleDocTemplate(
             file_name,
-            pagesize=self.pagesize,
-            rightMargin=self.right_margin,
-            leftMargin=self.right_margin,
-            topMargin=self.top_margin,
-            bottomMargin=self.bottom_margin
+            pagesize=self.styler.page_size,
+            rightMargin=self.styler.right_margin,
+            leftMargin=self.styler.left_margin,
+            topMargin=self.styler.top_margin,
+            bottomMargin=self.styler.bottom_margin
         )
-        doc.build(content)
+        renderer.build(
+            content,
+            onFirstPage=self.styler.first_page,
+            onLaterPages=self.styler.later_pages
+        )

@@ -3,7 +3,7 @@ import cerberus
 import yaml
 import logging
 
-from ..exceptions import CkitValidationException
+from ..exceptions import DKitValidationException
 from ..messages import MSG_0019
 
 
@@ -82,7 +82,7 @@ class SchemaValidator(object):
         if not validated:
             for k, error in self.validator.errors.items():
                 logger.error(f"element {k}: {str(error)}")
-            raise CkitValidationException(MSG_0019)
+            raise DKitValidationException(MSG_0019)
 
     def __call__(self, instance):
         self.validate(instance)

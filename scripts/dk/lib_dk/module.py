@@ -93,7 +93,7 @@ class Module(object):
 
         # raise exception if no confif file
         if len(config_paths) == 0:
-            raise exceptions.CkitConfigException("No Valid configuration files found")
+            raise exceptions.DKitConfigException("No Valid configuration files found")
         return config_paths
 
     @property

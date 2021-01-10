@@ -248,7 +248,7 @@ class InitConfigMixin(ConfigMixin):
                 config = configparser.ConfigParser()
                 config.readfp(open(config_filename))
             else:
-                raise exceptions.CkitConfigException("No valid configration file specified.")
+                raise exceptions.DKitConfigException("No valid configration file specified.")
             return config
         else:
             return config

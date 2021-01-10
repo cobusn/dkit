@@ -109,7 +109,7 @@ def parse(uri):
     if retval is not None:
         return retval
     else:
-        raise exceptions.CkitParseException(
+        raise exceptions.DKitParseException(
             messages.MSG_0012.format(uri)
         )
 
@@ -149,7 +149,7 @@ def _parse_file_driver(uri):
                 # encryption=_parse_encryption_from_filename(m.group(2))
             ).as_dict()
         else:
-            raise exceptions.CkitParseException(messages.MSG_0014.format(dialect))
+            raise exceptions.DKitParseException(messages.MSG_0014.format(dialect))
     else:
         return None
 
@@ -208,7 +208,7 @@ def _parse_dialect_from_filename(file_name):
     p = re.compile(r".+\.({})(?:\..+$)?".format("|".join(FILE_DIALECTS)))
     r = p.search(file_name)
     if r is None:
-        raise(exceptions.CkitParseException(messages.MSG_0013.format(file_name)))
+        raise(exceptions.DKitParseException(messages.MSG_0013.format(file_name)))
     else:
         return r.group(1)
 

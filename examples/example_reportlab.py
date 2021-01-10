@@ -1,32 +1,75 @@
 import sys
 sys.path.insert(0, "..")  # noqa
-from reportlab.lib.styles import getSampleStyleSheet
-from dkit.doc.reportlab_renderer import ReportLabBuilder, ReportlabDocRenderer
+from dkit.doc.reportlab_renderer import ReportLabBuilder
 from dkit.utilities.file_helper import yaml_load
 from dkit.doc import document
 # from example_barplot import gg
 from dkit.plot import ggrammar
+from dkit.doc.document import Table
+from dkit.data import fake_helper
+from dkit.doc.lorem import Lorem
+
+lorem = Lorem()
 
 
 def build_doc():
     """create document"""
-    d = document.Document()
-    d += document.Title("Example document")
+    d = document.Document("DataKit Reportlab Renderer", "Example Document", "Cobus Nel")
     d += document.Heading("Heading 1", 1)
+
     d += document.Heading("Heading 2", 2)
-    d += document.Paragraph("Test para")
-    d += document.Paragraph("Another test para")
+    d += lorem.paragraph()
+    d += lorem.unordered_list()
+    d += lorem.paragraph()
     d += document.MD(
         """
         ##  heading 2
         This is **bold** and *italic* text.
+
+        This is `inline` text.
+
+        This is a [link](http://google.com)
+
+        > This is an example of
+        > a **block** quote
+
+        And some source code:
+
+        ```python
+        import xml
+        xml.parse()
+        ```
+
+        And verbatim text:
+
+            Verbatim
+            text
+
         """
     )
     d += document.LineBreak(0.5)
-    # d += document.Image("plots/plot.png", "Forecast", width=17, height=8)
+    d += document.Heading("Specific Features", 1)
+
+    # Inline latex
+    d += document.Heading("Latex includes", 2)
+    d += document.Latex(r"This is \LaTex")
+
+    # URL
+    # d += document.Heading("URL", 2)
+    # d += document.Link("Google", "www.google.com", "title")
+
+    # Plots
+    d += document.Image("plots/plot.png", "Forecast", width=17, height=8)
     d += document.Image("plots/plotdata.pdf", "Forecast", width=17, height=8)
     d += document.Image("plots/plotdata.pdf", "Forecast")
 
+    d += document.Paragraph(
+        [
+            document.Text("hahahah "),
+            document.Link("Google", "www.google.com", "google")
+        ]
+    )
+    # List
     l1 = document.List()
     l1.add_entry("one")
     l1.add_entry("two")
@@ -36,6 +79,7 @@ def build_doc():
     l1.add_entry(l2)
     d += l1
 
+    # Figure
     d += document.Heading("Figure", 1)
 
     data = [
@@ -49,14 +93,26 @@ def build_doc():
     ]
 
     fig = document.Figure(data) \
-        + ggrammar.GeomBar("Revenue", y_data="revenue",
-                           x_data="index", color="#0000FF", alpha=0.8) \
+        + ggrammar.GeomBar("Revenue", y_data="revenue", x_data="index",
+                           color="#0000FF", alpha=0.8) \
         + ggrammar.Title("2018 Sales") \
         + ggrammar.YAxis("Rand", min=0, max=100, ticks=1) \
         + ggrammar.XAxis("Month") \
-        + ggrammar.Aesthetic(stacked=True, width=15, height=5)
+        + ggrammar.Aesthetic(stacked=True, height=5)
 
     d += fig
+
+    # Table
+    d += document.Heading("Tables", 1)
+    d += Table(
+        list(fake_helper.persons(n=20)),
+        [
+            Table.Field("first_name", "First name", width=5),
+            Table.Field("last_name", "Last name"),
+            Table.Field("birthday", "DOB", align="right", width=4, format_="{:%Y-%m-%d}"),
+            Table.Field("gender", "Gender"),
+        ]
+    )
 
     return d
 
@@ -64,12 +120,10 @@ def build_doc():
 def render_doc(doc):
 
     with open("stylesheet.yaml") as infile:
-        plot_style = yaml_load(infile)
+        local_style = yaml_load(infile)
 
-    r = ReportlabDocRenderer(doc, getSampleStyleSheet(), plot_style)
-    b = ReportLabBuilder()
-    content = list(r)
-    b.run("reportlab_render.pdf", content)
+    b = ReportLabBuilder(local_style)
+    b.run("reportlab_render.pdf", doc)
 
 
 if __name__ == "__main__":

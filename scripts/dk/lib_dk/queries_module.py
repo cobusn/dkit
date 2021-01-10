@@ -39,7 +39,7 @@ class QueriesModule(module.CRUDModule):
         model = services.model
         container = getattr(model, self.entity_name)
         if self.args.query in container:
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 "query '{}' exists already".format(self.args.query)
             )
         else:
