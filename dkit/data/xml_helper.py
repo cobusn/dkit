@@ -28,7 +28,7 @@ import collections
 from xml.sax.handler import ContentHandler
 from xml import sax
 from ..utilities.instrumentation import CounterLogger
-from ..exceptions import CkitParseException
+from ..exceptions import DKitParseException
 import typing
 from .. import NA_VALUE
 #
@@ -107,7 +107,7 @@ class XmlFieldParser(AbstractFieldParser):
         from lxml.etree import XPath
         fname = tokens[0]
         if len(tokens) != 2:
-            raise CkitParseException(f"function {fname} require 1 parameter")
+            raise DKitParseException(f"function {fname} require 1 parameter")
         xpath_query = tokens[1]
         compiled = XPath(xpath_query)
 

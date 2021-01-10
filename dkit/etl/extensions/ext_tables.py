@@ -88,7 +88,7 @@ def parse_fullpath(full_path: str):
     parse full path to node_path, node_name tuple
     """
     if not full_path.startswith("/"):
-        raise exceptions.CkitETLException(messages.MSG_0015)
+        raise exceptions.DKitETLException(messages.MSG_0015)
     full_path = full_path.strip()
     l_path = path.split(full_path.strip())
     if len(l_path[0]) == 0:
@@ -560,7 +560,7 @@ class PyTablesServices(model.ETLServices):
             - Entity instance
         """
         if not path.exists(file_name):
-            raise exceptions.CkitETLException(f"file {file_name} not found")
+            raise exceptions.DKitETLException(f"file {file_name} not found")
         accessor = PyTablesAccessor(file_name)
         entity = accessor.get_node_schema(full_path)
         return entity
@@ -576,6 +576,6 @@ class PyTablesServices(model.ETLServices):
             list of table names
         """
         if not path.exists(database_name):
-            raise exceptions.CkitETLException(f"file {database_name} not found")
+            raise exceptions.DKitETLException(f"file {database_name} not found")
         accessor = PyTablesAccessor(database_name, "r")
         return accessor.get_node_info()

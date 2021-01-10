@@ -63,7 +63,7 @@ from pyparsing import (
 
 from ..data import helpers
 from ..data.containers import ReusableStack
-from ..exceptions import CkitParseException
+from ..exceptions import DKitParseException
 from ..utilities import time_helper
 from .helpers import rex_match_closure
 from .. import NA_VALUE
@@ -87,7 +87,7 @@ def f1_closure(fn):
     def validate_fn(parser, strg, tokens):
         fname = tokens[0]
         if len(tokens) != 2:
-            raise CkitParseException(f"function {fname} require 1 parameter")
+            raise DKitParseException(f"function {fname} require 1 parameter")
         return lambda x: fn(x._internal_eval())
     return validate_fn
 
@@ -96,7 +96,7 @@ def f2_closure(fn):
     def validate_fn(parser, strg, tokens):
         fname = tokens[0]
         if len(tokens) != 3:
-            raise CkitParseException(f"function {fname} require 2 parameters")
+            raise DKitParseException(f"function {fname} require 2 parameters")
 
         def ret_fn(parser):
             par_b = parser._internal_eval()
@@ -348,7 +348,7 @@ class InfixParser(object):
         try:
             self.__parse_definition().parseString(str_expression, parseAll=True)
         except ParseException as E:
-            raise CkitParseException(E)
+            raise DKitParseException(E)
         self._evaluation_stack = ReusableStack(self._parse_stack)
         return self
 

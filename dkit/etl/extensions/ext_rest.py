@@ -1,5 +1,5 @@
 from .. import source, DEFAULT_LOG_TRIGGER
-from ...exceptions import CkitETLException
+from ...exceptions import DKitETLException
 
 import requests
 
@@ -37,4 +37,4 @@ class RESTSource(source.AbstractSource):
         if response.status_code == 200:
             yield from response.json()
         else:
-            raise CkitETLException("Status code {}".format(response.status_code))
+            raise DKitETLException("Status code {}".format(response.status_code))

@@ -1,25 +1,81 @@
-# xx-small, x-small, small, medium, large, x-large, xx-large, smaller, larger.
+# Sizes:
+# tiny, scriptsize, footnotesize, small, normalsize, 
+# large, Large, LARGE, huge, Huge
+# 
+# Standard Fonts:
+# Courier, Helvetica, Symbol, Times, Times-Roman
 
+reportlab:
+  # Reportlab specific customisations
+  styles:
+    Heading1:
+      textColor: "#05386E"
+      fontName: SourceSansPro-Bold
+      fontSize: 12
+      spaceAfter: 5
+      leading: 10
+    Heading2:
+      textColor: "#05386E"
+      fontName: SourceSansPro-Bold
+      fontSize: 11
+      spaceAfter: 5
+      leading: 10
+    Heading3:
+      textColor: "#05386E"
+      fontName: SourceSansPro
+      fontSize: 10
+      spaceAfter: 5 
+      leading: 10
+    Normal: 
+      fontName: SourceSansPro
+      size: 10
+      #  textColor: "#378245"
+      textColor: "#05386E"
+      alignment: 4                    # TA_JUSTIFY
+    BodyText:
+      spaceAfter: 10
+      alignment: 4                    # TA_JUSTIFY
+      textColor: "#05386E"
+    Verbatim: 
+      fontName: Times-Roman
+    BlockQuote: 
+      fontName: Times-Italic
+    Code:
+      fontName: Times-Roman 
+      leading: 10
+    UnorderedList:
+      textColor: "#378245"
+      spaceAfter: 4
+    OrderedList:
+      textColor: "#378245"
+      spaceAfter: 4
+page:
+  size: A4
+  left: 20
+  right: 20
+  top: 22
+  bottom: 20
+  orientation: portrait
+  title_date_format: "{:%d %B %Y}"
 table:
-    heading_color: "#0047bb"
-    # tiny, scriptsize, footnotesize, small, normalsize, 
-    # large, Large, LARGE, huge, Huge
-    font_size: footnotesize
+  heading_color: "#00a9e0"
+  font_size: footnotesize
 plot:
-    theme: seaborn-bright
-    colors:
-        palette:
-            - "#00a9e0"
-            - "#0047bb" 
-            - "#008fd5"
-            - "#fc4f30"
-            - "#e5ae38"
-        red: "#ef3340"
-        green: "#00c389"
-    width: 17
-    height: 7 
-    axes:
-        linewidth: 0.5
-        titlesize: medium 
-        labelsize: small
-        ticklabelsize: x-small 
+  theme: seaborn-bright
+  colors:
+    palette:
+      - "#05386E"
+      - "#00a9e0"
+      - "#0047bb" 
+      - "#008fd5"
+      - "#fc4f30"
+      - "#e5ae38"
+    red: "#ef3340"
+    green: "#00c389"
+  width: 16
+  height: 7 
+  axes:
+    linewidth: 0.5
+    titlesize: medium 
+    labelsize: small
+    ticklabelsize: x-small 

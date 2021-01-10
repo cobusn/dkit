@@ -27,7 +27,7 @@ import sys
 sys.path.insert(0, "..")
 from dkit.parsers.infix_parser import InfixParser, f2_closure, f1_closure
 
-from dkit.exceptions import CkitParseException
+from dkit.exceptions import DKitParseException
 
 
 class TestInfixParser(unittest.TestCase):
@@ -108,7 +108,7 @@ class TestInfixParser(unittest.TestCase):
             ['match("yes","","")']
         ]
         for example in examples:
-            with self.assertRaises(CkitParseException) as _:
+            with self.assertRaises(DKitParseException) as _:
                 InfixParser(example[0])
 
     def test_operator_precedence(self):
@@ -130,7 +130,7 @@ class TestInfixParser(unittest.TestCase):
             "58 3)",
         ]
         for example in examples:
-            with self.assertRaises(CkitParseException):
+            with self.assertRaises(DKitParseException):
                 InfixParser(example)
                 print(example)
 
@@ -155,7 +155,7 @@ class TestInfixParser(unittest.TestCase):
             "nosuch(1)"
         ]
         for example in bad_stuff:
-            with self.assertRaises(CkitParseException):
+            with self.assertRaises(DKitParseException):
                 InfixParser(example)
                 print(example)
 
@@ -177,7 +177,7 @@ class TestInfixParser(unittest.TestCase):
     def test_fn2_raise(self):
         """Test that error is raised if incorrect number of parameters in expression"""
         parser = InfixParser()
-        with self.assertRaises(CkitParseException):
+        with self.assertRaises(DKitParseException):
             parser.parse("randint(1)")
             parser.parse("randint(1,1,1)")
             parser.parse("nosuch(1,1)")

@@ -23,7 +23,7 @@ Parsing utilities
 """
 
 import re
-from ..exceptions import CkitParseException
+from ..exceptions import DKitParseException
 
 
 class AbstractScanner(object):
@@ -95,7 +95,7 @@ def rex_match_closure():
     def validate_fn(parser, strg, tokens):
         fname = tokens[0]
         if len(tokens) != 3:
-            raise CkitParseException(f"function {fname} require 2 parameters")
+            raise DKitParseException(f"function {fname} require 2 parameters")
         expression = tokens[2]
         scanner = re.compile(expression)
 
@@ -120,7 +120,7 @@ class deprecated_RegexMatch(object):
     """
     def __init__(self, strg, tokens):
         if len(tokens) != 3:
-            raise CkitParseException(f"RegexMatch require 2 paramters, provided: {strg}")
+            raise DKitParseException(f"RegexMatch require 2 paramters, provided: {strg}")
         expression = tokens[2]
         self.scanner = re.compile(expression)
 

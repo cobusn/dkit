@@ -20,7 +20,7 @@ d += document.Heading("Heading 1.1.1", 3)
 d += document.Paragraph("afda")
 d += document.MD(
     """
-    ## secttion 2.1
+    ## section 2.1
     This is a **markdown** document, with
 
     * multiple

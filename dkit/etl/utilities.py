@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import os
 import pickle
-from ..exceptions import CkitETLException, CkitArgumentException
+from ..exceptions import DKitETLException, DKitArgumentException
 from .. import messages
 from . import (reader, source, sink, writer)
 from .extensions import (
@@ -149,7 +149,7 @@ def _sink_factory(uri_struct, key=None):
     def make_shm_sink(uri_struct):
         dialect = uri_struct["dialect"]
         if dialect not in ["pkl"]:
-            raise CkitETLException("Shared Memory source only work with pickle")
+            raise DKitETLException("Shared Memory source only work with pickle")
         snk = SINK_MAP[dialect]
         _writer = writer.SharedMemoryWriter(
             file_name=uri_struct["database"],
@@ -362,7 +362,7 @@ class _SourceIterFactory(object):
         elif uri_struct["dialect"] in ["pke"]:
             # Encryption key must be specified
             if not self.key:
-                raise CkitArgumentException(messages.MSG_0022)
+                raise DKitArgumentException(messages.MSG_0022)
 
             if uri_struct["compression"]:
                 compression = COMPRESS_LIB[uri_struct["compression"]]

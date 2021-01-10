@@ -24,7 +24,7 @@ from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
 from ...utilities import iter_helper
 from ... import CHUNK_SIZE
 from ... import messages
-from ...exceptions import CkitETLException
+from ...exceptions import DKitETLException
 from datetime import datetime
 
 from typing import Dict
@@ -343,7 +343,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
 
     def __get_dialect(self, dialect):
         if dialect not in VALID_DIALECTS:
-            raise CkitETLException(
+            raise DKitETLException(
                 messages.MSG_0020.format(dialect)
             )
         _module_name = f"sqlalchemy.dialects.{dialect}"

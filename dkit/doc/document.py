@@ -31,7 +31,7 @@ from ..plot import ggrammar
 import collections
 import textwrap
 from abc import ABC, abstractmethod
-
+from datetime import datetime
 __report_version__ = "0.2"
 
 
@@ -70,11 +70,14 @@ class DocumentContainer(collections.MutableMapping):
 
 class Document(DocumentContainer):
 
-    def __init__(self, title=None, sub_title=None, author=None):
+    def __init__(self, title=None, sub_title=None, author=None, date=None, email=None, contact=None):
         super().__init__()
         self.title = title
         self.sub_title = sub_title
         self.author = author
+        self.date = date if date else datetime.now()
+        self.email = email
+        self.contact = contact
 
     def __add__(self, other):
         other.modify(self)

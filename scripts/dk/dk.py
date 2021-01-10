@@ -143,7 +143,7 @@ class DataKit(object):
                 getattr(self, method)()
             except KeyError as err:
                 print(defaults.MSK_ERR_KEYERROR.format(str(err)))
-            except dkit_exceptions.CkitApplicationException as err:
+            except dkit_exceptions.DKitApplicationException as err:
                 print(err)
             except Exception as err:
                 print(f"An exception occurred: {err.__class__.__name__}: {err}")

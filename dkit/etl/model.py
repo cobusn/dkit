@@ -377,7 +377,7 @@ def load_config(config):
         config_files.append(LOCAL_CONFIG_FILE)
 
     if len(config_files) == 0:
-        raise exceptions.CkitConfigException(messages.MSG_0021)
+        raise exceptions.DKitConfigException(messages.MSG_0021)
     else:
         c = configparser.ConfigParser()
         c.read(config_files)
@@ -453,7 +453,7 @@ class ModelManager(map_db.FileObjectMapDB):
     def add_connection(self, conn_name, uri, password=None):
         """save connection with encrypted password"""
         if conn_name in self.connections:
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 "connection '{}' exists already".format(conn_name)
             )
         else:
@@ -493,24 +493,24 @@ class ModelManager(map_db.FileObjectMapDB):
         """
         # validations
         if name in self.relations:
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 f"relation '{name}' exists already"
             )
 
         if len(const_cols) != len(ref_cols):
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 "Relation should have an equal number of columns specified"
             )
 
         for column in ref_cols:
             if column not in self.entities[ref_entity]:
-                raise exceptions.CkitApplicationException(
+                raise exceptions.DKitApplicationException(
                     f"column '{column}' not in entity {ref_entity}"
                 )
 
         for column in const_cols:
             if column not in self.entities[const_entity]:
-                raise exceptions.CkitApplicationException(
+                raise exceptions.DKitApplicationException(
                     f"column '{column}' not in entity {const_entity}"
                 )
 
@@ -709,7 +709,7 @@ class ETLServices(object):
         file_name = config_uri
 
         if os.path.exists(file_name):
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 messages.MSG_0018.format(file_name)
             )
         else:
@@ -730,7 +730,7 @@ class ETLServices(object):
             - CkitApplicationException
         """
         if os.path.exists(model_uri):
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 messages.MSG_0018.format(model_uri)
             )
         else:

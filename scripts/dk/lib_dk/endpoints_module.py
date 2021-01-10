@@ -41,7 +41,7 @@ class EndpointsModule(module.CRUDModule):
         m = services.model
         container = getattr(m, self.entity_name)
         if self.args.endpoint in container:
-            raise exceptions.CkitApplicationException(
+            raise exceptions.DKitApplicationException(
                 "endpoint '{}' exists already".format(self.args.endpoint)
             )
         else:

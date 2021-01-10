@@ -28,7 +28,7 @@ class TestConfig(unittest.TestCase):
     """
     def test_init_config(self):
         """admin init_config"""
-        with self.assertRaises(exceptions.CkitApplicationException):
+        with self.assertRaises(exceptions.DKitApplicationException):
             admin_module.AdminModule(
                 ["init_config", "--config", "testdata/tst.ini"]
             ).run()
@@ -40,7 +40,7 @@ class TestConfig(unittest.TestCase):
 
     def test_init_model(self):
         """admin init_model"""
-        with self.assertRaises(exceptions.CkitApplicationException):
+        with self.assertRaises(exceptions.DKitApplicationException):
             admin_module.AdminModule(
                 ["init_model", "--model", "testdata/model_test.json"]
             ).run()
