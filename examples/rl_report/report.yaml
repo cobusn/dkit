@@ -1,0 +1,21 @@
+configuration:
+  builder: reportlab
+  styler: default 
+  template_folder: templates
+  version: 1
+document:
+  author: Cobus Nel
+  title: Motor Cars
+  sub_title: Efficiency Analysis
+  date: null
+  contact: null
+styles: []
+documents: 
+  - introduction.md
+  - analysis.md
+presentations: {}
+code: {}
+data: {}
+variables:
+    topn: 15
+    window: 6

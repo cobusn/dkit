@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2016  Cobus Nel
 #
 # This library is free software; you can redistribute it and/or
@@ -15,3 +15,17 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
+
+fontsize_map = {
+    "tiny": 4,
+    "scriptsize": 6,
+    "footnotesize": 8,
+    "small": 9,
+    "normalsize": 10,
+    "large": 12,
+    "Large": 14,
+    "LARGE": 16,
+    "huge": 20,
+    "Huge": 24,
+    "HUGE": 26,
+}

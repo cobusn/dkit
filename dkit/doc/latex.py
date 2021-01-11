@@ -18,12 +18,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import os.path as path
-import sys
 import copy
+import os.path as path
+import subprocess
+import sys
+from pathlib import Path
+
 import tabulate
+
 from ..data.helpers import scale
+
 
 """
 Latex helper classes
@@ -831,3 +835,48 @@ class Heading(SimpleTexConstruct):
 
     def __str__(self):
         return self.hierarchy[self.level](self.data).__str__()
+
+
+class LatexRunner(object):
+    """
+    calls pdflatex to generate a pdf file from latex source
+    """
+    def __init__(self, tex_filename, command="pdflatex", output_folder="."):
+        self.tex_filename = tex_filename
+        self.command = command
+        self.output_folder = output_folder.strip()
+
+    def run(self):
+        """
+        call latex command to build specified file
+        """
+        cmd = [self.command, '-interaction', 'nonstopmode',
+               f"-output-directory={self.output_folder}", self.tex_filename]
+
+        proc = subprocess.Popen(
+            cmd,
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.PIPE
+        )
+
+        out, err = proc.communicate()
+        retcode = proc.returncode
+
+        if not retcode == 0:
+            raise ValueError('Error {} executing command: {}'.format(retcode, ' '.join(cmd)))
+
+    def clean(self):
+        """
+        clean all associated tex logiles etc.
+
+        will silently catch any FileNotFoundError
+        """
+        stem = (Path.cwd() / self.tex_filename).stem
+        clean_extensions = ["log", "aux", "idx", "out", "snm", "toc", "nav", "vrb"]
+        _path = Path.cwd() / self.output_folder
+        for ext in clean_extensions:
+            path = _path / f"{stem}.{ext}"
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass

@@ -94,6 +94,9 @@ class Document(DocumentContainer):
             "sub_title": self.sub_title,
             "author": self.author,
             "data": self.store,
+            "email": self.email,
+            "contact": self.contact,
+            "date": self.date,
             "elements": [i.as_dict() for i in self.elements]
         }
 

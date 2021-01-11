@@ -20,8 +20,13 @@ configuration:
     required: True
     type: dict
     schema:
-        plot_folder:
+        styler:
             required: True
+        builder:
+            allowed:
+                - reportlab
+        plot_folder:
+            required: False
             type: string
         template_folder:
             required: True
@@ -30,6 +35,7 @@ configuration:
             required: True
             type: integer
 latex:
+    required: False
     type: list
     schema:
         type: string
@@ -37,13 +43,33 @@ styles:
     type: list
     schema:
         type: string
-documents: &_dict
+documents:
+    type: list
+    schema:
+        type: string
+presentations: &_dict
     type: dict
     keyschema:
         type: string
     valueschema:
         type: string
 presentations: *_dict
+document:
+    type: dict
+    schema:
+        author:
+            type: string
+        title:
+            type: string
+        sub_title:
+            type: string
+            nullable: True
+        date:
+            type: datetime
+            nullable: True
+        contact:
+            type: string
+            nullable: True
 code: *_dict
 data: *_dict
 variables:
@@ -82,7 +108,8 @@ class SchemaValidator(object):
         if not validated:
             for k, error in self.validator.errors.items():
                 logger.error(f"element {k}: {str(error)}")
-            raise DKitValidationException(MSG_0019)
+                err = error
+            raise DKitValidationException(MSG_0019, str(err))
 
     def __call__(self, instance):
         self.validate(instance)

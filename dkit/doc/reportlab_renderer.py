@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
-from importlib.resources import open_binary
+from importlib.resources import open_binary, open_text
+from dkit.utilities.file_helper import yaml_load
 
 import mistune
 from pdfrw import PdfReader
@@ -18,12 +19,12 @@ from reportlab.platypus import (
     Image, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer, Flowable,
     Table, TableStyle, Preformatted, PageBreak
 )
-
+from . import fontsize_map
 from ..data.containers import AttrDict
 from ..exceptions import DKitDocumentException
 from ..plot import matplotlib as mpl
 from ..utilities.introspection import is_list
-from .document import AbstractRenderer
+from .document import AbstractRenderer, Document
 from .json_renderer import JSONRenderer
 from .. import messages
 
@@ -113,10 +114,10 @@ class FieldFormatter(Formatter):
 class TableHelper(object):
     """Helper functions for formatting tables"""
 
-    def __init__(self, table, stylesheet):
+    def __init__(self, table, local_style):
         self.table = table
         self.data = table["data"]
-        self.lstyle = stylesheet
+        self.lstyle = local_style
         self.fields = table["fields"]
         self.format_map = {"field": FieldFormatter, }
 
@@ -138,14 +139,29 @@ class TableHelper(object):
         return aligns
 
     def heading_color(self):
-        color = colors.HexColor(self.lstyle["table"]["heading_color"])
-        return [("BACKGROUND", (0, 0), (-1, 0), color)]
+        textcolor = colors.HexColor(self.lstyle["table"]["heading_color"])
+        background = colors.HexColor(self.lstyle["table"]["heading_background"])
+        return [
+            ("BACKGROUND", (0, 0), (-1, 0), background),
+            ("TEXTCOLOR", (0, 0), (-1, 0), textcolor),
+        ]
+
+    def table_fonts(self):
+        font_name = self.lstyle["table"]["font"]
+        font_size = fontsize_map[self.lstyle["table"]["fontSize"]]
+        font_color = colors.HexColor(self.lstyle["table"]["font_color"])
+        return [
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ("FONT", (0, 0), (-1, -1), font_name),
+            ("TEXTCOLOR", (0, 1), (-1, -1), font_color),
+            ("FONTSIZE", (0, 0), (-1, -1), font_size),
+        ]
 
     def table_style(self):
         """generate TableStyle instance"""
         styles = self.col_alignments() + self.head_alignments() + \
-            self.heading_color()
-
+            self.heading_color() + self.table_fonts()
         return TableStyle(styles)
 
     def extract_data(self):
@@ -161,8 +177,11 @@ class TableHelper(object):
 
 class RLStyler(object):
 
-    def __init__(self, local_style, document):
-        self.local_style = local_style
+    def __init__(self, document, local_style=None):
+        if local_style:
+            self.local_style = local_style
+        else:
+            self.local_style = self.load_local_style()
         self.doc = document
         self.style = getSampleStyleSheet()
         self.unit = cm
@@ -171,6 +190,13 @@ class RLStyler(object):
 
     def __getitem__(self, key):
         return self.style[key]
+
+    def load_local_style(self):
+        """
+        load default style update
+        """
+        with open_text("dkit.resources", "rl_stylesheet.yaml") as infile:
+            return yaml_load(infile)
 
     @property
     def title_date(self):
@@ -225,16 +251,19 @@ class RLStyler(object):
 
     def register_fonts(self):
         """load additional fonts"""
-        normal = "../resources/SourceSansPro-Regular.ttf"
-        bold = "../resources/SourceSansPro-Bold.ttf"
-        italic = "../resources/SourceSansPro-Italic.ttf"
-        bold_italic = "../resources/SourceSansPro-BoldItalic.ttf"
-        pdfmetrics.registerFont(TTFont('SourceSansPro', normal))
-        pdfmetrics.registerFont(TTFont('SourceSansPro-Bold', bold))
-        pdfmetrics.registerFont(TTFont('SourceSansProi-Ital', italic))
-        pdfmetrics.registerFont(TTFont('SourceSansPro-BoldItalic', bold_italic))
-        pdfmetrics.registerFontFamily("SourceSansPro", "SourceSansPro", "SourceSansPro-Bold",
-                                      "SourceSansPro-Ital", "SourceSansPro-BoldItalic")
+        def register_font(font_name, file_name):
+            """load font from resources and register"""
+            with open_binary("dkit.resources", file_name) as infile:
+                pdfmetrics.registerFont(TTFont(font_name, infile))
+
+        register_font("SourceSansPro", "SourceSansPro-Regular.ttf")
+        register_font("SourceSansPro-Bold", "SourceSansPro-Bold.ttf")
+        register_font("SourceSansPro-Italic", "SourceSansPro-Italic.ttf")
+        register_font("SourceSansPro-BoldItalic", "SourceSansPro-BoldItalic.ttf")
+        pdfmetrics.registerFontFamily(
+            "SourceSansPro", "SourceSansPro", "SourceSansPro-Bold",
+            "SourceSansPro-Ital", "SourceSansPro-BoldItalic"
+        )
 
     def __print_style(self, style):
         """helper to print style info"""
@@ -243,9 +272,9 @@ class RLStyler(object):
 
     def update_styles(self):
         # Create Verbatim style
-        print(list(self.style.byName.keys()))
+        # print(list(self.style.byName.keys()))
         h1 = dict(self.style.byName)["Heading1"]
-        self.__print_style(h1)
+        # self.__print_style(h1)
         self.style.byName['Verbatim'] = ParagraphStyle(
             'Verbatim',
             parent=self.style['Normal'],
@@ -273,6 +302,8 @@ class RLStyler(object):
             for k, v in updates.items():
                 if "Color" in k:
                     setattr(this, k, colors.HexColor(v))
+                elif k == "fontSize":
+                    setattr(this, k, fontsize_map[v])
                 else:
                     setattr(this, k,  v)
 
@@ -518,7 +549,11 @@ class ReportlabDocRenderer(AbstractRenderer):
 
     def _make_all(self):
         yield PageBreak()
-        for c in self.data.as_dict()["elements"]:
+        if isinstance(self.data, Document):
+            content = self.data.as_dict()["elements"]
+        else:
+            content = self.data
+        for c in content:
             i = self.callbacks[c["~>"]](c)
             if is_list(i):
                 yield from i
@@ -529,13 +564,14 @@ class ReportlabDocRenderer(AbstractRenderer):
         yield from self._make_all()
 
 
-class ReportLabBuilder(object):
+class ReportLabRenderer(object):
 
-    def __init__(self, local_style):
+    def __init__(self, styler=None, local_style=None):
+        self.styler = styler if styler else RLStyler
         self.local_style = local_style
 
     def run(self, file_name, doc):
-        self.styler = RLStyler(self.local_style, doc)
+        self.styler = self.styler(doc, self.local_style)
         content = list(ReportlabDocRenderer(doc, self.styler))
         renderer = SimpleDocTemplate(
             file_name,

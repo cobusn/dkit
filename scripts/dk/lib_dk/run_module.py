@@ -220,7 +220,6 @@ class RunModule(module.MultiCommandModule):
     def do_report(self):
         """run report"""
         from dkit.doc import builder
-
         b = builder.ReportBuilder.from_file(self.args.report)
         b.run()
 
