@@ -44,5 +44,4 @@ class Lorem(object):
         lst = doc.List(ordered=False)
         for i in range(n):
             lst.add_entry(self.txt_sentence())
-        print("xx", lst.as_dict())
         return lst

@@ -19,25 +19,30 @@
 # SOFTWARE.
 
 import functools
+import logging
 import pathlib
 import subprocess
-import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
+from string import Template
 
+import inflect
 import jinja2
 import mistune
 import yaml
-import inflect
 from IPython import get_ipython
 from IPython.display import HTML
 from tabulate import tabulate
-from string import Template
+
 from . import json_renderer, latex_renderer, schemas
+from .. import __version__
+from ..data import json_utils as ju
 from ..etl import source
 from ..plot import matplotlib
-from ..data import json_utils as ju
+from .document import Document, __report_version__
+from .lorem import Lorem
+from .latex import LatexRunner
 
 try:
     from yaml import CLoader as Loader
@@ -58,26 +63,26 @@ def is_in_notebook():
         return False
 
 
-class ReportContent(ABC):
-
-    def __init__(self, parent):
-        self.parent = parent
-        self.configure()
-
-    @property
-    def data(self):
-        return self.parent.data
-
-    @property
-    def variables(self):
-        return self.parent.variables
-
-    def configure(self):
-        """
-        Hook to perform initialisation without having to boilerplate the
-        constructor
-        """
-        pass
+# class ReportContent(ABC):
+#
+#    def __init__(self, parent):
+#          self.parent = parent
+#         self.configure()
+#
+#     @property
+#     def data(self):
+#         return self.parent.data
+#
+#     @property
+#     def variables(self):
+#         return self.parent.variables
+#
+#     def configure(self):
+#         """
+#         Hook to perform initialisation without having to boilerplate the
+#         constructor
+#        """
+#        pass
 
 
 def jsonise(fn) -> str:
@@ -133,51 +138,6 @@ def is_table(func):
     return wrapper
 
 
-class LatexRunner(object):
-    """
-    calls pdflatex to generate a pdf file from latex source
-    """
-    def __init__(self, tex_filename, command="pdflatex", output_folder="."):
-        self.tex_filename = tex_filename
-        self.command = command
-        self.output_folder = output_folder.strip()
-
-    def run(self):
-        """
-        call latex command to build specified file
-        """
-        cmd = [self.command, '-interaction', 'nonstopmode',
-               f"-output-directory={self.output_folder}", self.tex_filename]
-
-        proc = subprocess.Popen(
-            cmd,
-            # stdout=subprocess.PIPE,
-            # stderr=subprocess.PIPE
-        )
-
-        out, err = proc.communicate()
-        retcode = proc.returncode
-
-        if not retcode == 0:
-            raise ValueError('Error {} executing command: {}'.format(retcode, ' '.join(cmd)))
-
-    def clean(self):
-        """
-        clean all associated tex logiles etc.
-
-        will silently catch any FileNotFoundError
-        """
-        stem = (Path.cwd() / self.tex_filename).stem
-        clean_extensions = ["log", "aux", "idx", "out", "snm", "toc", "nav", "vrb"]
-        _path = Path.cwd() / self.output_folder
-        for ext in clean_extensions:
-            path = _path / f"{stem}.{ext}"
-            try:
-                path.unlink()
-            except FileNotFoundError:
-                pass
-
-
 class BuilderProxy(object):
     """load a subset of report configuration (data and varialbes)
 
@@ -198,7 +158,10 @@ class BuilderProxy(object):
 
     @property
     def plot_folder(self):
-        return self.definition["configuration"]["plot_folder"]
+        if "plot_folder" in self.definition["configuration"]:
+            return self.definition["configuration"]["plot_folder"]
+        else:
+            return "plots"
 
     def load_data(self):
         """
@@ -224,8 +187,9 @@ class BuilderProxy(object):
         constructor. file is a yaml file
         """
         with open(file_name) as infile:
-            j = yaml.load(infile, Loader=Loader)
-        return cls(j)
+            definition  = yaml.load(infile, Loader=Loader)
+        if definition["configuration"]["builder"] == "reportlab":
+            return ReportLabBuilder(definition)
 
 
 class ReportBuilder(BuilderProxy):
@@ -242,6 +206,7 @@ class ReportBuilder(BuilderProxy):
             "variables": self.variables,
             "data": self.data,
             "inflect": inflect.engine(),
+            "lorem": Lorem(),
         }
         self.documents = {}
         self.presentations = {}
@@ -251,6 +216,10 @@ class ReportBuilder(BuilderProxy):
         self.load_stylesheets()
         self.load_documents()
         self.load_presentations()
+
+    @property
+    def builder_type(self):
+        return self.definition["configuration"]["builder"]
 
     def __fmt_currency(self, the_str):
         return "R{:,.0f}".format(the_str)
@@ -284,7 +253,8 @@ class ReportBuilder(BuilderProxy):
         loader_path = Path().cwd() / self.configuration["template_folder"]
         loader = jinja2.FileSystemLoader(str(loader_path))
         self.environment = jinja2.Environment(loader=loader)
-        for doc_name, template_name in self.definition["documents"].items():
+        for template_name in self.definition["documents"]:
+            doc_name = template_name.replace(".md", "")
             logger.info(f"loading document template: {template_name}")
             self.documents[doc_name] = self.environment.get_template(template_name)
 
@@ -298,7 +268,77 @@ class ReportBuilder(BuilderProxy):
             with open(template_name) as tpl_data:
                 self.presentations[k] = jinja2.Template(tpl_data.read())
 
-    def render(self, renderer, documents):
+    def run(self):
+        raise NotImplementedError
+
+    def render_templates(self):
+        raise NotImplementedError
+
+
+class ReportLabBuilder(ReportBuilder):
+
+    def run(self):
+        """build report using reportlab module"""
+        from dkit.doc.reportlab_renderer import ReportLabRenderer
+        #
+        # add logic to instantiate styler etc..
+        #
+        b = ReportLabRenderer()
+        doc = self.render_templates(self.documents)
+        b.run("reportlab_render.pdf", doc)
+
+    def render_templates(self, documents):
+        """
+        render report
+
+        arguments:
+            - renderer: object that implement renderer interface
+                        (e.g. LatexReport)
+            - documents: dictionary of documents
+        """
+        class __ProxyDocument(Document):
+            """
+            modified Document class to support elements that have already
+            been translated to dict format
+            """
+            def as_dict(self):
+                return {
+                    "library_version": __version__,
+                    "report_version": __report_version__,
+                    "title": self.title,
+                    "sub_title": self.sub_title,
+                    "author": self.author,
+                    "contact": self.contact,
+                    "email": self.email,
+                    "date": self.date,
+                    "data": self.store,
+                    "elements": self.elements
+                }
+
+        content = []
+        for _name, _template in documents.items():
+            logger.info(f"rendering template to {_name}")
+            rendered = _template.render(**self.code)
+
+            # create json cannonical format
+            md = mistune.Markdown(renderer=json_renderer.JSONRenderer())
+            content += md(rendered)
+        retval = __ProxyDocument(**self.definition["document"])
+        retval.elements = content
+        return retval
+
+
+class LatexReportBuilder(ReportBuilder):
+
+    """ReportBuilder specialized for building Latex projects"""
+    def run(self):
+        self.render(latex_renderer.LatexDocRenderer, self.documents)
+        self.render(latex_renderer.LatexBeamerRenderer, self.presentations)
+        runner = LatexRunner(_name, output_folder="output")
+        runner.run()
+        runner.clean()
+
+    def render_templates(self, renderer, documents):
         """
         render report
 
@@ -320,15 +360,3 @@ class ReportBuilder(BuilderProxy):
             r = renderer(dict_, style_sheet=self.style_sheet, plot_folder=self.plot_folder)
             with open(_name, "wt") as out_file:
                 out_file.write("".join(r))
-
-    def build_output(self):
-        for _name in self.definition["latex"]:
-            runner = LatexRunner(_name, output_folder="output")
-            runner.run()
-            runner.clean()
-
-    def run(self, report_type="latex"):
-        if report_type == "latex":
-            self.render(latex_renderer.LatexDocRenderer, self.documents)
-            self.render(latex_renderer.LatexBeamerRenderer, self.presentations)
-            self.build_output()

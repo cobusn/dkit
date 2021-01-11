@@ -1,0 +1,87 @@
+# 
+# Default stylesheet for Reportlab documents
+#
+# Sizes:
+# tiny, scriptsize, footnotesize, small, normalsize, 
+# large, Large, LARGE, huge, Huge
+# 
+# Standard Fonts:
+# Courier, Helvetica, Symbol, Times, Times-Roman
+
+reportlab:
+  # Reportlab specific customisations
+  styles:
+    Heading1:
+      textColor: "#05386E"
+      fontName: SourceSansPro-Bold
+      fontSize: large
+      spaceAfter: 5
+      leading: 10
+    Heading2:
+      textColor: "#05386E"
+      fontName: SourceSansPro-Bold
+      fontSize: normalsize
+      spaceAfter: 5
+      leading: 10
+    Heading3:
+      textColor: "#05386E"
+      fontName: SourceSansPro
+      fontSize: normalsize 
+      spaceAfter: 5 
+      leading: 10
+    Normal: 
+      fontName: SourceSansPro
+      fontSize: normalsize 
+      #  textColor: "#378245"
+      textColor: "#05386E"
+      alignment: 4                    # TA_JUSTIFY
+    BodyText:
+      fontSize: normalsize 
+      spaceAfter: 10
+      alignment: 4                    # TA_JUSTIFY
+      textColor: "#05386E"
+    Verbatim: 
+      fontName: Times-Roman
+    BlockQuote: 
+      fontName: Times-Italic
+    Code:
+      fontName: Times-Roman 
+      leading: 10
+    UnorderedList:
+      textColor: "#378245"
+      spaceAfter: 4
+    OrderedList:
+      textColor: "#378245"
+      spaceAfter: 4
+page:
+  size: A4
+  left: 20
+  right: 20
+  top: 22
+  bottom: 20
+  orientation: portrait
+  title_date_format: "{:%d %B %Y}"
+table:
+  heading_color: "#FFFFFF"
+  heading_background: "#05386E"
+  fontSize: footnotesize
+  font_color: "#05386E" 
+  font: SourceSansPro
+plot:
+  theme: seaborn-bright
+  colors:
+    palette:
+      - "#003F7D"
+      - "#4A8691"
+      - "#66CBDE"
+      - "#DEA95B"
+      - "#7393DE"
+    red: "#ef3340"
+    green: "#00c389"
+  width: 16
+  height: 7 
+  axes:
+    linewidth: 0.5
+    titlesize: medium 
+    labelsize: small
+    ticklabelsize: x-small 

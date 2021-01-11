@@ -37,7 +37,23 @@ setup(
         "dkit.etl.extensions",
         "dkit.parsers",
         "dkit.plot",
+        "dkit.resources",
         "dkit.shell",
         "dkit.utilities",
+    ],
+    data_files=[
+        (
+            'dkit/resources', [
+                "dkit/resources/SourceSansPro-Bold.ttf",
+                "dkit/resources/SourceSansPro-Regular.ttf",
+                "dkit/resources/SourceSansPro-Italic.ttf",
+                "dkit/resources/SourceSansPro-Bold.ttf",
+                "dkit/resources/SourceSansPro-BoldItalic.ttf",
+                "dkit/resources/lorem.txt",
+                "dkit/resources/background.pdf",
+                "dkit/resources/cars.csv",
+                "dkit/resources/rl_stylesheet.yaml",
+            ]
+        )
     ],
 )

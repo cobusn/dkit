@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, "..")  # noqa
-from dkit.doc.reportlab_renderer import ReportLabBuilder
+from dkit.doc.reportlab_renderer import ReportLabRenderer
 from dkit.utilities.file_helper import yaml_load
 from dkit.doc import document
 # from example_barplot import gg
@@ -107,10 +107,10 @@ def build_doc():
     d += Table(
         list(fake_helper.persons(n=20)),
         [
-            Table.Field("first_name", "First name", width=5),
-            Table.Field("last_name", "Last name"),
-            Table.Field("birthday", "DOB", align="right", width=4, format_="{:%Y-%m-%d}"),
-            Table.Field("gender", "Gender"),
+            Table.Field("first_name", "First name", width=3),
+            Table.Field("last_name", "Last name", width=3),
+            Table.Field("birthday", "DOB", align="right", width=3, format_="{:%Y-%m-%d}"),
+            Table.Field("gender", "Gender", width=2),
         ]
     )
 
@@ -118,11 +118,7 @@ def build_doc():
 
 
 def render_doc(doc):
-
-    with open("stylesheet.yaml") as infile:
-        local_style = yaml_load(infile)
-
-    b = ReportLabBuilder(local_style)
+    b = ReportLabRenderer()
     b.run("reportlab_render.pdf", doc)
 
 
