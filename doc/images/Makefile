@@ -28,15 +28,15 @@ DATA      =     AttrDict.svg Pivot.svg ReducePivot.svg Proxy.svg XmlTransformer.
 				Aggregate.svg GroupBy.svg Count.svg _Shelve.svg FlexBSDDBShelve.svg \
 				FlexShelve.svg FastFlexShelve.svg Substitute.svg OrderedSet.svg
 ETLSOURCE =     AbstractSource.svg FileListingSource.svg AbstractMultiReaderSource.svg PickleSource.svg\
-				JsonlSource.svg CsvDictSource.svg XmlRpcSource.svg EntityValidator.svg\
-				Entity.svg Transform.svg ModelManager.svg ExpressionFilter.svg Connection.svg\
-				Query.svg Endpoint.svg ShelveVerifier.svg Relation.svg\
-				ETLServices.svg 
+				JsonlSource.svg CsvDictSource.svg XmlRpcSource.svg
+ETLCLASSES =	EntityValidator.svg Entity.svg Transform.svg ModelManager.svg ExpressionFilter.svg \
+				Connection.svg Query.svg Endpoint.svg ShelveVerifier.svg Relation.svg ETLServices.svg  \
+				XmlSource.svg
 SQL_ALCHEMY_SOURCE = SQLAlchemyAccessor.svg SQLAlchemyTableSource.svg SQLAlchemySink.svg \
 					 SQLAlchemyModelFactory.svg SQLAlchemyReflector SQLAlchemySelectSource.svg
 PYTABLES_SOURCE = PyTablesAccessor.svg PyTablesSource.svg PyTablesSink.svg PyTablesModelFactory.svg \
 				  PyTablesReflector.svg PyTablesServices.svg
-ETL       = 	$(ETLSOURCE) $(SQL_ALCHEMY_SOURCE) $(PYTABLES_SOURCE) XmlSource.svg
+ETL       = 	$(ETLSOURCE) $(SQL_ALCHEMY_SOURCE) $(PYTABLES_SOURCE) $(ETLCLASSES) 
 PARSERS   = 	URIStruct.svg SearchScanner.svg MatchScanner.svg InfixParser.svg HTMLTableParser.svg\
 				TypeParser.svg
 PLOT      =     classes_plot.svg Plot.svg GeomLine.svg GeomArea.svg GeomScatter.svg GeomBar.svg AbstractGeom.svg\
