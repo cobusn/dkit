@@ -45,14 +45,22 @@ type_map = {
 }
 
 
+def int_or_none(value):
+    if value == "None":
+        return None
+    else:
+        return int(value)
+
+
 class TypeParser(object):
 
     parameter_map = {
-        "str_len": [r"\d+", int],
+        "str_len": [r"\d+|None", int_or_none],
         "primary_key": [re_bool, to_boolean],
         "unique": [re_bool, to_boolean],
         "index": [re_bool, to_boolean],
         "autoincrement": [re_bool, to_boolean],
+        "computed": [re_bool, to_boolean],
         "nullable": [re_bool, to_boolean],
         "info": [r"\w+", str],
     }
