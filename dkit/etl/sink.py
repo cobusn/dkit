@@ -36,7 +36,7 @@ import os
 from ..utilities import instrumentation
 from ..utilities import iff
 from ..data import json_utils as ju
-from ..utilities.iter_helper import chunker
+from ..data.iteration import chunker
 
 # CONSTANTS
 DATE_FMT = '%Y-%m-%d'

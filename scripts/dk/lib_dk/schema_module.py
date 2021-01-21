@@ -29,7 +29,7 @@ from . import module, options
 from dkit.etl import model
 from dkit.etl.extensions import ext_sql_alchemy as sa
 from dkit.parsers import uri_parser
-from dkit.utilities import iter_helper
+from dkit.data import iteration
 
 
 class SchemaModule(module.CRUDModule):
@@ -95,7 +95,7 @@ class SchemaModule(module.CRUDModule):
         do_close = False    # used to close file, if opened
         services = self.load_services()
         all_entity_names = list(services.model.entities.keys())
-        entity_names = list(sorted(iter_helper.glob_list(all_entity_names, self.args.glob)))
+        entity_names = list(sorted(iteration.glob_list(all_entity_names, self.args.glob)))
 
         # export model
         if self.args.type == "model":
@@ -178,7 +178,7 @@ class SchemaModule(module.CRUDModule):
         services = self.load_services(ext_sql_alchemy.SQLServices)
 
         table_names = services.get_sql_tables(self.args.connection)
-        reflect_names = list(sorted(iter_helper.glob_list(table_names, self.args.glob)))
+        reflect_names = list(sorted(iteration.glob_list(table_names, self.args.glob)))
         for table_name in reflect_names:
             self.print("\n" + table_name)
             e = services.get_sql_table_schema(

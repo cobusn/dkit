@@ -101,27 +101,12 @@ Pie
    :undoc-members:
    :show-inheritance:
 
-iter_helper
-===========
-.. automodule:: dkit.utilities.iter_helper
-
-.. autofunction:: dkit.utilities.iter_helper.add_key
-.. autofunction:: dkit.utilities.iter_helper.add_uuid_key
-.. autofunction:: dkit.utilities.iter_helper.chunker
-.. autofunction:: dkit.utilities.iter_helper.glob_list
-
 log_helper
 ==========
 .. automodule:: dkit.utilities.log_helper
-    :members:
+   :members:
+   :undoc-members:
 
-functions
----------
-# .. autofunction:: dkit.utilities.log_helper.init_file_logger
-# .. autofunction:: dkit.utilities.log_helper.init_null_logger
-# .. autofunction:: dkit.utilities.log_helper.init_stream_logger
-# .. autofunction:: dkit.utilities.log_helper.init_stdout_logger
-# .. autofunction:: dkit.utilities.log_helper.init_stderr_logger
 
 intervals
 =========
