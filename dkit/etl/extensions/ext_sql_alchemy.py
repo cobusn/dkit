@@ -282,7 +282,8 @@ class SQLAlchemyReflector(object):
             _name = ref_col["name"]
             ref_col["type"] = self.c_map[_type.__class__.__name__]
             if ref_col["type"] == "string":
-                ref_col["str_len"] = _type.length
+                if _type.length:
+                    ref_col["str_len"] = _type.length
             if "primary_key" in ref_col:
                 if ref_col["primary_key"] == 1:
                     ref_col["primary_key"] = True
