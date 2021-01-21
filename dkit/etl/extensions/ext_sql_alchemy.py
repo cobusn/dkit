@@ -292,6 +292,8 @@ class SQLAlchemyReflector(object):
             if "comment" in ref_col:
                 del ref_col["comment"]
             del ref_col["nullable"]
+            if "computed" in ref_col:
+                ref_col["computed"] = True
             if "autoincrement" in ref_col:
                 del ref_col["autoincrement"]
             if "default" in ref_col:
