@@ -40,8 +40,8 @@ class RelationsModule(module.CRUDModule):
         """
         if self.args.relation is None:
             relation_name = "{}_{}".format(
-                self.args.constrained_entity.lower(),
-                self.args.referred_entity.lower()
+                self.args.many.lower(),
+                self.args.one.lower()
             )
         else:
             relation_name = self.args.relation
@@ -50,8 +50,8 @@ class RelationsModule(module.CRUDModule):
 
         services.model.add_relation(
             relation_name,
-            self.args.constrained_entity,
-            self.args.referred_entity,
+            self.args.many,
+            self.args.one,
             self.args.const_cols,
             self.args.ref_cols
         )
