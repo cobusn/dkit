@@ -10,7 +10,7 @@ PYTHON=python
 all: sdist bdist
 
 test:
-	cd test && make
+	cd test && make -j 7
 
 doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
 	cd doc/images && make -j 8

@@ -23,7 +23,7 @@ Maintain relations
 """
 
 from . import module, options
-from dkit.utilities import iter_helper
+from dkit.data import iteration
 from dkit.etl.extensions import ext_sql_alchemy
 
 
@@ -70,7 +70,7 @@ class RelationsModule(module.CRUDModule):
         """reflect entities in sql database"""
         services = self.load_services(ext_sql_alchemy.SQLServices)
         table_names = services.get_sql_tables(self.args.connection)
-        reflect_names = list(sorted(iter_helper.glob_list(table_names, self.args.glob)))
+        reflect_names = list(sorted(iteration.glob_list(table_names, self.args.glob)))
         for table_name in reflect_names:
             self.print(f"\nReflecting relations for table '{table_name}':")
             e = services.get_sql_table_relations(

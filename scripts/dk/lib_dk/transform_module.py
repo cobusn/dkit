@@ -24,7 +24,7 @@ Maintain transforms
 
 from . import module, defaults, options
 from dkit.etl import transform, model
-from dkit.data import manipulate
+from dkit.data import iteration
 
 
 class TransformModule(module.MultiCommandModule):
@@ -59,7 +59,7 @@ class TransformModule(module.MultiCommandModule):
         """
         self.push_to_uri(
             self.args.output,
-            manipulate.iter_add_id(
+            iteration.iter_add_id(
                 self.input_stream(self.args.input),
                 key=self.args.fieldname
             )

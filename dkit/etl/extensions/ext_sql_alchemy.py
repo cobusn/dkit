@@ -21,7 +21,7 @@
 import importlib
 import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...utilities import iter_helper
+from ...data import iteration
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import CkitETLException
@@ -539,7 +539,7 @@ class SQLAlchemySink(sink.Sink):
         conn = self.accessor.engine.connect()
 
         stats = self.stats.start()
-        for chunk in iter_helper.chunker(the_iterable, self.commit_rate):
+        for chunk in iteration.chunker(the_iterable, self.commit_rate):
             ins_chunk = list(chunk)
             conn.execute(
                 the_table.insert(),

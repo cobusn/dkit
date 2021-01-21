@@ -18,7 +18,7 @@
 
 from ...data import msgpack_utils
 from .. import source, sink
-from ...utilities.iter_helper import chunker
+from ...data.iteration import chunker
 
 
 class MsgpackSource(source.AbstractMultiReaderSource):
