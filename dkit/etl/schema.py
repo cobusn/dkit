@@ -105,6 +105,13 @@ class EntityValidator(cerberus.Validator):
         if not isinstance(strlen, int):
             self._error(field, "Must be integer value")
 
+    def _validate_computed(self, computed, field, value):
+        """
+         {'type': 'boolean'}
+        """
+        if computed and not isinstance(computed, bool):
+            self._error(field, "Must be boolean.")
+
     def _validate_primary_key(self, primarykey, field, value):
         """
          {'type': 'boolean'}
