@@ -32,7 +32,6 @@ class TestTypeParser(unittest.TestCase):
         tests = [
             ["String()", {"type": "string"}],
             ["String(computed=True)", {"type": "string", "computed": True}],
-            ["String(str_len=None)", {"type": "string", "str_len": None}],
             ["String(str_len=10)", {"type": "string", "str_len": 10}],
             ["String(str_len=10, primary_key=True)",
              {"type": "string", "str_len": 10, "primary_key": True}
