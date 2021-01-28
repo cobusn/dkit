@@ -17,18 +17,20 @@
 #
 # =========== =============== =================================================
 # 27 Nov 2019 Cobus Nel       Added facility for options in URL
+# 28 Jan 2021 Cobus Nel       Modified code to work with Oracle SID's
 # =========== =============== =================================================
 import importlib
 import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...utilities import iter_helper
+from ...data import iteration
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import CkitETLException
+from ...utilities.cmd_helper import LazyLoad
 from datetime import datetime
-import cx_Oracle as ora
 from typing import Dict
 import re
+ora = LazyLoad("cx_Oracle")
 
 
 logger = logging.getLogger(__name__)
@@ -564,7 +566,7 @@ class SQLAlchemySink(sink.Sink):
         conn = self.accessor.engine.connect()
 
         stats = self.stats.start()
-        for chunk in iter_helper.chunker(the_iterable, self.commit_rate):
+        for chunk in iteration.chunker(the_iterable, self.commit_rate):
             ins_chunk = list(chunk)
             conn.execute(
                 the_table.insert(),
