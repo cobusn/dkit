@@ -23,6 +23,7 @@ utilities for iteration tasks
 =========== =============== =================================================
 Aug 2019    Cobus Nel       Added uuid_key function
 Jan 2021    Cobus Nel       refactored iter_functions from manipulate.py
+Jan 2020    Cobus Nel       added take()
 =========== =============== =================================================
 """
 
@@ -46,7 +47,13 @@ __all__ = [
     "iter_take",
     "iter_rename",
     "iter_sample",
+    "take",
 ]
+
+
+def take(row, *fields):
+    """create new dict with just entires specified in fields"""
+    return {k: row[k] for k in fields}
 
 
 def add_uuid_key(iterable, name="uuid"):
