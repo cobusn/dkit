@@ -21,12 +21,12 @@
 import importlib
 import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...data import iteration
+from ...utilities import iter_helper
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import CkitETLException
 from datetime import datetime
-
+import cx_Oracle as ora
 from typing import Dict
 import re
 
@@ -59,28 +59,49 @@ class URL(object):
         self.database = database
         self.options = options
 
-    def __str__(self):
-        s = self.drivername + "://"
+    @property
+    def _user(self):
+        """create user / password portion of url"""
+        rv = ""
         if self.username is not None:
-            s += _rfc_1738_quote(self.username)
+            rv = _rfc_1738_quote(self.username)
             if self.password is not None:
-                s += ":" + _rfc_1738_quote(self.password)
-            s += "@"
-        if self.host is not None:
-            if ":" in self.host:
-                s += "[%s]" % self.host
-            else:
-                s += self.host
-        if self.port is not None:
-            s += ":" + str(self.port)
-        if self.database is not None:
-            if not(("oracle" in self.drivername) and (self.host is None)):
-                s += "/"
-            s += self.database
+                rv += ":" + _rfc_1738_quote(self.password)
+            rv += "@"
+        return rv
+
+    @property
+    def _uri(self):
+        rv = ""
+        if "oracle" in self.drivername:
+            # create Oracle DSN
+            return ora.makedsn(
+                self.host,
+                self.port,
+                service_name=self.database
+            )
+        else:
+            if self.host is not None:
+                if ":" in self.host:
+                    rv += "[%s]" % self.host
+                else:
+                    rv += self.host
+            if self.port is not None:
+                rv += ":" + str(self.port)
+            if self.database is not None and self.host is not None:
+                rv += "/"
+                rv += self.database
+        return rv
+
+    @property
+    def _options(self):
         if self.options is not None:
-            s += "?" + self.options
-        print(s)
-        return s
+            return "?" + self.options
+        else:
+            return ""
+
+    def __str__(self):
+        return f"{self.drivername}://{self._user}{self._uri}{self._options}"
 
 
 def as_sqla_url(uri_map: Dict[str, str]):
@@ -543,7 +564,7 @@ class SQLAlchemySink(sink.Sink):
         conn = self.accessor.engine.connect()
 
         stats = self.stats.start()
-        for chunk in iteration.chunker(the_iterable, self.commit_rate):
+        for chunk in iter_helper.chunker(the_iterable, self.commit_rate):
             ins_chunk = list(chunk)
             conn.execute(
                 the_table.insert(),
