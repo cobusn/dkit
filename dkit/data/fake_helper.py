@@ -7,6 +7,14 @@ from faker import Factory
 
 from faker.providers import BaseProvider
 from . import helpers
+from .. import DEFAULT_LOCALE
+import logging
+
+
+#
+# Faker is generating too much logging
+#
+logging.getLogger('faker.factory').setLevel(logging.ERROR)
 
 
 class DocumentProvider(BaseProvider):
@@ -51,7 +59,7 @@ class TaskProvider(BaseProvider):
 
     def __init__(self, generator):
         super().__init__(generator)
-        self.fake = Factory.create()
+        self.fake = Factory.create(locale=DEFAULT_LOCALE)
         self.fake.add_provider(DocumentProvider)
         self.fake.add_provider(ApplicationProvider)
 
@@ -92,7 +100,7 @@ def persons(n=1000, split=0.5):
     :param n: number of persons to generate
     :param split: split between male and female. 0.9 means 90% male
     """
-    fake = Factory.create()
+    fake = Factory.create(locale=DEFAULT_LOCALE)
     i = 0
 
     while i < n:

@@ -45,48 +45,32 @@ Data manipulation routines.
 from .. import NA_VALUE
 from ..decorators import deprecated
 from ..utilities.introspection import is_list
-from .stats import quantile_bins
 from .helpers import md5_obj_hash
 import collections
-import datetime
-import dateutil.parser
-import decimal
 import itertools
 import math
 import operator
-import random
 import re
 import statistics
 import sys
 import typing
-import uuid
-from collections_extended import RangeMap
 
 
 __all__ = [
-        "Indexer",
-        "InferTypes",
-        "KeyIndexer",
-        "MultiKeyIndexer",
-        "Pivot",
-        "ReducePivot",
-        "Substitute",
-        "aggregate",
-        "aggregates",
-        "distinct",
-        "duplicates",
-        "index",
-        "infer_type",
-        "iter_add_id",
-        "iter_drop",
-        "iter_keep",
-        "iter_take",
-        "iter_rename",
-        "iter_sample",
-        "melt",
-        "merge",
-        "reduce_aggregate",
-        "rename",
+    "Indexer",
+    "KeyIndexer",
+    "MultiKeyIndexer",
+    "Pivot",
+    "ReducePivot",
+    "Substitute",
+    "aggregate",
+    "aggregates",
+    "distinct",
+    "duplicates",
+    "index",
+    "melt",
+    "merge",
+    "reduce_aggregate",
 ]
 
 
@@ -198,21 +182,6 @@ def distinct_values(iter_input, field) -> set:
         set containing distinct values
     """
     return set(r[field] for r in iter_input)
-
-
-def rename(the_iterable, rename_map):
-    """Rename rows of dictionaries
-
-    Args:
-        - the_iterable: iterable of dictionary like rows
-        - rename_map: rename dictionary
-    """
-    yield from (
-        {
-            v: row[k] for v, k in rename_map.items()
-        }
-        for row in the_iterable
-    )
 
 
 def reduce_aggregate(the_iterable, by_list, value_field, function=operator.add):
@@ -724,179 +693,6 @@ class ReducePivot(__PivotAbstract):
             yield retval
 
 
-def iter_add_id(the_iterator, key="uuid"):
-    """
-    Add UUID to each row
-    :param the_iterator: iterator containing the rows in dictionary format
-    :param key: key for uuid
-    """
-    for row in the_iterator:
-        row[key] = str(uuid.uuid4())
-        yield row
-
-
-def iter_add_quantile(the_iterator, value_field, n_quantiles=10, strict=False,
-                      field_name="quantile"):
-    """
-    Add quantile membership to each row
-
-    WARINING: this function will convert input to a list and may
-    have heavy memory overhead.
-
-    args:
-        * the_iterator: input data
-        * value_field: field name for values
-        * n_quantiles: number of quantiles
-        * strict: generate an error if values overflow to other quantiles
-        * field_name: name of new field
-
-    """
-    data = list(the_iterator)
-
-    q_map = RangeMap.from_iterable(
-        quantile_bins(
-            (i[value_field] for i in data),
-            n_quantiles,
-            strict
-        )
-    )
-
-    def add_q(row):
-        row["quantile"] = q_map[row["amount"]]
-        return row
-
-    return map(add_q, data)
-
-
-def iter_drop(the_iterator, fields):
-    """Drop specified fields from each row """
-    return (
-        {k: v for k, v in row.items() if k not in fields}
-        for row in the_iterator
-    )
-
-
-def iter_keep(the_iterator, fields):
-    """Keep specified fields from each row """
-    return (
-        {k: v for k, v in row.items() if k in fields}
-        for row in the_iterator
-    )
-
-
-def iter_take(the_iterator, fields):
-    """Take only specified fields from each row """
-    return (
-        {k: v for k, v in row.items() if k in fields}
-        for row in the_iterator
-    )
-
-
-def iter_sample(the_iterator, p: float = 1,
-                k: int = 0) -> typing.Generator[typing.Dict, None, None]:
-    """
-    generates samples from items in a generator
-
-    Will sample between 1 and k values with probability p.
-    When k=None, the function will continue sampling until reaching sys.maxint
-
-    Args:
-        the_iterable: an iterable
-        p: probability of sampling an item
-        k: stop when k is reached (sys.max_size if not defined)
-    """
-    k = k if k > 0 else (sys.maxsize - 1)
-    i = 0
-    rand = random.random
-    for entry in the_iterator:
-        if (rand() <= p):
-            yield entry
-            i += 1
-            if i >= k:
-                break
-
-
-def iter_rename(input, rename_map):
-    """rename fields in a dict
-
-    Args:
-        - input: input iterator (iter of Dicts)
-        - rename_map: rename keys
-    """
-    for row in input:
-        for k, v in rename_map.items():
-            row[v] = row.pop(k)
-        yield row
-
-
-def infer_type(input, empty_str=None, strict=True):
-    """
-    infer data type from python string
-
-    Attempt to infer the data type of input.  Input is assumed to be string.
-    If input is a different type that type is returned. If input is an
-    empty string, the empty_str value is returned.
-
-    Reference:
-
-    * https://stackoverflow.com/questions/2103071/
-              determine-the-type-of-a-value-which-is-represented-as-string-in-python
-    * https://stackoverflow.com/questions/10261141/determine-type-of-value-from-a-string-in-python
-
-    :param empty_str: type of empty string
-    :param strict: remove commas from numbers (e.g. 300,000)
-    """
-
-    if input is None:
-        return None
-
-    if type(input) == str:
-        # if empty string return empty_str value
-        if len(input) == 0:
-            return empty_str
-
-        # Parse int or float
-        try:
-            input = input.strip()
-            if len(input) == 0:
-                return empty_str
-
-            if input.lower() in ["true", "false", "yes", "no"]:
-                return bool
-
-            num_input = input.replace(',', "") if not strict else input
-
-            # Integer
-            try:
-                candidate = type(int(num_input))
-                return int
-            except ValueError:
-                candidate = str
-
-            # Float
-            try:
-                candidate = type(float(num_input))
-                return float
-            except ValueError:
-                candidate = str
-
-        except (ValueError, SyntaxError):
-            candidate = str
-
-        if candidate in (int, float, bool):
-            return candidate
-        else:
-            # Not a number check for dates
-            try:
-                date_type = dateutil.parser.parse(input)
-                return type(date_type)
-            except (ValueError, OverflowError):
-                # Ok is a str after all
-                return str
-    else:
-        return type(input)
-
-
 class Substitute(object):
     """Substitute values based on regular expressions
     Args:
@@ -934,104 +730,6 @@ class Substitute(object):
                     except TypeError:
                         pass
             yield row
-
-
-class InferTypes(object):
-    """
-    Infer types for a list of dictionaries.
-
-    Provide additional information.
-    """
-    Point = collections.namedtuple("Point", ["type", "size"])
-    TypeStats = collections.namedtuple(
-        "TypeStats", ["type", "str_type", "dirty", "min", "max", "mean", "stdev"]
-    )
-    type_map = {
-        None: "string",
-        int: "integer",
-        float: "float",
-        bool: "boolean",
-        str: "string",
-        decimal.Decimal: "decimal",
-        datetime.date: "date",
-        datetime.datetime: "datetime",
-    }
-
-    def __init__(self, strict=True):
-        self.the_iterable = None
-        self.strict = strict
-        self.data = None
-        self.summary = None
-        self.num_rows = 0
-
-    def get_main_type(self, types):
-        # note the sequence is important
-        seq = [str, datetime.datetime, datetime.date, decimal.Decimal, bool, float, int, None]
-        for t in seq:
-            if t in types:
-                return t
-
-    def _collect_stats(self, the_iterable, strict, p=1.0, stop=100):
-        row_counter = 0
-        data = collections.defaultdict(lambda: {})
-        for row in iter_sample(the_iterable, p, stop):
-            for key, value in row.items():
-                the_type = infer_type(value, strict)
-                size = len(str(value))
-                data[key][row_counter] = self.Point(the_type, size)
-                row_counter += 1
-        self.num_rows = row_counter
-        return data
-
-    def _calc_summary(self):
-        # summary = collections.OrderedDict()
-        summary = dict()
-
-        for key, points in self.data.items():
-            sizes = [point.size for point in points.values() if point.size is not None]
-            _type = self.get_main_type(set([point.type for point in points.values()]))
-
-            try:
-                _max = max(sizes)
-            except ValueError:
-                _max = 0
-            try:
-                _min = min(sizes)
-            except ValueError:
-                _min = 0
-            try:
-                _mean = statistics.mean(sizes)
-            except statistics.StatisticsError:
-                _mean = 0
-            _str_type = self.type_map[_type]
-            try:
-                _stdev = statistics.stdev(sizes)
-            except statistics.StatisticsError:
-                _stdev = 0
-            _dirty = True if len(sizes) < self.num_rows else False
-            summary[key] = self.TypeStats(_type, _str_type, _dirty, _min, _max, _mean, _stdev)
-        return summary
-
-    # dirty
-    def __get_dirty(self):
-        return False
-
-    dirty = property(__get_dirty)
-
-    def __call__(self, the_iterable, strict=False,  p=1, stop=100):
-        """
-        Infer data types from the provided iterable
-
-        Args:
-            the_iterable:   an iterator of dictionaries
-            strict:         remove commas from numbers if false
-            p:              probability of evaluating a row
-            stop:           stop after n rows
-        """
-        self.the_iterable = the_iterable
-        self.data = self._collect_stats(the_iterable, strict, p=p, stop=stop)
-        self.summary = self._calc_summary()
-        return {key: points.type for key, points in self.summary.items()}
 
 
 def remainder(the_iterable, index_key, value_key, threshold=0.8, n=15, title="Remainder",

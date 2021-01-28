@@ -1,8 +1,8 @@
 from pyspark.sql import types
 from pyspark.sql.types import (
     StructType,
-    LongType,
     StringType,
+    LongType,
     FloatType
     )
 
