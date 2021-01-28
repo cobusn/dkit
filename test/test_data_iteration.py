@@ -1,7 +1,7 @@
 import sys
 import unittest
-sys.path.insert(0, "..")
-from dkit.utilities.iter_helper import chunker, glob_list
+sys.path.insert(0, "..")  # noqa
+from dkit.data.iteration import chunker, glob_list
 
 
 class TestIterHelpers(unittest.TestCase):
@@ -23,15 +23,16 @@ class TestIterHelpers(unittest.TestCase):
 
     def test_chunker(self):
         """test chunker"""
-        input_data  = range(1000)
+        input_data = range(1000)
         for chunk in chunker(input_data, size=100):
-            c  = list(chunk)
+            c = list(chunk)
             self.assertEqual(len(c), 100)
 
     def test_glob_list(self):
         """test glob_list"""
         c = glob_list(self.data, ["j*", "at*"], lambda x: x["name"])
         self.assertEqual(len(list(c)), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

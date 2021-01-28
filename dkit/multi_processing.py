@@ -41,7 +41,7 @@ from dataclasses import dataclass
 from .data.bencode import md5_hash
 from .utilities import log_helper as lh, instrumentation
 from .utilities.identifier import uid
-from .utilities.iter_helper import chunker
+from .data.iteration import chunker
 
 
 logger = logging.getLogger(__name__)

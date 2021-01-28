@@ -378,10 +378,6 @@ merge
 -----
 .. autofunction:: dkit.data.manipulate.merge
 
-iter_sample
------------
-.. autofunction:: dkit.data.manipulate.iter_sample
-
 Pivot
 -----
 .. image:: ../images/Pivot.svg
@@ -403,6 +399,43 @@ Substitute
    :special-members:
    :exclude-members: __dict__,__weakref__,__module__
 
+
+iteration
+=========
+.. automodule:: dkit.data.iteration
+    :members:
+    :undoc-members:
+
+
+infer
+=====
+.. automodule:: dkit.data.infer
+
+Supporting Classes
+------------------
+
+.. autoclass:: dkit.data.infer.Field
+    :members:
+    :undoc-members:
+
+.. autoclass:: dkit.data.infer.TypeStats
+    :members:
+    :undoc-members:
+
+InferTypes
+----------
+
+.. image:: ../images/InferTypes.svg
+   :align: center
+
+.. autoclass:: dkit.data.infer.InferTypes
+   :members:
+   :undoc-members:
+   :special-members: __call__, __len__
+
+infer_type
+----------
+.. autofunction:: infer_type
 
 matching
 ========

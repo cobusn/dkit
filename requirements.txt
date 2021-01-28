@@ -1,7 +1,4 @@
-sphinx
-sphinxcontrib-napoleon
-xlrd
-posix_ipc
+pylint==2.5.2
 boltons
 cerberus
 cffi
@@ -9,6 +6,7 @@ collections-extended
 coverage
 cryptography
 cython
+faker
 flask
 inflect
 ipython
@@ -21,6 +19,7 @@ msgpack
 nose
 openpyxl
 paramiko
+posix_ipc
 psycopg2-binary
 pyarrow
 pyparsing
@@ -29,8 +28,12 @@ python-levenshtein
 pyyaml
 requests
 scipy
+sphinx
+sphinxcontrib-napoleon
 sqlalchemy
 squarify
 tables
 tabulate
+tqdm
+xlrd
 zmq
