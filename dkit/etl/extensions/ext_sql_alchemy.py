@@ -79,6 +79,7 @@ class URL(object):
             s += self.database
         if self.options is not None:
             s += "?" + self.options
+        print(s)
         return s
 
 
