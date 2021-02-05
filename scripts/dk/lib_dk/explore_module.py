@@ -28,6 +28,7 @@ from re import RegexFlag
 from . import module, options
 from dkit.plot import ggrammar
 from dkit.data import manipulate as mp
+from dkit.data import eda
 
 
 class ExploreModule(module.MultiCommandModule):
@@ -222,6 +223,12 @@ class ExploreModule(module.MultiCommandModule):
         a.consume((a[field_name]) for a in self.input_stream(self.args.input))
         self.print(str(a))
 
+    def do_strucmap(self):
+        """create structure map of data"""
+        r = eda.SchemaMap(800)
+        data = list(self.input_stream(self.args.input))
+        r.save_plot(self.args.output, data)
+
     def do_table(self):
         """print all data in a table"""
         self.tabulate(
@@ -315,6 +322,13 @@ class ExploreModule(module.MultiCommandModule):
         parser_plot.add_argument("--title", help="plot title", default=None)
         parser_plot.add_argument("-o", "--output", help="output to file", default=None)
         parser_plot.add_argument("--script", help="gnuplot script file (optional)",  default=None)
+
+        # struc
+        parser_struc = self.sub_parser.add_parser("struc", help=self.do_strucmap.__doc__)
+        options.add_option_n(parser_struc, default=0)
+        options.add_option_defaults(parser_struc)
+        options.add_options_inputs(parser_struc)
+        parser_struc.add_argument("-o", "--output", help="output to file", default="structure.pdf")
 
         # table
         parser_table = self.sub_parser.add_parser("table", help=self.do_table.__doc__)

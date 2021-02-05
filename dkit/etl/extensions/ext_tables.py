@@ -32,7 +32,7 @@ import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
 from ... import exceptions
 from ... import messages
-from ...utilities.iter_helper import chunker
+from ...data.iteration import chunker
 from ... import CHUNK_SIZE
 
 

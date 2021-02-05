@@ -33,7 +33,7 @@ import tabulate
 
 from . import defaults
 from dkit import exceptions
-from dkit.data import manipulate as mp
+from dkit.data import iteration
 from dkit.data import filters
 from dkit.etl import transform, model
 from dkit.shell import console
@@ -273,7 +273,7 @@ class Module(object):
         open a sampled input stream
         """
         the_iterator = self.input_stream(uri_list)
-        yield from mp.iter_sample(
+        yield from iteration.iter_sample(
             the_iterator,
             self.args.sample_probability,
             self.args.sample_size

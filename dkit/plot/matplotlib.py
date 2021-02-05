@@ -1,3 +1,4 @@
+import warnings
 import matplotlib.pyplot as plt
 from matplotlib import cycler
 from matplotlib.ticker import StrMethodFormatter, PercentFormatter, MaxNLocator, FuncFormatter
@@ -159,9 +160,15 @@ class MPLBackend(Backend):
         # do not draw if suppress is specified
         if ("defeat" not in axes) or ("defeat" in axes and not axes["defeat"]):
             ax.set_xticks(x_vals)
-            ax.xaxis.set_major_locator(MaxNLocator(36, integer=True))
-            ax.set_xticklabels(x_labels, minor=False)
-            ax.xaxis.set_major_formatter(FuncFormatter(x_format_fn))
+            #
+            # Generates UserWarning: FixedFormatter should only be used
+            # together with FixedLocator
+            #
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                ax.xaxis.set_major_locator(MaxNLocator(36, integer=True))
+                ax.set_xticklabels(x_labels, minor=False)
+                ax.xaxis.set_major_formatter(FuncFormatter(x_format_fn))
 
             # rotate labels
             if "rotation" in axes and axes["rotation"]:
