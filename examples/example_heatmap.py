@@ -1,9 +1,9 @@
 import sys; sys.path.insert(0, "..")  # noqa
+
+from dkit.etl import source
 from dkit.plot import ggrammar
 from dkit.plot.matplotlib import MPLBackend
 
-
-from dkit.etl import source
 
 with source.load("data/runstats.jsonl.xz") as src:
     data = list(src)

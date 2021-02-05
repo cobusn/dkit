@@ -299,13 +299,13 @@ def add_options_join(parser):
 
 def add_option_relation_add(parser):
     """add relation options"""
-    parser.add_argument("-L", "--constrained-entity", required=True,
+    parser.add_argument("-M", "--many", required=True,
                         help="name of constrained entity")
-    parser.add_argument("-R", "--referred-entity", required=True,
+    parser.add_argument("-O", "--one", required=True,
                         help="name of referred entity")
-    parser.add_argument("--lc", action='append', dest="const_cols", required=True,
+    parser.add_argument("--mc", action='append', dest="const_cols", required=True,
                         help="append constrained column")
-    parser.add_argument("--rc", action='append', dest="ref_cols", required=True,
+    parser.add_argument("--oc", action='append', dest="ref_cols", required=True,
                         help="append referred column")
 
 

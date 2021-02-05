@@ -17,18 +17,20 @@
 #
 # =========== =============== =================================================
 # 27 Nov 2019 Cobus Nel       Added facility for options in URL
+# 28 Jan 2021 Cobus Nel       Modified code to work with Oracle SID's
 # =========== =============== =================================================
 import importlib
 import logging
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...utilities import iter_helper
+from ...data import iteration
 from ... import CHUNK_SIZE
 from ... import messages
 from ...exceptions import DKitETLException
+from ...utilities.cmd_helper import LazyLoad
 from datetime import datetime
-
 from typing import Dict
 import re
+ora = LazyLoad("cx_Oracle")
 
 
 logger = logging.getLogger(__name__)
@@ -59,27 +61,49 @@ class URL(object):
         self.database = database
         self.options = options
 
-    def __str__(self):
-        s = self.drivername + "://"
+    @property
+    def _user(self):
+        """create user / password portion of url"""
+        rv = ""
         if self.username is not None:
-            s += _rfc_1738_quote(self.username)
+            rv = _rfc_1738_quote(self.username)
             if self.password is not None:
-                s += ":" + _rfc_1738_quote(self.password)
-            s += "@"
-        if self.host is not None:
-            if ":" in self.host:
-                s += "[%s]" % self.host
-            else:
-                s += self.host
-        if self.port is not None:
-            s += ":" + str(self.port)
-        if self.database is not None:
-            if not(("oracle" in self.drivername) and (self.host is None)):
-                s += "/"
-            s += self.database
+                rv += ":" + _rfc_1738_quote(self.password)
+            rv += "@"
+        return rv
+
+    @property
+    def _uri(self):
+        rv = ""
+        if "oracle" in self.drivername:
+            # create Oracle DSN
+            return ora.makedsn(
+                self.host,
+                self.port,
+                service_name=self.database
+            )
+        else:
+            if self.host is not None:
+                if ":" in self.host:
+                    rv += "[%s]" % self.host
+                else:
+                    rv += self.host
+            if self.port is not None:
+                rv += ":" + str(self.port)
+            if self.database is not None and self.host is not None:
+                rv += "/"
+                rv += self.database
+        return rv
+
+    @property
+    def _options(self):
         if self.options is not None:
-            s += "?" + self.options
-        return s
+            return "?" + self.options
+        else:
+            return ""
+
+    def __str__(self):
+        return f"{self.drivername}://{self._user}{self._uri}{self._options}"
 
 
 def as_sqla_url(uri_map: Dict[str, str]):
@@ -282,7 +306,8 @@ class SQLAlchemyReflector(object):
             _name = ref_col["name"]
             ref_col["type"] = self.c_map[_type.__class__.__name__]
             if ref_col["type"] == "string":
-                ref_col["str_len"] = _type.length
+                if _type.length:
+                    ref_col["str_len"] = _type.length
             if "primary_key" in ref_col:
                 if ref_col["primary_key"] == 1:
                     ref_col["primary_key"] = True
@@ -292,6 +317,8 @@ class SQLAlchemyReflector(object):
             if "comment" in ref_col:
                 del ref_col["comment"]
             del ref_col["nullable"]
+            if "computed" in ref_col:
+                ref_col["computed"] = True
             if "autoincrement" in ref_col:
                 del ref_col["autoincrement"]
             if "default" in ref_col:
@@ -539,7 +566,7 @@ class SQLAlchemySink(sink.Sink):
         conn = self.accessor.engine.connect()
 
         stats = self.stats.start()
-        for chunk in iter_helper.chunker(the_iterable, self.commit_rate):
+        for chunk in iteration.chunker(the_iterable, self.commit_rate):
             ins_chunk = list(chunk)
             conn.execute(
                 the_table.insert(),

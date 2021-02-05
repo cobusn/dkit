@@ -25,7 +25,6 @@ test data manipulation routines.
 =========== =============== =================================================
 """
 
-import datetime
 import os
 import random
 import sys; sys.path.insert(0, "..")  # noqa
@@ -34,18 +33,16 @@ from statistics import mean
 import shelve
 import common
 from dkit.data.manipulate import (
-    InferTypes,
     KeyIndexer,
     aggregate,
     aggregates,
-    infer_type,
     distinct,
     duplicates,
-    iter_sample,
     merge,
     reduce_aggregate,
     melt
 )
+from dkit.data.iteration import iter_sample
 from dkit.etl.reader import FileReader
 from dkit.etl.source import CsvDictSource
 from dkit.data.containers import FlexShelve
@@ -218,76 +215,6 @@ class TestAggregate(unittest.TestCase):
     def test_reduce_aggregate(self):
         agg = reduce_aggregate(self.data, ["region", "product"], "amount")
         for row in agg:
-            print(row)
-
-
-class TestInferType(common.TestBase):
-    """Test the Timer class"""
-
-    def test_bool(self):
-        """
-        test infer bool types
-        """
-        tests = [True, False, "True", "False", "true", "no", "yes"]
-        for test in tests:
-            t = infer_type(test)
-            self.assertEqual(t, bool)
-
-    def test_int(self):
-        """
-        test infer int types
-        """
-        tests = [1, '12', '34', '-3', '3', ' 39 ']
-        for test in tests:
-            t = infer_type(test, strict=True)
-            self.assertEqual(t, int)
-
-        # using strict
-        tests = [1, '12', '34', '-3', '3', ' 300 ', '300,0']
-        for test in tests:
-            t = infer_type(test, strict=False)
-            self.assertEqual(t, int)
-
-    def test_float(self):
-        """
-        test infer float types
-        """
-        tests = [1.0, '-0.00001', '12.1', '34.1', '-3.5', '3E5', ' 300.0 ', ' 3,00.0 ', '300,0.4E4']
-        for test in tests:
-            t = infer_type(test, strict=False)
-            self.assertEqual(t, float)
-
-    def test_str(self):
-        """
-        test infer str typs
-        """
-        tests = ["asdf", r"a@#%@", "a 2342", "A,2342", "1233ss"]
-        for test in tests:
-            t = infer_type(test, strict=False)
-            self.assertEqual(t, str)
-
-    def test_datetime(self):
-        """
-        test infer datetime types
-        """
-        tests = ["1 jan 2010", "5/5/2015", "5/5/05", "5-5-2015", "3 December 2016", "12:00"]
-        for test in tests:
-            t = infer_type(test, strict=False)
-            self.assertEqual(t, datetime.datetime)
-
-
-class TestInferTypes(common.TestBase):
-    """Test the Timer class"""
-
-    def test_1(self):
-        data = [
-            {"_str": "Str", "_int": "10", "_float": "10.2", "_datetime": "5 Jan 2016"},
-            {"_str": "String", "_float": "100.2", "_datetime": "5 February 2017"},
-        ]
-        checker = InferTypes()
-        types = checker(data)
-        print(types)
-        for row in checker.summary.values():
             print(row)
 
 

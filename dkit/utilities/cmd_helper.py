@@ -25,7 +25,14 @@ import importlib
 
 class LazyLoad(object):
     """
-    lazy import of modules
+    Only import module when used
+
+    Use as follows:
+
+        np = LazyLoad("numpy")
+        ..
+
+        np.random(...)
 
     args:
         * name: name of module
@@ -34,7 +41,7 @@ class LazyLoad(object):
         self._library = library
         self._mod = None
 
-    def __getattrib__(self, name):
+    def __getattr__(self, name):
         if not self._mod:
             self._mod = importlib.import_module(self._library)
         return getattr(self._mod, name)

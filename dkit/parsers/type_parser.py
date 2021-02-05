@@ -53,6 +53,7 @@ class TypeParser(object):
         "unique": [re_bool, to_boolean],
         "index": [re_bool, to_boolean],
         "autoincrement": [re_bool, to_boolean],
+        "computed": [re_bool, to_boolean],
         "nullable": [re_bool, to_boolean],
         "info": [r"\w+", str],
     }

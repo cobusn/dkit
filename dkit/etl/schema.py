@@ -26,7 +26,7 @@ This module relies and extends the Cerberus python library
 import collections
 
 import cerberus
-from dkit.data import manipulate
+from dkit.data import infer
 from dateutil import parser
 import decimal
 
@@ -105,6 +105,13 @@ class EntityValidator(cerberus.Validator):
         if not isinstance(strlen, int):
             self._error(field, "Must be integer value")
 
+    def _validate_computed(self, computed, field, value):
+        """
+         {'type': 'boolean'}
+        """
+        if computed and not isinstance(computed, bool):
+            self._error(field, "Must be boolean.")
+
     def _validate_primary_key(self, primarykey, field, value):
         """
          {'type': 'boolean'}
@@ -156,7 +163,7 @@ class EntityValidator(cerberus.Validator):
             p: probability of evaluating a record
             stop: stop after n rows
         """
-        sniffer = manipulate.InferTypes(strict)
+        sniffer = infer.InferTypes(strict)
         sniffer(the_iterable, strict, p=p, stop=stop)
         dict_schema = collections.OrderedDict()
         for key, stats in sniffer.summary.items():
