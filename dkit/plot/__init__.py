@@ -18,23 +18,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
-
 
 VALID_TERMINALS = ["dumb", "png", "jpeg", "svg", "pdf", "ps", "eps"]
-
-
-class Backend(ABC):
-    """base class for plot backends"""
-
-    def __init__(self, grammar, terminal="pdf", style_sheet=None):
-        self.grammar = grammar
-        self.terminal = terminal
-        self.style_sheet = style_sheet if style_sheet else {}
-        self.data = grammar["data"]
-        for i, row in enumerate(self.data):
-            row["_index"] = i
-
-    @abstractmethod
-    def render(self, file_name):
-        pass

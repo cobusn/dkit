@@ -90,7 +90,7 @@ class URL(object):
                     rv += self.host
             if self.port is not None:
                 rv += ":" + str(self.port)
-            if self.database is not None and self.host is not None:
+            if self.database is not None:
                 rv += "/"
                 rv += self.database
         return rv

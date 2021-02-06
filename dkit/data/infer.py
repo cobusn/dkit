@@ -144,7 +144,7 @@ class InferTypes(object):
 
         for key, points in self.data.items():
             sizes = [point.size for point in points.values() if point.size is not None]
-            _type = self._get_main_type(set([point.type for point in points.values()]))
+            _type = _get_main_type(set([point.type for point in points.values()]))
 
             try:
                 _max = max(sizes)

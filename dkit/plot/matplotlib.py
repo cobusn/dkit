@@ -6,7 +6,7 @@ from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import squarify
 from itertools import accumulate
-from . import Backend
+from .base import Backend
 from . import ggrammar
 from ..data.filters import ExpressionFilter
 from io import BytesIO
@@ -34,8 +34,8 @@ class MPLBackend(Backend):
         - style_sheet: dictionary of style settings to apply
 
     """
-    def __init__(self, grammar_instance, terminal="pdf", style_sheet=None):
-        super().__init__(grammar_instance, terminal, style_sheet)
+    def __init__(self, terminal="pdf", style_sheet=None):
+        super().__init__(terminal, style_sheet)
         self.render_map = {
             "anchoredtext": self.anchored_text,
             "geomarea": self.r_area_plot,
@@ -51,9 +51,6 @@ class MPLBackend(Backend):
             "hline": self.r_hline,
             "vline": self.r_vline,
         }
-        self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
-            grammar_instance["aes"]
-        )
         self.red_color = "#da291c"
         self.green_color = "#006747"
         if self.style_sheet:
@@ -229,7 +226,11 @@ class MPLBackend(Backend):
         self.set_title(ax)
         return self.fig
 
-    def render(self, file_name):
+    def render(self, grammar, file_name):
+        super().render(grammar, file_name)
+        self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
+            grammar["aes"]
+        )
         fig = self._render_fig()
         self.save(fig, file_name)
 
