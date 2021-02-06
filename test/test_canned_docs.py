@@ -27,7 +27,6 @@ from dkit.doc.canned import (
 )
 
 from sample_data import control_chart_data
-import json
 
 
 class TestCanned(unittest.TestCase):
@@ -48,7 +47,7 @@ class TestCanned(unittest.TestCase):
             height=6
 
         )
-        MPLBackend(plt.as_dict(), "svg").render("plots/cc_plot.svg")
+        MPLBackend("svg").render(plt.as_dict(), "plots/cc_plot.svg")
 
 
 if __name__ == '__main__':

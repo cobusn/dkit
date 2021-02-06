@@ -151,7 +151,6 @@ class TestModel(unittest.TestCase):
         c = ModelManager.from_file()
         c = add_encrypted_connection(c)
         conn = c.get_connection("mysql")
-        print(conn.as_uri())
         self.assertEqual(conn.password, "password")
 
     def test_get_uri(self):

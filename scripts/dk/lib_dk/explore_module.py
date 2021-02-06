@@ -156,14 +156,11 @@ class ExploreModule(module.MultiCommandModule):
         print(self.args.script)
         if self.args.output is not None:
             terminal = ggrammar.Plot.terminal_from_filename(self.args.output)
-            gnuplot.BackendGnuPlot(
-                grammar.as_dict(), terminal=terminal
-            ).render(self.args.output, self.args.script)
+            gnuplot.BackendGnuPlot(terminal=terminal) \
+                .render(grammar.as_dict(), self.args.output, self.args.script)
         else:
             self.print(
-                gnuplot.BackendGnuPlot(
-                    grammar.as_dict(), "dumb"
-                ).render_str()
+                gnuplot.BackendGnuPlot("dumb").render_str(grammar.as_dict())
             )
 
     def do_plot(self):

@@ -52,7 +52,7 @@ class TestHistogram(unittest.TestCase):
                 + ggrammar.Title("Random Data Histogram") \
                 + ggrammar.YAxis("frequency") \
                 + ggrammar.XAxis("bin")
-            print(BackendGnuPlot(plt.as_dict(), terminal="svg").render_str())
+            print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))
             print(str(h_data))
 
 

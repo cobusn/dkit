@@ -2,7 +2,7 @@ import subprocess
 
 import jinja2
 
-from . import Backend
+from .base import Backend
 from . import ggrammar
 from ..utilities import file_helper as fh
 #
@@ -200,10 +200,9 @@ class BackendGnuPlot(Backend):
     args:
         * terminal: svg, png, jpg, dumb
     """
-    def __init__(self, grammar, terminal="pdf", styler=None, enhanced: bool = True):
-        super().__init__(grammar, terminal, styler)
+    def __init__(self, terminal="pdf", styler=None, enhanced: bool = True):
+        super().__init__(terminal, styler)
         self.enhanced = enhanced
-        self.aes = ggrammar.Aesthetic.from_dict(self.grammar["aes"])
 
     @property
     def width(self):
@@ -216,13 +215,16 @@ class BackendGnuPlot(Backend):
     def _get_template(self, name):
         return template_dict[name]
 
-    def render_str(self):
+    def render_str(self, grammar):
         """
         Helper to render plot to unicode string
 
         temporarily set terminal to dumb and write
         to a tempfile
         """
+        super().render(grammar, None)
+        self.aes = ggrammar.Aesthetic.from_dict(self.grammar["aes"])
+
         save_terminal = self.terminal
         width = self.width if self.width else 78
         height = self.height if self.height else 24
@@ -231,13 +233,13 @@ class BackendGnuPlot(Backend):
         else:
             self.terminal = "dumb nofeed noenhanced"
         file_name = fh.temp_filename()
-        self.render(file_name, None)
+        self.render(grammar, file_name, None)
         self.terminal = save_terminal
         with open(file_name) as infile:
             rv = infile.read()
         return rv
 
-    def render(self, file_name: str, script_name: str = None):
+    def render(self, grammar, file_name: str, script_name: str = None):
         """
         generate ouput
 
@@ -245,6 +247,9 @@ class BackendGnuPlot(Backend):
             * file_name: output file name
             * script_name: gnuplot script file name, will use tempfile if None
         """
+        super().render(grammar, file_name)
+        self.aes = ggrammar.Aesthetic.from_dict(self.grammar["aes"])
+
         def write_and_run(plot, script_name, file_name):
             with open(script_name, "wt") as handle:
                 handle.write(self._render_source(plot, file_name))

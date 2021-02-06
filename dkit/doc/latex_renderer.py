@@ -45,8 +45,6 @@ class LatexDocRenderer(AbstractRenderer):
         if isinstance(elements, str):
             return elements
         else:
-            print(elements)
-            print([e["~>"] for e in elements])
             return [self.callbacks[e["~>"]](e) for e in elements]
 
     def encode_elements(self, elements):
