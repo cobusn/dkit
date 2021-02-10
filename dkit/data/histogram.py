@@ -57,6 +57,121 @@ def binner(data, value_field, bins: int = None, bin_digits: int = 1):
     return [{"left": i[0], "count": i[1]} for i in bins_]
 
 
+@dataclass
+class Bin:
+    """
+    Represent a histogram bin
+    """
+    left: float
+    right: float
+    count: int = 0
+
+    @property
+    def width(self):
+        return self.right - self.left
+
+    @property
+    def midpoint(self):
+        return (self.left + self.right) / 2
+
+    def as_dict(self):
+        return {
+            "left": self.left,
+            "right": self.right,
+            "midpoint": self.midpoint,
+            "count": self.count,
+            "width": self.width,
+        }
+
+
+class Histogram(object):
+    """
+    Histogram object used to standardise creating histograms from
+    various different data structures.
+    """
+    def __init__(self, bins: List[Bin]):
+        self.bins = bins
+
+    def __iter__(self):
+        return (i.as_dict() for i in self.bins)
+
+    def __str__(self):
+        return tabulate.tabulate(
+            [i.as_dict() for i in self.bins],
+            headers="keys"
+        )
+
+    def plot_data(self):
+        """Return list of dicts for plotting"""
+        return [b.as_dict() for b in self.bins]
+
+#    def _bin_width(self):
+#         """
+#        calculate bin width for histograms
+#
+#        Using Freedman-Diaconis rule
+#        """
+#        n = self.observations
+#        return 2 * self.iqr/(math.pow(n, -1/3))
+
+    @classmethod
+    def from_data(cls, data, bins: int = None, precision=1) -> "Histogram":
+        """
+        Use boltons.statsutils.Stats class to instantiate Histogram
+        """
+        stats = Stats(data)
+        bins_ = stats.get_histogram_counts(bins=bins, bin_digits=precision)
+        bin_list = []
+        for i in range(len(bins_)-1):
+            left, count = bins_[i]
+            right = bins_[i+1][0]
+            bin_list.append(Bin(left, right, count))
+        last = bins_[-1]
+        bin_list.append(Bin(last[0], last[1], stats.max))
+        return cls(bin_list)
+
+    @classmethod
+    def from_accumulator(cls, accumulator: "Accumulator", n: int = 10,
+                         precision=None) -> List[Bin]:
+        """
+        estimate frequency distribution
+
+        args:
+            * n: number of bins
+            * precision: decimal precision. If not specified, will inherit from class
+        returns:
+            * List[Bin]
+        """
+        precision_ = precision if precision is not None else accumulator.precision
+        getcontext().prec = precision_
+        centroids = list(accumulator._tdigest.centroids())
+        low_ = accumulator.median - 2.5 * accumulator.iqr
+        high_ = accumulator.median + 2.5 * accumulator.iqr
+        p = pow(10, precision_)
+        if accumulator.min > low_:
+            low = Decimal(math.floor(accumulator.min * p) / p)
+        else:
+            low = Decimal(low_)
+        if accumulator.max < high_:
+            high = Decimal(math.ceil(accumulator.max * p) / p)
+        else:
+            high = Decimal(high_)
+
+        binw = Decimal((high - low) / n)
+        bins = [Bin(Decimal(low+i*binw), Decimal(low + (i+1)*binw)) for i in range(n)]
+        bin_idx = 0
+        for c in centroids:
+            if c.mean <= bins[bin_idx].right:
+                bins[bin_idx].count += c.weight
+            else:
+                if bin_idx < n-1:
+                    bins[bin_idx + 1].count += c.weight
+                    bin_idx += 1
+                else:
+                    bins[bin_idx].count += c.weight
+        return Histogram(bins)
+
+
 class LegacyHistogram(Accumulator):
     """
     Create histogram bins and frequencies from data
@@ -119,103 +234,3 @@ class LegacyHistogram(Accumulator):
         :returns: List containing the bin data.Return bin data.
         """
         return self._bins[0:-1]
-
-
-@dataclass
-class Bin:
-    """
-    Represent a histogram bin
-    """
-    left: float
-    right: float
-    count: int = 0
-
-    @property
-    def width(self):
-        return self.right - self.left
-
-    @property
-    def midpoint(self):
-        return (self.left + self.right) / 2
-
-    def as_dict(self):
-        return {
-            "left": self.left,
-            "right": self.right,
-            "midpoint": self.midpoint,
-            "count": self.count,
-            "width": self.width,
-        }
-
-
-class Histogram(object):
-    """
-    Histogram object used to standardise creating histograms from
-    various different data structures.
-    """
-    def __init__(self, bins: List[Bin]):
-        self.bins = bins
-
-    def __iter__(self):
-        return (i.as_dict() for i in self.bins)
-
-    def __str__(self):
-        return tabulate.tabulate(
-            [i.as_dict() for i in self.bins],
-            headers="keys"
-        )
-
-    def plot_data(self):
-        """Return list of dicts for plotting"""
-        return [b.as_dict() for b in self.bins]
-
-    @classmethod
-    def from_accumulator(cls, accumulator: "Accumulator", n: int = 10,
-                         precision=None) -> List[Bin]:
-        """
-        estimate frequency distribution
-
-        args:
-            * n: number of bins
-            * precision: decimal precision. If not specified, will inherit from class
-        returns:
-            * List[Bin]
-        """
-        precision_ = precision if precision is not None else accumulator.precision
-        getcontext().prec = precision_
-        centroids = list(accumulator._tdigest.centroids())
-        low_ = accumulator.median - 2.5 * accumulator.iqr
-        high_ = accumulator.median + 2.5 * accumulator.iqr
-        p = pow(10, precision_)
-        if accumulator.min > low_:
-            low = Decimal(math.floor(accumulator.min * p) / p)
-        else:
-            low = Decimal(low_)
-        if accumulator.max < high_:
-            high = Decimal(math.ceil(accumulator.max * p) / p)
-        else:
-            high = Decimal(high_)
-
-        binw = Decimal((high - low) / n)
-        bins = [Bin(Decimal(low+i*binw), Decimal(low + (i+1)*binw)) for i in range(n)]
-        bin_idx = 0
-        for c in centroids:
-            if c.mean <= bins[bin_idx].right:
-                bins[bin_idx].count += c.weight
-            else:
-                if bin_idx < n-1:
-                    bins[bin_idx + 1].count += c.weight
-                    bin_idx += 1
-                else:
-                    bins[bin_idx].count += c.weight
-        # print("-> ", sum(c.weight for c in centroids))
-        return Histogram(bins)
-
-    def _bin_width(self):
-        """
-        calculate bin width for histograms
-
-        Using Freedman-Diaconis rule
-        """
-        n = self.observations
-        return 2 * self.iqr/(math.pow(n, -1/3))
