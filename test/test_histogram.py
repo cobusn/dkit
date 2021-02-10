@@ -42,7 +42,7 @@ class TestHistogram(unittest.TestCase):
             "exponential": (exp(i) for i in frange(-5, 5, 0.01)),
         }
 
-    def test_histogram(self):
+    def test_histogram_accumulator(self):
         for name, test in self.tests.items():
             a = Accumulator(test)
             h_data = Histogram.from_accumulator(a)
@@ -50,6 +50,18 @@ class TestHistogram(unittest.TestCase):
                 + ggrammar.Aesthetic(width=78, height=25) \
                 + ggrammar.GeomHistogram(name, "#FF0000", 0.8) \
                 + ggrammar.Title("Random Data Histogram") \
+                + ggrammar.YAxis("frequency") \
+                + ggrammar.XAxis("bin")
+            print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))
+            print(str(h_data))
+
+    def test_histogram_data(self):
+        for name, test in self.tests.items():
+            h_data = Histogram.from_data(test, 6)
+            plt = ggrammar.Plot(h_data) \
+                + ggrammar.Aesthetic(width=78, height=25) \
+                + ggrammar.GeomHistogram(name, "#FF0000", 0.8) \
+                + ggrammar.Title(name) \
                 + ggrammar.YAxis("frequency") \
                 + ggrammar.XAxis("bin")
             print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))

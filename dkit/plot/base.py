@@ -23,8 +23,8 @@ class SharedBackend(Backend):
     """
     Shared functionality
     """
-    def __init__(self, grammar_instance, terminal="pdf", style_sheet=None):
-        super().__init__(grammar_instance, terminal, style_sheet)
+    def __init__(self, terminal="pdf", style_sheet=None):
+        super().__init__(terminal, style_sheet)
         self.render_map = {
             "anchoredtext": self.anchored_text,
             "geomarea": self.r_area_plot,
@@ -40,11 +40,6 @@ class SharedBackend(Backend):
             "hline": self.r_hline,
             "vline": self.r_vline,
         }
-        self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
-            grammar_instance["aes"]
-        )
-        self.red_color = "#da291c"
-        self.green_color = "#006747"
         if self.style_sheet:
             self._apply_style()
 
