@@ -404,11 +404,10 @@ class ReportlabDocRenderer(AbstractRenderer):
         """format a plot"""
         # filename = str(temp_filename(suffix="svg"))
         be = self.plot_backend(
-            data,
             terminal="pdf",
             style_sheet=self.styler.local_style
         )
-        pdf_data = be.render_mem()
+        pdf_data = be.render_mem(data)
         flowable = PdfImage(pdf_data)
 
         # This should be an option in the data provided..

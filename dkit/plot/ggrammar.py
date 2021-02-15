@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, List
 import os
 
 from . import VALID_TERMINALS
@@ -160,10 +160,11 @@ class GeomDelta(GeomBar):
 
 class GeomTreeMap(GeomBar):
 
-    def __init__(self, title: str,  x_data: str, y_data: str, color: str = None,
-                 alpha: float = None, str_format=None, *args, **kwargs):
-        super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
+    def __init__(self, path: List[str], size_field: str, color_field: str = None,
+                 color: str= None, alpha: float = None, str_format=None, *args, **kwargs):
+        super().__init__(None, path, size_field, color, alpha, *args, **kwargs)
         self.str_format = str_format
+        self.color_field = color_field
 
 
 class GeomImpulse(GeomBar):

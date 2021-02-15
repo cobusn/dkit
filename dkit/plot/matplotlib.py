@@ -67,7 +67,7 @@ class MPLBackend(Backend):
 
     def _apply_style(self):
         """Apply settings specified in stylesheet"""
-        style = self.style_sheet["plot"]
+        style = self.style_sheet["matplotlib"]
         if "theme" in style:
             plt.style.use(style["theme"])
         else:
@@ -238,10 +238,14 @@ class MPLBackend(Backend):
         plt.close(self.fig)
         return fig
 
-    def render_mem(self, _format="PDF"):
+    def render_mem(self, grammar, _format="PDF"):
         """
         render plot as BytesObject and return
         """
+        super().render(grammar, None)
+        self.aes: ggrammar.Aesthetic = ggrammar.Aesthetic.from_dict(
+            grammar["aes"]
+        )
         imgdata = BytesIO()
         fig = self._render_fig()
         fig.savefig(imgdata, format=_format)

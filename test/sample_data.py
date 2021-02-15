@@ -24,6 +24,7 @@ source of test data for unittests
 from random import random, gauss
 from dkit.data.stats import Accumulator
 from dkit.data.histogram import Histogram
+import plotly.express as px
 
 
 N = 1000
@@ -44,6 +45,7 @@ plot_data = [
     {"index": "jul", "sales": 10, "revenue": 20},
 ]
 
+
 def update_control_chart(row):
     """add control chart values"""
     r = dict(row)
@@ -60,3 +62,5 @@ scatter_data = [
     {"x": random(), "y": random()}
     for _ in range(N)
 ]
+
+gapminder = px.data.gapminder().query("year == 2007").to_dict("records")

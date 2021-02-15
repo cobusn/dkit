@@ -309,6 +309,7 @@ class RunModule(module.MultiCommandModule):
         parser_report.add_argument(
             "-r", "--report", required=True, help="report.yml file"
         )
+        options.add_option_logging(parser_report)
 
         # template
         parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)

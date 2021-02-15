@@ -26,7 +26,12 @@ from dkit.plot import ggrammar
 from dkit.plot.gnuplot import BackendGnuPlot
 from dkit.plot.matplotlib import MPLBackend
 from dkit.plot.plotly import PlotlyBackend
-from sample_data import plot_data, scatter_data, histogram_data, control_chart_data
+from sample_data import plot_data, scatter_data, histogram_data, control_chart_data, gapminder
+from dkit.utilities.file_helper import yaml_load
+
+
+with open("stylesheet.yaml", "rt") as infile:
+    style_sheet = yaml_load(infile)
 
 
 class AbstractPlot(object):
@@ -109,7 +114,7 @@ class TestMatplotlib(AbstractPlot, TestCase):
         self.render(plt, "fill_plot.svg")
 
     def render(self, plt, filename):
-        MPLBackend("svg").render(
+        MPLBackend("svg", style_sheet=style_sheet).render(
             plt.as_dict(),
             file_name=self.out_path / f"mpl_{filename}"
         )
@@ -118,10 +123,21 @@ class TestMatplotlib(AbstractPlot, TestCase):
 class TestPlotly(AbstractPlot, TestCase):
 
     def render(self, plt, filename):
-        PlotlyBackend("svg").render(
+        PlotlyBackend("svg", style_sheet=style_sheet).render(
             plt.as_dict(),
             file_name=self.out_path / f"plotly_{filename}"
         )
+
+    def test_treemap(self):
+        """test fill plot"""
+        plt = ggrammar.Plot(gapminder) \
+            + ggrammar.Title("Population") \
+            + ggrammar.GeomTreeMap(
+                path=["continent", "country"],
+                size_field="pop",
+                color_field="lifeExp"
+            )
+        self.render(plt, "treemap_plot.svg")
 
 
 if __name__ == '__main__':

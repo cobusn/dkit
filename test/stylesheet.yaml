@@ -1,0 +1,36 @@
+# xx-small, x-small, small, medium, large, x-large, xx-large, smaller, larger.
+
+table:
+    heading_color: "#0047bb"
+    # tiny, scriptsize, footnotesize, small, normalsize, 
+    # large, Large, LARGE, huge, Huge
+    font_size: footnotesize
+matplotlib:
+    theme: fivethirtyeight
+    colors:
+        palette:
+            - "#72BF44"
+            - "#FC353A"
+            - "#008fd5"
+            - "#0047bb" 
+        red: "#ef3340"
+        green: "#00c389"
+    width: 17
+    height: 7 
+    axes:
+        titlesize: medium 
+        labelsize: small
+        ticklabelsize: x-small 
+plotly:
+    theme: presentation 
+    colors:
+        palette:
+            - "#72BF44"
+            - "#FC353A"
+            - "#008fd5"
+            - "#0047bb" 
+        red: "#ef3340"
+        green: "#00c389"
+    # plotly only allow pixels
+    width: 600   
+    height: 600 

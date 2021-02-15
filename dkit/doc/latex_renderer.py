@@ -44,6 +44,10 @@ class LatexDocRenderer(AbstractRenderer):
     def to_tex_list(self, elements):
         if isinstance(elements, str):
             return elements
+        elif isinstance(elements, dict):
+            # this is because list_items is not in a list..
+            # a hack for now, fixe list_elements
+            return [self.callbacks[elements["~>"]](elements)]
         else:
             return [self.callbacks[e["~>"]](e) for e in elements]
 
@@ -64,14 +68,13 @@ class LatexDocRenderer(AbstractRenderer):
     def make_emphasis(self, element):
         return tex.Emph(self.to_tex_list(element["data"]))
 
-    def make_figure(self, figure):
-        filename = (self.plot_path / figure["filename"]).relative_to(Path().cwd())
+    def make_figure(self, grammar):
+        filename = (self.plot_path / grammar["filename"]).relative_to(Path().cwd())
         be = self.plot_backend(
-            figure,
             terminal="pdf",
             style_sheet=self.stylesheet
         )
-        be.render(filename)
+        be.render(grammar, filename)
         return tex.Image(filename)
 
     def make_heading(self, element):
