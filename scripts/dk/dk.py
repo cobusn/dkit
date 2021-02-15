@@ -31,6 +31,7 @@ from dkit import exceptions as dkit_exceptions, __version__
 
 VERSION = __version__
 
+sys.path.insert(0, os.getcwd())
 
 class DataKit(object):
     """
