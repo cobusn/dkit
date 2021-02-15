@@ -357,5 +357,5 @@ class LatexReportBuilder(ReportBuilder):
 
             # render to endpoint
             r = renderer(dict_, style_sheet=self.style_sheet, plot_folder=self.plot_folder)
-            with open(f"output/{_name}", "wt") as out_file:
+            with open(f"output/{_name}.tex", "wt") as out_file:
                 out_file.write("".join(r))
