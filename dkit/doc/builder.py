@@ -21,12 +21,10 @@
 import functools
 import logging
 import pathlib
-import subprocess
-from abc import ABC
 from importlib import import_module
 from pathlib import Path
 from string import Template
-
+from abc import ABC
 import inflect
 import jinja2
 import mistune
@@ -63,26 +61,25 @@ def is_in_notebook():
         return False
 
 
-# class ReportContent(ABC):
-#
-#    def __init__(self, parent):
-#          self.parent = parent
-#         self.configure()
-#
-#     @property
-#     def data(self):
-#         return self.parent.data
-#
-#     @property
-#     def variables(self):
-#         return self.parent.variables
-#
-#     def configure(self):
-#         """
-#         Hook to perform initialisation without having to boilerplate the
-#         constructor
-#        """
-#        pass
+class ReportContent(ABC):
+    def __init__(self, parent):
+        self.parent = parent
+        self.configure()
+
+    @property
+    def data(self):
+        return self.parent.data
+
+    @property
+    def variables(self):
+        return self.parent.variables
+
+    def configure(self):
+        """
+        Hook to perform initialisation without having to boilerplate the
+        constructor
+        """
+        pass
 
 
 def jsonise(fn) -> str:
@@ -187,9 +184,11 @@ class BuilderProxy(object):
         constructor. file is a yaml file
         """
         with open(file_name) as infile:
-            definition  = yaml.load(infile, Loader=Loader)
+            definition = yaml.load(infile, Loader=Loader)
         if definition["configuration"]["builder"] == "reportlab":
             return ReportLabBuilder(definition)
+        elif definition["configuration"]["builder"] == "latex":
+            return LatexReportBuilder(definition)
 
 
 class ReportBuilder(BuilderProxy):
@@ -331,9 +330,9 @@ class ReportLabBuilder(ReportBuilder):
 class LatexReportBuilder(ReportBuilder):
 
     """ReportBuilder specialized for building Latex projects"""
-    def run(self):
-        self.render(latex_renderer.LatexDocRenderer, self.documents)
-        self.render(latex_renderer.LatexBeamerRenderer, self.presentations)
+    def run(self, _name="tex/builder.tex"):
+        self.render_templates(latex_renderer.LatexDocRenderer, self.documents)
+        self.render_templates(latex_renderer.LatexBeamerRenderer, self.presentations)
         runner = LatexRunner(_name, output_folder="output")
         runner.run()
         runner.clean()
@@ -358,5 +357,5 @@ class LatexReportBuilder(ReportBuilder):
 
             # render to endpoint
             r = renderer(dict_, style_sheet=self.style_sheet, plot_folder=self.plot_folder)
-            with open(_name, "wt") as out_file:
+            with open(f"output/{_name}", "wt") as out_file:
                 out_file.write("".join(r))

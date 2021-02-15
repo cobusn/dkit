@@ -67,7 +67,7 @@ table:
   fontSize: footnotesize
   font_color: "#05386E" 
   font: SourceSansPro
-plot:
+matplotlib:
   theme: seaborn-bright
   colors:
     palette:

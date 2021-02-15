@@ -60,7 +60,7 @@ page:
 table:
   heading_color: "#00a9e0"
   font_size: footnotesize
-plot:
+matplotlib:
   theme: seaborn-bright
   colors:
     palette:

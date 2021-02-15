@@ -25,6 +25,7 @@ configuration:
         builder:
             allowed:
                 - reportlab
+                - latex
         plot_folder:
             required: False
             type: string

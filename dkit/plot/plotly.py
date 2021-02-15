@@ -1,8 +1,9 @@
 from .base import SharedBackend
 from . import ggrammar
 import plotly.graph_objects as go
+from itertools import cycle
 # from io import BytesIO
-
+import pandas as pd
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -18,9 +19,37 @@ class PlotlyBackend(SharedBackend):
         - style_sheet: dictionary of style settings to apply
 
     """
+    def __init__(self, terminal="pdf", style_sheet=None):
+        self.width = None
+        self.height = None
+        self.colors = None
+        self.palette = None
+        super().__init__(terminal, style_sheet)
+
     def _apply_style(self):
         """Apply settings specified in stylesheet"""
-        pass
+        style = self.style_sheet["plotly"]
+        if "theme" in style:
+            self.theme = style["theme"]
+        else:
+            self.theme = None
+
+        # width and height
+        if "width" in style and "height" in style:
+            self.width = style["width"]
+            self.height = style["height"]
+        else:
+            self.width = self.height = None
+
+        if "colors" in style:
+            colors = style["colors"]
+            if "palette" in colors:
+                self.colors = colors["palette"]
+                self.palette = cycle(self.colors)
+            if "red" in colors:
+                self.red_color = colors["red"]
+            if "green" in colors:
+                self.green_color = colors["green"]
 
     def set_title(self, fig):
         """set plot title"""
@@ -35,6 +64,10 @@ class PlotlyBackend(SharedBackend):
         axes = self.grammar["axes"]["0"]
         if "title" in axes:
             fig.update_layout(xaxis_title=axes["title"])
+
+    def set_size(self, fig):
+        if self.width and self.height:
+            fig.update_layout(height=self.height, width=self.width)
 
     def set_y_label(self, fig):
         """set y axis label"""
@@ -116,6 +149,10 @@ class PlotlyBackend(SharedBackend):
         pass
 
     def __r_plot(self, plot_type, series, data: list, layout: list, **opts):
+        if color := self.get_color(series):
+            opts["marker_color"] = color
+        else:
+            opts["marker_color"] = next(self.palette)
         data.append(
             plot_type(
                 x=self.get_x_values(series),
@@ -139,8 +176,8 @@ class PlotlyBackend(SharedBackend):
         """histogram"""
         data.append(
             go.Bar(
-                x=self.get_x_values(series),
-                y=[r["midpoint"] for r in self.data]
+                x=[r["midpoint"] for r in self.data],
+                y=[r["count"] for r in self.data]
             )
         )
         return data, layout
@@ -155,14 +192,24 @@ class PlotlyBackend(SharedBackend):
 
     def r_delta_plot(self, data, layout):
         """bar plot with positive values greeen and negative red"""
-        pass
+        raise NotImplementedError
 
     def r_heatmap_plot(self, data, layout):
         """heatmap"""
         pass
 
-    def r_treemap_plot(self, data, layout):
-        pass
+    def r_treemap_plot(self, series, data: list, layout: list):
+        """generate a treemap"""
+        data_ = pd.DataFrame(self.data)
+        print(series)
+        data.append(
+            go.Treemap(
+                data_,
+                path=series["x_data"],
+                values=[series["y_data"]],
+            )
+        )
+        return data, layout
 
     def save(self, fig, file_name):
         """write to file"""
@@ -173,3 +220,4 @@ class PlotlyBackend(SharedBackend):
         self.set_title(fig)
         self.set_x_label(fig)
         self.set_y_label(fig)
+        self.set_size(fig)
