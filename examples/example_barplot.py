@@ -21,7 +21,8 @@ gg = ggrammar.Plot(data) \
     + ggrammar.Aesthetic(stacked=True, width=15, height=10)
 
 
-BackendGnuPlot(gg.as_dict(), terminal="svg").render(
+BackendGnuPlot(terminal="svg").render(
+    gg.as_dict(),
     file_name="example_barplot.svg",
     script_name="example_barplot.plot"
 )
