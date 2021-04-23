@@ -9,4 +9,4 @@ ggrammar = ggrammar.Plot(data) \
     + ggrammar._Axis("Rand", min=0, max=100, ticks=1) \
     + ggrammar._Axis("Month", which=1)
 
-print(BackendGnuPlot(ggrammar.as_dict()).render_str())
+print(BackendGnuPlot().render_str(ggrammar.as_dict()))

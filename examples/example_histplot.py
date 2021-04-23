@@ -19,12 +19,14 @@ plt = ggrammar.Plot(data) \
     + ggrammar.Aesthetic(width=15, height=10)
 
 
-BackendGnuPlot(plt.as_dict(), terminal="svg").render(
+BackendGnuPlot(terminal="svg").render(
+    plt.as_dict(),
     file_name="example_hist.svg",
     script_name="example_hist.plot"
 )
 
 
-MPLBackend(plt.as_dict(), terminal="svg").render(
+MPLBackend(terminal="svg").render(
+    plt.as_dict(),
     file_name="example_mpl_histogram.svg"
 )

@@ -22,6 +22,7 @@ ggrammar = ggrammar.Plot(data) \
     + ggrammar.Aesthetic(width=15, height=10)
 
 
-MPLBackend(ggrammar.as_dict()).render(
+MPLBackend().render(
+    ggrammar.as_dict(),
     file_name="example_heatmap.pdf"
 )

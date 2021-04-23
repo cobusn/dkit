@@ -24,6 +24,7 @@ encodings independent of the storage mechanism
 
 =========== =========== =================================================
 27 Apr 2020 Cobus Nel   Fixed field name bug in CsvDictSource
+17 Feb 2021 Cobus Nel   Added load_glob
 =========== =========== =================================================
 """
 import csv
@@ -505,3 +506,17 @@ def load(uri: str, skip_lines=0, field_names=None, delimiter=","):
         yield factory
     finally:
         factory.close()
+
+
+def load_glob(*globs: str):
+    """
+    open and yield from multiple files
+
+    args:
+        - globs: file globs
+    """
+    for g in globs:
+        files = glob.glob(g)
+        for file_name in files:
+            with load(file_name) as infile:
+                yield from infile

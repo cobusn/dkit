@@ -8,6 +8,20 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 
+DEFAULT_COLORS = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#2ca02c',  # cooked asparagus green
+    '#d62728',  # brick red
+    '#9467bd',  # muted purple
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf'   # blue-teal
+]
+
+
 class PlotlyBackend(SharedBackend):
     """Matplotlib Plot Render Backend
 
@@ -22,8 +36,8 @@ class PlotlyBackend(SharedBackend):
     def __init__(self, terminal="pdf", style_sheet=None):
         self.width = None
         self.height = None
-        self.colors = None
-        self.palette = None
+        self.colors = DEFAULT_COLORS
+        self.palette = cycle(self.colors)
         super().__init__(terminal, style_sheet)
 
     def _apply_style(self):
@@ -98,8 +112,8 @@ class PlotlyBackend(SharedBackend):
     def initialise(self):
         data = []
         layout = go.Layout(
-            title=go.layout.Title(text="Election results", x=0.5),
-            yaxis_title="Seats",
+            # title=go.layout.Title(text="Election results", x=0.5),
+            # yaxis_title="Seats",
             # xaxis_tickmode="array",
             # xaxis_tickvals=list(range(27)),
             # xaxis_ticktext=tuple(df['year'].values),
