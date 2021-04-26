@@ -1,5 +1,13 @@
 __meta__: {}
-connections: {}
+connections:
+  sakila:
+    database: sakila
+    dialect: postgres
+    driver: postgres
+    host: localhost
+    password: gAAAAABggtFvIqYIskklURnoyazZvhg-0PBqyhg-_gl-rDVPwvQvgLlNe4-PfC7Om-9BWX_QuTgpPAXHDzBK0yg_oaZTJuD0OQ==
+    port: '5432'
+    username: cobus
 endpoints: {}
 entities:
   mpg:

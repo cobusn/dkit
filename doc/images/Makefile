@@ -34,7 +34,7 @@ ETLCLASSES =	EntityValidator.svg Entity.svg Transform.svg ModelManager.svg Expre
 				Connection.svg Query.svg Endpoint.svg ShelveVerifier.svg Relation.svg ETLServices.svg  \
 				XmlSource.svg
 SQL_ALCHEMY_SOURCE = SQLAlchemyAccessor.svg SQLAlchemyTableSource.svg SQLAlchemySink.svg \
-					 SQLAlchemyModelFactory.svg SQLAlchemyReflector SQLAlchemySelectSource.svg
+					 SQLAlchemyModelFactory.svg SQLAlchemyReflector.svg SQLAlchemySelectSource.svg
 PYTABLES_SOURCE = PyTablesAccessor.svg PyTablesSource.svg PyTablesSink.svg PyTablesModelFactory.svg \
 				  PyTablesReflector.svg PyTablesServices.svg
 ETL       = 	$(ETLSOURCE) $(SQL_ALCHEMY_SOURCE) $(PYTABLES_SOURCE) $(ETLCLASSES) 
