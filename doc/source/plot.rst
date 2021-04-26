@@ -184,7 +184,7 @@ Backends
 Backend
 -------
 
-.. autoclass:: dkit.plot.Backend
+.. autoclass:: dkit.plot.base.Backend
    :members:
    :undoc-members:
    :show-inheritance:
