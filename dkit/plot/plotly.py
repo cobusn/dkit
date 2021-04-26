@@ -214,20 +214,16 @@ class PlotlyBackend(SharedBackend):
 
     def r_treemap_plot(self, series, data: list, layout: list):
         """generate a treemap"""
+        # BELOW NEED TO BE REPLACED WITH go.Treemap
         import plotly.express as px
-        data_ = pd.DataFrame(self.data)
-        print(series)
-        print(data_)
-        print(series["x_data"])
-        print(series["y_data"])
-        data.append(
-            px.treemap(
-                data_frame=data_,
-                path=series["x_data"],
-                values=series["y_data"],
-                color=series["color_field"]
-            )
+        df = pd.DataFrame(self.data)
+        fig = px.treemap(
+            df,
+            path=series["x_data"],
+            values=series["y_data"],
+            color=series["color_field"]
         )
+        data.append(fig)
         return data, layout
 
     def save(self, fig, file_name):
