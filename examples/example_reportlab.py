@@ -49,10 +49,6 @@ def build_doc():
     d += document.LineBreak(0.5)
     d += document.Heading("Specific Features", 1)
 
-    # Inline latex
-    d += document.Heading("Latex includes", 2)
-    d += document.Latex(r"This is \LaTex")
-
     # URL
     # d += document.Heading("URL", 2)
     # d += document.Link("Google", "www.google.com", "title")
