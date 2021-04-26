@@ -128,7 +128,7 @@ class TestPlotly(AbstractPlot, TestCase):
             file_name=self.out_path / f"plotly_{filename}"
         )
 
-    def test_treemap(self):
+    def _test_treemap(self):
         """test fill plot"""
         plt = ggrammar.Plot(gapminder) \
             + ggrammar.Title("Population") \
