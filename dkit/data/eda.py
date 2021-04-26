@@ -14,6 +14,7 @@ class Normalizer(object):
     Normalize a set of data between 0.0 and 1.0
     """
     def __init__(self, max_, min_):
+
         if isinstance(max_, (datetime.datetime, datetime.date)):
             delta = datetime.timedelta(microseconds=1)
             self._max = max_ + delta
