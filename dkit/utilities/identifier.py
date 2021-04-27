@@ -17,7 +17,7 @@
 #
 from uuid import uuid4
 from zlib import crc32, adler32
-
+from ..data import bencode
 
 URLSAFE32 = "abcdefghijkmnpqrstuvwxy23456789"
 URLSAVE32L = "ABCDEFGHIJKMNPQRSTUVWXY23456789"
@@ -36,6 +36,34 @@ def short_adler32(data, alphabet=SENSIBLE):
     adler is faster than crc32
     """
     return encode(adler32(data), SENSIBLE)
+
+
+def obj_crc32(object_, alphabet=SENSIBLE):
+    """crc32 with bencode of object
+
+    Not efficient but provide consistent short hash
+    for an object.
+    """
+    return short_crc32(
+        bencode.encode(object_),
+        alphabet=alphabet
+    )
+
+
+def obj_adler32(object_, alphabet=SENSIBLE):
+    """crc32 with bencode of object
+
+    Not efficient but provide consistent short hash
+    for an object.
+    """
+    return short_adler32(
+        bencode.encode(object_),
+        alphabet=alphabet
+    )
+
+
+"""return md5 hash of any object"""
+obj_md5 = bencode.md5_hash
 
 
 def uid():
