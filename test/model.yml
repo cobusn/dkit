@@ -1,0 +1,12 @@
+__meta__:
+  version: '0.2'
+connections:
+  northwind:
+    database: data/northwind.sqlite
+    dialect: sqlite
+    driver: sqlite
+endpoints: {}
+entities: {}
+queries: {}
+relations: {}
+transforms: {}
