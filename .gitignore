@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 test/cover/*
 test/plots/*
+*.xlsx
 # C extensions
 *.so
 

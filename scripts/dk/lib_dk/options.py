@@ -159,10 +159,11 @@ def add_option_pattern(parser):
                         action="store_true", help="Ignore case")
 
 
-def add_option_glob(parser):
+def add_option_glob(parser, entity="glob", help_=None, default=None):
     """glob pattern(s)"""
-    parser.add_argument("glob", nargs="*", default=["*"],
-                        help=add_option_glob.__doc__)
+    __help = help_ if help_ else add_option_glob.__doc__
+    parser.add_argument(entity, nargs="*", default=["*"],
+                        help=__help)
 
 
 def add_option_head(parser):

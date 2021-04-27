@@ -51,6 +51,7 @@ class XlsxSink(sink.Sink):
         wb = self.openpyxl.Workbook(write_only=True)
 
         for name, the_iterable in the_dict.items():
+            logger.info(f"writing sheet '{name}'")
             ws = wb.create_sheet(name)
             for i, row in enumerate(the_iterable):
                 if i == 0:

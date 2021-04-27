@@ -730,6 +730,7 @@ class SQLServices(model.ETLServices):
             _tables = tables
         retval = {}
         for table_name in _tables:
+            print(table_name)
             rows = SQLAlchemyTableSource(accessor, table_name, chunk_size=n)
             retval[table_name] = list(itertools.islice(rows, n))
         return retval
