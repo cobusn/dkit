@@ -22,13 +22,18 @@
 Exploration sub system
 """
 import collections
+import importlib
 import itertools
 import sys
 from re import RegexFlag
+
 from . import module, options
+from dkit.data import manipulate as mp, eda, iteration
 from dkit.plot import ggrammar
-from dkit.data import manipulate as mp
-from dkit.data import eda
+from dkit.etl.extensions.ext_xlsx import XlsxSink
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ExploreModule(module.MultiCommandModule):
@@ -226,6 +231,26 @@ class ExploreModule(module.MultiCommandModule):
         data = list(self.input_stream(self.args.input))
         r.save_plot(self.args.output, data)
 
+    def do_sample(self):
+        """sample n records from each table in a database"""
+        ext_sql_alchemy = importlib.import_module("dkit.etl.extensions.ext_sql_alchemy")
+        services = self.load_services(ext_sql_alchemy.SQLServices)
+
+        # get table names from glob
+        all_table_names = services.get_sql_tables(self.args.connection)
+        table_names = list(sorted(iteration.glob_list(all_table_names, self.args.table)))
+
+        # extract sample
+        sample = services.sample_from_db(
+            self.args.connection,
+            *table_names,
+            n=self.args.n
+        )
+
+        # write to output
+        logger.info(f"Writing sample output to '{self.args.output}'")
+        XlsxSink(self.args.output).process_dict(sample)
+
     def do_table(self):
         """print all data in a table"""
         self.tabulate(
@@ -326,6 +351,15 @@ class ExploreModule(module.MultiCommandModule):
         options.add_option_defaults(parser_struc)
         options.add_options_inputs(parser_struc)
         parser_struc.add_argument("-o", "--output", help="output to file", default="structure.pdf")
+
+        # sample
+        parser_sample = self.sub_parser.add_parser("sample", help=self.do_sample.__doc__)
+        options.add_option_defaults(parser_sample)
+        options.add_option_connection_name(parser_sample)
+        options.add_option_n(parser_sample, default=1000)
+        parser_sample.add_argument("-o", "--output", help="output to file (sample.xlsx)",
+                                   default="sample.xlsx")
+        options.add_option_glob(parser_sample, entity="table", help_="Table names")
 
         # table
         parser_table = self.sub_parser.add_parser("table", help=self.do_table.__doc__)
