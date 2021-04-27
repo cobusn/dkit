@@ -18,20 +18,23 @@
 # =========== =============== =================================================
 # 27 Nov 2019 Cobus Nel       Added facility for options in URL
 # 28 Jan 2021 Cobus Nel       Modified code to work with Oracle SID's
+# 26 Apr 2022 Cobus Nel       Added additional reflection code
 # =========== =============== =================================================
 import importlib
 import logging
-from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
-from ...data import iteration
-from ... import CHUNK_SIZE
-from ... import messages
-from ...exceptions import DKitETLException
-from ...utilities.cmd_helper import LazyLoad
+import re
 from datetime import datetime
 from typing import Dict
-import re
-ora = LazyLoad("cx_Oracle")
+import itertools
+from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
+from ... import CHUNK_SIZE, messages
+from ...data import iteration
+from ...exceptions import DKitETLException
+from ...utilities.cmd_helper import LazyLoad
+from ...utilities import identifier
 
+
+ora = LazyLoad("cx_Oracle")
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +47,58 @@ VALID_DIALECTS = [
     "firebird", "mssql", "mysql", "oracle", "postgresql", "sqlite", "sybase",
     "impala"
 ]
+
+# map between SQL types and closest Python type
+TYPE_MAP = {
+    "BIGINT": "int64",
+    "BIT": "binary",
+    "BLOB": "binary",
+    "BOOLEAN": "boolean",
+    "BigInteger": "int64",
+    "Boolean": "boolean",
+    "CHAR": "binary",
+    "DATE": "date",
+    "DATETIME": "datetime",
+    "DATETIME2": "datetime",
+    "DECIMAL": "decimal",
+    "DOUBLE": "float",
+    "Date": "date",
+    "DateTime": "datetime",
+    "ENUM": "string",                   # MYSQL ENUM
+    "FLOAT": "float",
+    "Float": "float",
+    "IMAGE": "binary",
+    "INT": "integer",
+    "INTEGER": "integer",
+    "Integer": "integer",
+    "LONGBLOB": "binary",
+    "LONGTEXT": "string",
+    "LargeBinary": "binary",
+    "MEDIUMBLOB": "binary",
+    "MEDIUMINT": "int32",             # MYSQL Medium Integer
+    "MEDIUMTEXT": "string",
+    "MONEY": "decimal",
+    "NCHAR": "decimal",
+    "NTEXT": "string",
+    "NullType": "object",             # Unknown object. e.g. sqlite counter table
+    "NUMERIC": "decimal",
+    "NVARCHAR": "string",
+    "Numeric": "decimal",
+    "REAL": "float",
+    "SMALLINT": "int16",
+    "SMALLMONEY": "decimal",
+    "SmallInteger": "int16",
+    "STRING": "string",
+    "String": "string",
+    "TEXT": "string",
+    "TIMESTAMP":  "datetime",
+    "TINYINT": "int8",              # MYSQL specific
+    "TINYTEXT": "string",           # MYSQL specific
+    "Time": "time",
+    "Unicode": "string",
+    "VARBINARY": "binary",
+    "VARCHAR": "string",
+}
 
 
 class URL(object):
@@ -219,61 +274,43 @@ class SQLAlchemyReflector(object):
     def __init__(self, accessor: SQLAlchemyAccessor):
         self.accessor = accessor
         self.sql_alchemy = accessor.sqlalchemy
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.c_map = TYPE_MAP
 
-        self.c_map = {
-            "BIGINT": "int64",
-            "BIT": "binary",
-            "BLOB": "binary",
-            "BOOLEAN": "boolean",
-            "BigInteger": "int64",
-            "Boolean": "boolean",
-            "CHAR": "binary",
-            "DATE": "date",
-            "DATETIME": "datetime",
-            "DATETIME2": "datetime",
-            "DECIMAL": "decimal",
-            "DOUBLE": "float",
-            "Date": "date",
-            "DateTime": "datetime",
-            "ENUM": "string",                   # MYSQL ENUM
-            "FLOAT": "float",
-            "Float": "float",
-            "IMAGE": "binary",
-            "INT": "integer",
-            "INTEGER": "integer",
-            "Integer": "integer",
-            "LONGBLOB": "binary",
-            "LONGTEXT": "string",
-            "LargeBinary": "binary",
-            "MEDIUMBLOB": "binary",
-            "MEDIUMINT": "int32",             # MYSQL Medium Integer
-            "MEDIUMTEXT": "string",
-            "MONEY": "decimal",
-            "NCHAR": "decimal",
-            "NTEXT": "string",
-            "NUMERIC": "decimal",
-            "NVARCHAR": "string",
-            "Numeric": "decimal",
-            "REAL": "float",
-            "SMALLINT": "int16",
-            "SMALLMONEY": "decimal",
-            "SmallInteger": "int16",
-            "STRING": "string",
-            "String": "string",
-            "TEXT": "string",
-            "TIMESTAMP":  "datetime",
-            "TINYINT": "int8",              # MYSQL specific
-            "TINYTEXT": "string",           # MYSQL specific
-            "Time": "time",
-            "Unicode": "string",
-            "VARBINARY": "binary",
-            "VARCHAR": "string",
-        }
+    def get_table_names(self):
+        """
+        list of table names
+
+        returns:
+            list of table names
+        """
+        return self.accessor.inspect.get_table_names()
+
+    def extract_profile(self, *tables):
+        """extract profile for tables"""
+        retval = {}
+        for tbl_name in tables:
+            _table = {}
+            retval[tbl_name] = _table
+            _table["schema"] = self.reflect_entity(tbl_name).as_dict()
+            _table["relations"] = {
+                k: v.as_dict()
+                for k, v in self.reflect_relations(tbl_name).items()
+            }
+
+        return retval
 
     def reflect_relations(self, entity_name):
         """
         reflect foreign key relations for table: entity_name
         """
+        def get_name(relation):
+            name = relation["name"]
+            if name:
+                return name
+            else:
+                return identifier.obj_adler32(relation)
+
         def from_dict(entry):
             return model.Relation(
                 constrained_entity=entity_name,
@@ -284,7 +321,7 @@ class SQLAlchemyReflector(object):
 
         relations = self.accessor.inspect.get_foreign_keys(entity_name)
         return {
-            i["name"]: from_dict(i) for i in relations
+            get_name(i): from_dict(i) for i in relations
         }
 
     def reflect_entity(self, entity_name):
@@ -297,6 +334,7 @@ class SQLAlchemyReflector(object):
         returns:
             model.Entity
         """
+        self.logger.info(f"Reflecting table '{entity_name}'")
         columns = self.accessor.inspect.get_columns(entity_name)
         pk = self.accessor.inspect.get_pk_constraint(entity_name)
         indexes = self.accessor.inspect.get_indexes(entity_name)
@@ -648,16 +686,19 @@ class SQLServices(model.ETLServices):
         return _entity
 
     def get_sql_table_relations(self, conn_name: str, table_name: str, append=False):
+        """reflect table relations
+
+        Parameters:
+            * conn_name: connection
+            * table_name: name of table
+            * append: append to model
+
+        """
         accessor = self.get_sql_accessor(conn_name)
         reflector = SQLAlchemyReflector(accessor)
         _relations = reflector.reflect_relations(table_name)
         if append:
             for name, relation in _relations.items():
-                if name is None:
-                    name = "{}_{}".format(
-                        relation.constrained_entity.lower(),
-                        relation.referred_entity.lower()
-                    )
                 self.model.relations[name] = relation
         return _relations
 
@@ -669,3 +710,26 @@ class SQLServices(model.ETLServices):
             query,
         )
         accessor.close()
+
+    def sample_from_db(self, conn_name, *tables, n=1000):
+        """sample n records from each table in a database
+
+        Arguments:
+            - connection: connection name
+            - n: number of records to sample
+            - *tables: list of tables, all if not specified
+
+        Returns:
+            - Dictionary table names as key and records as value
+
+        """
+        accessor = self.get_sql_accessor(conn_name)
+        if len(tables) == 0:
+            _tables = self.get_sql_tables(conn_name)
+        else:
+            _tables = tables
+        retval = {}
+        for table_name in _tables:
+            rows = SQLAlchemyTableSource(accessor, table_name, chunk_size=n)
+            retval[table_name] = list(itertools.islice(rows, n))
+        return retval

@@ -21,6 +21,7 @@ import os
 import yaml
 from dkit.etl.extensions import ext_sql_alchemy
 from dkit.etl import (reader, source, schema, transform)
+from dkit.utilities.identifier import obj_md5
 
 
 SCHEMA = """
@@ -32,6 +33,12 @@ name: {str_len: 22, type: string}
 score: {type: float}
 year: {type: integer}
 """
+NORTHWIND = "sqlite:///data/northwind.sqlite"
+NORTHWIND_TABLE_NAMES = [
+    'Categories', 'CustomerCustomerDemo', 'CustomerDemographics', 'Customers',
+    'EmployeeTerritories', 'Employees', 'Order Details', 'Orders', 'Products',
+    'Regions', 'Shippers', 'Suppliers', 'Territories', 'sqlite_sequence'
+]
 
 
 class TestSQLAlchemyFactory(unittest.TestCase):
@@ -98,6 +105,7 @@ class TestSQLAlchemyBase(unittest.TestCase):
 class TestSQLAlchemyReflection(TestSQLAlchemyBase):
 
     def test_reflect_entity(self):
+        """reflect one entity"""
         self.create_model()
         self.insert_data()
         r = ext_sql_alchemy.SQLAlchemyReflector(self.accessor)
@@ -113,6 +121,34 @@ class TestSQLAlchemyReflection(TestSQLAlchemyBase):
                 'score': 'Float()',
                 'year': 'Integer()'
             }
+        )
+
+    def _get_reflector(self) -> ext_sql_alchemy.SQLAlchemyReflector:
+        accessor = ext_sql_alchemy.SQLAlchemyAccessor(
+            NORTHWIND,
+            echo=False
+        )
+        return ext_sql_alchemy.SQLAlchemyReflector(accessor)
+
+    def test_list_tables(self):
+        """test table names reflection"""
+        reflector = self._get_reflector()
+        tables = reflector.get_table_names()
+        self.assertEqual(
+            tables,
+            NORTHWIND_TABLE_NAMES
+        )
+
+    def test_profile(self):
+        reflector = self._get_reflector()
+        profile = reflector.extract_profile(*reflector.get_table_names())
+        self.assertEqual(
+            list(profile.keys()),
+            self.table_names
+        )
+        self.assertEqual(
+            obj_md5(profile),
+            '6c46243915e4fa383ac536652dc0e974'
         )
 
 
@@ -153,6 +189,27 @@ class TestSQLAlchemyExtension(TestSQLAlchemyBase):
         self.assertEqual(
             self.accessor.inspect.get_table_names(),
             ["input"]
+        )
+
+
+class TestSQLServices(unittest.TestCase):
+
+    def test_sample_all(self):
+        """test sampling all data from a database"""
+        services = ext_sql_alchemy.SQLServices.from_file("model.yml")
+        sample = services.sample_from_db("northwind")
+        self.assertEqual(
+            list(sample.keys()),
+            NORTHWIND_TABLE_NAMES
+        )
+
+    def test_sample_specified(self):
+        """test sampling all data from a database"""
+        services = ext_sql_alchemy.SQLServices.from_file("model.yml")
+        sample = services.sample_from_db("northwind", "Categories", "Employees")
+        self.assertEqual(
+            list(sample.keys()),
+            ["Categories", "Employees"]
         )
 
 
