@@ -532,11 +532,12 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
     """
     def __init__(self, accessor, table_name, where_clause=None, field_names=None,
                  log_trigger=DEFAULT_LOG_TRIGGER,
-                 chunk_size=CHUNK_SIZE):
+                 chunk_size=CHUNK_SIZE, limit=None):
         super().__init__(accessor, field_names=field_names, log_trigger=log_trigger,
                          chunk_size=chunk_size)
         self.table_name = table_name
         self.where_clause = where_clause or ""
+        self.limit = limit
 
     def iter_some_fields(self, field_names):
         the_table = self.sqlalchemy.Table(
@@ -547,6 +548,8 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
         where_clause = self.sqlalchemy.sql.text(self.where_clause)
         fields = [getattr(the_table.c, n) for n in field_names]
         s = self.sqlalchemy.select(fields, whereclause=where_clause)
+        if self.limit:
+            s = s.limit(self.limit)
         yield from self.iter_results(s)
 
     def iter_all_fields(self):
@@ -557,6 +560,8 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
         )
         where_clause = self.sqlalchemy.sql.text(self.where_clause)
         s = self.sqlalchemy.select([the_table], whereclause=where_clause)
+        if self.limit:
+            s = s.limit(self.limit)
         yield from self.iter_results(s)
 
 
@@ -730,7 +735,7 @@ class SQLServices(model.ETLServices):
             _tables = tables
         retval = {}
         for table_name in _tables:
-            print(table_name)
-            rows = SQLAlchemyTableSource(accessor, table_name, chunk_size=n)
+            logger.info(f"sampling from '{table_name}'")
+            rows = SQLAlchemyTableSource(accessor, table_name, chunk_size=n, limit=n)
             retval[table_name] = list(itertools.islice(rows, n))
         return retval

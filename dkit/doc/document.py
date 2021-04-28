@@ -269,7 +269,8 @@ class List(_AddElement):
         self.ordered = ordered
 
     def add_entry(self, element):
-        self.data.append(self.Entry(element))
+        # self.data.append(self.Entry(element))
+        self.data.append(element)
 
 
 class LineBreak(_AddElement):

@@ -144,7 +144,7 @@ class TestSQLAlchemyReflection(TestSQLAlchemyBase):
         profile = reflector.extract_profile(*reflector.get_table_names())
         self.assertEqual(
             list(profile.keys()),
-            self.table_names
+            NORTHWIND_TABLE_NAMES
         )
         self.assertEqual(
             obj_md5(profile),
