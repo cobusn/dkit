@@ -62,7 +62,7 @@ class Timer(object):
     def __str__(self, *args, **kwargs) -> str:
         return str(self.str_elapsed)
 
-    def start(self):
+    def start(self) -> "Timer":
         """
         Start the timer.
 
