@@ -27,8 +27,11 @@ import sys
 import tarfile
 import mmap
 import posix_ipc
-
+import logging
 from . import DEFAULT_READ_CHUNK_SIZE
+
+
+logger = logging.getLogger(__name__)
 
 
 class Reader():
@@ -101,6 +104,7 @@ class TarFileReader(ArchiveReader):
     :param mode: mode for opening. Refer to python tarfile docs
     """
     def __init__(self, file_name, regex=r".*", mode="r:*", output_encoding="utf-8"):
+        logger.info(f"reading from {file_name}")
         self.file_name = file_name
         self.regex = regex
         self.mode = mode
@@ -119,6 +123,7 @@ class TarFileReader(ArchiveReader):
 class FileReader(ClosedReader):
 
     def __init__(self, file_path, mode="r", encoding="utf-8"):
+        logger.info(f"reading from {file_path}")
         self.file_path = file_path
         self.mode = mode
         self.encoding = encoding
@@ -137,6 +142,7 @@ class FileReader(ClosedReader):
 class SharedMemoryReader(OpenReader):
 
     def __init__(self, name, compression=None):
+        logger.info(f"reading from shared memory: {name}")
         self.name = name
         self.compresson = compression
         self.fd = posix_ipc.SharedMemory(
@@ -171,6 +177,7 @@ class BufferedFileReader(ClosedReader):
     """
 
     def __init__(self, file_path, mode="r", encoding="utf-8", chunk_size=DEFAULT_READ_CHUNK_SIZE):
+        logger.info(f"reading from {file_path}")
         self.file_path = file_path
         self.mode = mode
         self.encoding = encoding

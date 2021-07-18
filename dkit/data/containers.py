@@ -26,6 +26,7 @@ __all__ = [
     "SortedCollection",
 ]
 
+
 class RangeCounter(object):
     """can be used to count items in ranges"""
 
@@ -105,7 +106,7 @@ class DictionaryEmulator(collections.MutableMapping):
         return self.store
 
 
-class ListEmulator(collections.MutableSequence):
+class ListEmulator(collections.abc.MutableSequence):
     """
     simple list emulator implementation
     """
@@ -578,7 +579,7 @@ class FastFlexShelve(collections.MutableMapping):
         self.udict.close()
 
 
-class OrderedSet(collections.MutableSet):
+class OrderedSet(collections.abc.MutableSet):
     """
     OrderedSet: Behave like a set but items are ordered
     by insertion
