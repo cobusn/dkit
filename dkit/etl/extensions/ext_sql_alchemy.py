@@ -50,6 +50,7 @@ VALID_DIALECTS = [
 
 # map between SQL types and closest Python type
 TYPE_MAP = {
+    "BINARY": "binary",
     "BIGINT": "int64",
     "BIT": "binary",
     "BLOB": "binary",

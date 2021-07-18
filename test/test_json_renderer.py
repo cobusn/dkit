@@ -149,22 +149,23 @@ class TestMD2Json(unittest.TestCase):
                 'data': [
                     {
                         '~>': 'entry',
-                        'data': {
-                            '~>': 'entry',
-                            'data': [
-                                {'~>': 'text', 'data': 'one'},
-                                {'~>': 'list', 'data': [
-                                    {
-                                        '~>': 'entry',
-                                        'data': {'~>': 'entry', 'data': [
-                                            {'~>': 'text', 'data': 'two'}
-                                        ]
-                                        }
-                                    }
-                                ], 'ordered': False}]}},
-                    {'~>': 'entry', 'data':
-                     {'~>': 'entry', 'data': [{'~>': 'text', 'data': 'three'}]}}],
-                'ordered': False}]
+                        'data': [
+                            {'~>': 'text', 'data': 'one'},
+                            {'~>': 'list', 'data': [
+                                {
+                                    '~>': 'entry',
+                                    'data': [{'~>': 'text', 'data': 'two'}]
+                                }], 'ordered': False
+                            }
+                        ]},
+                    {
+                        '~>': 'entry',
+                        'data': [{'~>': 'text', 'data': 'three'}]
+                    }
+                ],
+                'ordered': False
+            }
+        ]
         self.assertEqual(o, c)
 
     def test_line_break(self):
