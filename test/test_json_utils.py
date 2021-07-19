@@ -26,6 +26,19 @@ from dkit.data import json_utils as ju
 
 sys.path.insert(0, "..")  # noqa
 
+class TestBytesEncoder(unittest.TestCase):
+
+    def setUp(self):
+        self.serializer = ju.JsonSerializer(
+            ju.BytesCodec()
+        )
+
+    def test_encoder_bytes(self):
+        obj = {"bytes value": b'1234'}
+        encoded = self.serializer.dumps(obj)
+        decoded = self.serializer.loads(encoded)
+        self.assertEqual(obj, decoded)
+
 
 class TestJsonUtilsDateEncoder(unittest.TestCase):
 

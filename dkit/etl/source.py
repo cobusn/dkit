@@ -254,6 +254,7 @@ class JsonSource(AbstractMultiReaderSource):
         self.json = ju.JsonSerializer(
             ju.DateCodec(),
             ju.DateTimeCodec(),
+            ju.BytesCodec(),
             encoder=json
         )
 

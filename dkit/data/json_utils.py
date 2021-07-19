@@ -4,6 +4,7 @@ from datetime import datetime, date
 import json
 import decimal
 import importlib
+import base64
 
 
 class CustomCodec(object):
@@ -20,6 +21,23 @@ class CustomCodec(object):
 
     def decode(self, obj):
         raise NotImplementedError
+
+
+class BytesCodec(CustomCodec):
+    """
+    Store bytes object as Base64 strings
+    """
+    def __init__(self):
+        super().__init__(bytes)
+
+    def encode(self, obj):
+        return {
+            '__type__': 'bytes',
+            'base64': base64.b64encode(obj).decode()
+        }
+
+    def decode(self, obj):
+        return base64.b64decode(obj['base64'].encode())
 
 
 class NPInt64Codec(CustomCodec):
