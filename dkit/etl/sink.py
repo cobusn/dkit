@@ -203,7 +203,8 @@ class JsonlSink(FileIteratorSink):
         self.encoder = ju.JsonSerializer(
             ju.DateTimeCodec(),
             ju.DateCodec(),
-            ju.Decimal2FloatCodec()
+            ju.Decimal2FloatCodec(),
+            ju.BytesCodec(),
         )
 
     def process_line(self, entry, stream):
