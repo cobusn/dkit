@@ -64,6 +64,18 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
             sorted(t.discover_parameters())
         )
 
+    def test_no_vars(self):
+        """test test that template work with no vars."""
+        s = "Select * from orders"
+        t = ext_sql_alchemy.SQLAlchemyTemplateSource(
+            self.accessor,
+            s
+        )
+        a = t.get_rendered_sql()
+        self.assertEqual(
+            a, s
+        )
+
     def test_select_dict(self):
         s = """
         Select * from orders

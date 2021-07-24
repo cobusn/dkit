@@ -463,6 +463,7 @@ class ReportlabDocRenderer(AbstractRenderer):
         return Spacer(0, h)
 
     def make_entry(self, element):
+        print(element)
         if isinstance(element["data"], dict) and element["data"]["~>"] == "list":
             return self.make_list(element["data"])
         else:

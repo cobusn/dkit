@@ -34,7 +34,8 @@ from ...exceptions import DKitETLException
 from ...utilities.cmd_helper import LazyLoad
 from ...utilities import identifier
 from ...data.containers import DictionaryEmulator
-import jinja2
+
+jinja2 = LazyLoad("jinja2")
 ora = LazyLoad("cx_Oracle")
 
 logger = logging.getLogger(__name__)
@@ -761,6 +762,16 @@ class SQLServices(model.ETLServices):
             for name, relation in _relations.items():
                 self.model.relations[name] = relation
         return _relations
+
+    def run_template_query(self, connection: model.Connection, template, variables):
+        """execute template query"""
+        accessor = SQLAlchemyAccessor(as_sqla_url(connection.as_dict(True)))
+        yield from SQLAlchemyTemplateSource(
+            accessor,
+            template,
+            variables
+        )
+        accessor.close()
 
     def run_query(self, connection: model.Connection, query: str):
         """execute query"""

@@ -1,5 +1,9 @@
 __meta__: {}
 connections:
+  northwind:
+    database: testdata/northwind.sqlite
+    dialect: sqlite
+    driver: sqlite
   sakila:
     database: sakila
     dialect: postgres

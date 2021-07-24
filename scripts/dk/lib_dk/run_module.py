@@ -26,7 +26,9 @@ from dkit import exceptions
 from dkit.data import manipulate as mp, containers
 from dkit.etl.extensions import ext_sql_alchemy
 from dkit.data import aggregation as agg
+from dkit.parsers.parameter_parser import parameter_dict
 import argparse
+from dkit.etl.extensions.ext_sql_alchemy import SQLAlchemyTemplateSource
 
 
 class GroupByAction(argparse.Action):
@@ -131,12 +133,28 @@ class RunModule(module.MultiCommandModule):
         else:
             str_query = self.args.query_string
 
+        # variables
+        variables = parameter_dict(self.args.parameter)
+
+        # show only
+        if self.args.show_sql:
+            s = SQLAlchemyTemplateSource(None, str_query, variables)
+            self.print(s.get_rendered_sql())
+            return
+
+        if self.args.show_params:
+            s = SQLAlchemyTemplateSource(None, str_query, variables)
+            for param in s.discover_parameters():
+                self.print(param)
+            return
+
         if self.args.table:
             # only retrieve first 100 rows
             data = []
-            i = srv.run_query(
+            i = srv.run_template_query(
                     connection,
                     str_query,
+                    variables=variables
                 )
             for i, row in enumerate(i):
                 data.append(row)
@@ -146,9 +164,10 @@ class RunModule(module.MultiCommandModule):
         else:
             self.push_to_uri(
                 self.args.output,
-                srv.run_query(
+                srv.run_template_query(
                     connection,
                     str_query,
+                    variables=variables
                 )
             )
 
@@ -302,6 +321,21 @@ class RunModule(module.MultiCommandModule):
         options.add_query_group(group_query)
         options.add_option_output_uri(parser_query)
         options.add_option_tabulate(parser_query)
+        parser_query.add_argument(
+            '-p', '-param', action='append', dest='parameter',
+            default=[],
+            help='define query parameters (can be added multiple times)'
+        )
+        parser_query.add_argument(
+            "--show-sql", dest="show_sql", action="store_true",
+            default=False,
+            help="show query without executing"
+        )
+        parser_query.add_argument(
+            "--show-params", dest="show_params", action="store_true",
+            default=False,
+            help="show parameters in sql statement without executing"
+        )
 
         # report
         parser_report = self.sub_parser.add_parser("report", help=self.do_report.__doc__)
