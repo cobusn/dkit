@@ -7,9 +7,19 @@ PYTHON=python
 
 .PHONY: test
 
-all: sdist bdist tseq.1
+all: sdist bdist
+
 test:
 	cd test && make -j 7
+
+doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
+	cd doc/images && make -j 8
+	cd examples && make cleanfiles
+	cd examples && make
+	cd doc && make html \
+		&& cd .. \
+		&& cp -r doc/build/* html
+
 
 sdist:
 	$(PYTHON) setup.py sdist
@@ -18,7 +28,7 @@ install:
 	$(PYTHON) setup.py install
 
 bdist:
-	$(PYTHON) setup.py bdist
+	$(PYTHON) setup.py bdist_wininst
 
 clean:
 	python setup.py clean --all

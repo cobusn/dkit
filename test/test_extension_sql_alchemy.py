@@ -22,7 +22,7 @@ import yaml
 from dkit.etl.extensions import ext_sql_alchemy
 from dkit.etl import (reader, source, schema, transform)
 from dkit.utilities.identifier import obj_md5
-
+import jinja2
 
 SCHEMA = """
 id: {str_len: 11, type: string, primary_key: True}
@@ -39,6 +39,71 @@ NORTHWIND_TABLE_NAMES = [
     'EmployeeTerritories', 'Employees', 'Order Details', 'Orders', 'Products',
     'Regions', 'Shippers', 'Suppliers', 'Territories', 'sqlite_sequence'
 ]
+
+
+class TestSQLAlchemyTemplate(unittest.TestCase):
+    """test template features"""
+
+    def setUp(self):
+        self.accessor = ext_sql_alchemy.SQLAlchemyAccessor(NORTHWIND)
+
+    def test_find_variables(self):
+        """test locating undeclared variables in the template"""
+        s = """
+        Select * from orders
+        where
+            CustomerId={{ cid }}
+            and EmployeeId={{ eid }}
+        """
+        t = ext_sql_alchemy.SQLAlchemyTemplateSource(
+            self.accessor,
+            s
+        )
+        self.assertEqual(
+            sorted(["eid", "cid"]),
+            sorted(t.discover_parameters())
+        )
+
+    def test_select_dict(self):
+        s = """
+        Select * from orders
+        where
+            CustomerId='{{ cid }}'
+        """
+        t = ext_sql_alchemy.SQLAlchemyTemplateSource(
+            self.accessor,
+            s
+        )
+        t["cid"] = "LAZYK"
+
+        self.assertEqual(len(list(t)), 2)
+
+    def test_select(self):
+        s = """
+        Select * from orders
+        where
+            CustomerId='{{ cid }}'
+        """
+        t = ext_sql_alchemy.SQLAlchemyTemplateSource(
+            self.accessor,
+            s,
+            {"cid": "LAZYK"}
+        )
+        r = list(t)
+        self.assertEqual(len(list(r)), 2)
+
+    def test_select_raise(self):
+        s = """
+        Select * from orders
+        where
+            CustomerId='{{ cid }}'
+        """
+        t = ext_sql_alchemy.SQLAlchemyTemplateSource(
+            self.accessor,
+            s
+        )
+        with self.assertRaises(jinja2.exceptions.UndefinedError):
+            _ = list(t)
 
 
 class TestSQLAlchemyFactory(unittest.TestCase):
@@ -152,7 +217,10 @@ class TestSQLAlchemyReflection(TestSQLAlchemyBase):
         )
 
 
-class TestSQLAlchemyExtension(TestSQLAlchemyBase):
+class TestSQLAlchemyCRUD(TestSQLAlchemyBase):
+    """
+    test create /insert / query operations
+    """
 
     def test_0_model(self):
         """
