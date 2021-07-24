@@ -110,12 +110,5 @@ entities:
     TerritoryDescription: String(str_len=50)
     TerritoryID: String(str_len=20, primary_key=True)
 queries: {}
-relations:
-  employeeterritories_employees:
-    constrained_columns:
-    - EmployeeID
-    constrained_entity: EmployeeTerritories
-    referred_columns:
-    - EmployeeID
-    referred_entity: Employees
+relations: {}
 transforms: {}
