@@ -18,13 +18,14 @@
 # =========== =============== =================================================
 # 27 Nov 2019 Cobus Nel       Added facility for options in URL
 # 28 Jan 2021 Cobus Nel       Modified code to work with Oracle SID's
-# 26 Apr 2022 Cobus Nel       Added additional reflection code
+# 26 Apr 2021 Cobus Nel       Added additional reflection code
 # =========== =============== =================================================
+
 import importlib
 import logging
 import re
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 import itertools
 from .. import (source, schema, sink, model, DEFAULT_LOG_TRIGGER)
 from ... import CHUNK_SIZE, messages
@@ -32,8 +33,8 @@ from ...data import iteration
 from ...exceptions import DKitETLException
 from ...utilities.cmd_helper import LazyLoad
 from ...utilities import identifier
-
-
+from ...data.containers import DictionaryEmulator
+import jinja2
 ora = LazyLoad("cx_Oracle")
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,7 @@ TYPE_MAP = {
 
 class URL(object):
 
+    """create SQlAlchemy URL from parameters"""
     def __init__(self, driver, username=None, password=None, host=None, port=None,
                  database=None, options=None, **kwargs):
         self.drivername = driver
@@ -584,6 +586,58 @@ class SQLAlchemySelectSource(SQLAlchemyAbstractSource):
     def iter_all_fields(self):
         stmt = self.sqlo.text(self.select_stmt)
         yield from self.iter_results(stmt)
+
+
+class SQLAlchemyTemplateSource(SQLAlchemyAbstractSource, DictionaryEmulator):
+    """
+    Create iterator from Jinja2 Template SQL statement
+
+    Args:
+        accessor: SQLAlchemyAccessor instance
+        template:  SQL select statement template
+        variables: dict containing variables
+        log_trigger: trigger a log event every n rows
+        ..
+
+    This class will raise jinja2.exceptions.UndefinedError
+    in the case of undefined variables
+
+    Note that this class act as a Dict and the dictionary
+    interface can be used to define variables
+    """
+    def __init__(self, accessor, template: str, variables: Dict = None,
+                 log_trigger=DEFAULT_LOG_TRIGGER,
+                 chunk_size=CHUNK_SIZE):
+        SQLAlchemyAbstractSource.__init__(
+            self, accessor,
+            log_trigger=log_trigger, chunk_size=chunk_size
+        )
+        _vars = variables if variables else {}
+        DictionaryEmulator.__init__(self, _vars)
+        self.sqlo = importlib.import_module("sqlalchemy.sql")
+        self.template = template
+
+    def discover_parameters(self) -> List:
+        """find variables in template"""
+        env = jinja2.Environment()
+        ast = env.parse(self.template)
+        return list(jinja2.meta.find_undeclared_variables(ast))
+
+    def get_rendered_sql(self):
+        """get the rendered template"""
+        tpl = jinja2.Template(
+            self.template,
+            undefined=jinja2.StrictUndefined
+        )
+        return tpl.render(self.store)
+
+    def iter_all_fields(self):
+        """
+        raises
+            - jinja2.exceptions.UndefinedError
+        """
+        _sql = self.sqlo.text(self.get_rendered_sql())
+        yield from self.iter_results(_sql)
 
 
 class SQLAlchemySink(sink.Sink):

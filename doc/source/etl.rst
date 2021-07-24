@@ -343,6 +343,16 @@ SQLAlchemySelectSource
    :undoc-members:
    :inherited-members:
 
+SQLAlchemyTemplateSource
+~~~~~~~~~~~~~~~~~~~~~~
+.. image:: ../images/SQLAlchemyTemplateSource.svg
+	:align: center
+
+.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTemplateSource
+   :members:
+   :undoc-members:
+   :inherited-members:
+
 SQLAlchemySink
 ~~~~~~~~~~~~~~
 .. image:: ../images/SQLAlchemySink.svg
