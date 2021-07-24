@@ -1,0 +1,6 @@
+it = iter time
+==============
+
+Simple command line utility to iterate over time based
+variables.
+
