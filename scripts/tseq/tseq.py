@@ -22,81 +22,13 @@
 
 import sys
 import argparse
-from dateutil.relativedelta import relativedelta
-from datetime import datetime
-from datetime import date
+from dkit.utilities.time_helper import TimeSequence
 
+DESCRIPTION = """tseq - print a sequence of date/time values"""
 DEFAULT_OF = "iso_date"
 DEFAULT_IF = "iso_date"
-CHOICES = ["years", "months", "days", "minutes", "seconds"]
 DEFAULT_TYPE = "days"
 FORMATS = ["iso", "iso_day", "epoch", "strftime format"]
-DESCRIPTION = """tseq - print a sequence of date/time values"""
-
-
-class TimeSequence(object):
-
-    def __init__(self, start, stop, kind="month", inc=1, pairs=False):
-        self.start = start
-        self.stop = stop
-        if kind not in CHOICES:
-            raise ValueError(f"kind should be one of {', '.join(CHOICES)}")
-        self.kind = kind
-        self.pairs = pairs
-        self.inc = inc
-
-    @staticmethod
-    def __get_formatter(spec):
-        if spec == "iso_date":
-            return lambda x: date(x.year, x.month, x.day).isoformat()
-        elif spec == "iso":
-            return lambda x: x.isoformat(" ")
-        elif spec == "epoch":
-            return lambda x: str(int(x.timestamp()))
-        else:
-            return lambda x: x.strftime(spec)
-
-    @staticmethod
-    def parse(value, spec):
-        """
-        convenience function to parse a date
-
-        spec can be any of:
-            - iso_date
-            - iso
-            - epoch
-            - custom strptime format
-        """
-        translate = {
-            'today': lambda: date.today(),
-            'tomorrow': lambda: date.today() + relativedelta(days=1),
-            'yesterday': lambda: date.today() - relativedelta(days=1)
-        }
-        if value in translate:
-            d = translate[value]()
-            return datetime(d.year, d.month, d.day)
-
-        if spec == "iso_date":
-            return datetime.strptime(value, "%Y-%m-%d")
-        elif spec == "iso":
-            return datetime.fromisoformat(value)
-        elif spec == "epoch":
-            return datetime.fromtimestamp(int(value))
-        else:
-            return datetime.strptime(value, spec)
-
-    def format(self, obj, format_spec):
-        return TimeSequence.__get_formatter(format_spec)(obj)
-
-    def __iter__(self):
-        incr = relativedelta(**{self.kind: self.inc})
-        d = self.start
-        while d < self.stop:
-            if self.pairs:
-                yield d, d + incr
-            else:
-                yield d
-            d = d + incr
 
 
 def run(args):
@@ -148,7 +80,7 @@ def main():
     )
     parser.add_argument(
         '-t', '--type',
-        choices=CHOICES,
+        choices=TimeSequence.CHOICES,
         default=DEFAULT_TYPE,
         help="output type"
     )

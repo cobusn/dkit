@@ -16,9 +16,92 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 from datetime import date, datetime, timedelta, timezone
-from typing import Union, Iterable
+from typing import Iterable
 import time
 from ..typing import AnyDate
+from dateutil.relativedelta import relativedelta
+
+
+class TimeSequence(object):
+    """
+    tseq - print a sequence of date/time values
+
+    useful for generating parameters for batch
+    programs
+
+    args:
+        - start: start date/time
+        - stop: stop date/time
+        - kind: jump size (e.g. days)
+        - inc: increment size
+        - pairs: yield pairs if True
+
+    """
+
+    CHOICES = ["years", "months", "days", "minutes", "seconds"]
+
+    def __init__(self, start: datetime, stop: datetime, kind: str = "month",
+                 inc: int = 1, pairs: bool = False):
+        self.start = start
+        self.stop = stop
+        if kind not in self.CHOICES:
+            raise ValueError(f"kind should be one of {', '.join(self.CHOICES)}")
+        self.kind = kind
+        self.pairs = pairs
+        self.inc = inc
+
+    @staticmethod
+    def __get_formatter(spec):
+        if spec == "iso_date":
+            return lambda x: date(x.year, x.month, x.day).isoformat()
+        elif spec == "iso":
+            return lambda x: x.isoformat(" ")
+        elif spec == "epoch":
+            return lambda x: str(int(x.timestamp()))
+        else:
+            return lambda x: x.strftime(spec)
+
+    @staticmethod
+    def parse(value, spec):
+        """
+        convenience function to parse a date
+
+        spec can be any of:
+            - iso_date
+            - iso
+            - epoch
+            - custom strptime format
+        """
+        translate = {
+            'today': lambda: date.today(),
+            'tomorrow': lambda: date.today() + relativedelta(days=1),
+            'yesterday': lambda: date.today() - relativedelta(days=1)
+        }
+        if value in translate:
+            d = translate[value]()
+            return datetime(d.year, d.month, d.day)
+
+        if spec == "iso_date":
+            return datetime.strptime(value, "%Y-%m-%d")
+        elif spec == "iso":
+            return datetime.fromisoformat(value)
+        elif spec == "epoch":
+            return datetime.fromtimestamp(int(value))
+        else:
+            return datetime.strptime(value, spec)
+
+    def format(self, obj, format_spec):
+        return TimeSequence.__get_formatter(format_spec)(obj)
+
+    def __iter__(self):
+        incr = relativedelta(**{self.kind: self.inc})
+        d = self.start
+        while d < self.stop:
+            if self.pairs:
+                yield d, d + incr
+            else:
+                yield d
+            d = d + incr
 
 
 def daterange(begin: AnyDate, end: AnyDate,
