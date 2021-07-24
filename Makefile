@@ -7,19 +7,9 @@ PYTHON=python
 
 .PHONY: test
 
-all: sdist bdist
-
+all: sdist bdist tseq.1
 test:
 	cd test && make -j 7
-
-doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
-	cd doc/images && make -j 8
-	cd examples && make cleanfiles
-	cd examples && make
-	cd doc && make html \
-		&& cd .. \
-		&& cp -r doc/build/* html
-
 
 sdist:
 	$(PYTHON) setup.py sdist
@@ -28,7 +18,7 @@ install:
 	$(PYTHON) setup.py install
 
 bdist:
-	$(PYTHON) setup.py bdist_wininst
+	$(PYTHON) setup.py bdist
 
 clean:
 	python setup.py clean --all
@@ -39,6 +29,7 @@ clean:
 	cd scripts/pyeek && make clean
 	cd scripts/xpstat && make clean
 	cd scripts/vigenere && make clean
+	cd scripts/tseq && make clean
 	cd test && make clean
 	find . | grep \.pyc$ | xargs rm -fr
 	find . | grep __pycache__ | xargs rm -rf
