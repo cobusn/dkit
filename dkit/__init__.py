@@ -1,4 +1,4 @@
-__version__ = "21.7.2"
+__version__ = "21.7.3"
 
 NA_VALUE = None
 CHUNK_SIZE = 10_000
