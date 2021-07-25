@@ -106,6 +106,41 @@ class DictionaryEmulator(collections.MutableMapping):
         return self.store
 
 
+class SizedMap(collections.OrderedDict):
+    """maintain a dictionary of size n
+
+    Older entries are discarded on a fifo
+    basis
+
+    https://stackoverflow.com/questions/2437617/how-to-limit-the-size-of-a-dictionary
+
+    """
+    def __init__(self, n, callback=None, *args, **kwargs):
+        self.n = n
+        self.callback = callback if callback else self.on_discard
+        super().__init__(*args, **kwargs)
+
+    def _check_size_limit(self):
+        """maintain size n"""
+        while len(self) > self.n:
+            self.callback(
+                *self.popitem(last=False)
+            )
+
+    def on_discard(self, key, last):
+        """callback called each time a value is discarded
+
+        parameter:
+            - key: discarded key
+            - value: discarded value
+        """
+        pass
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._check_size_limit()
+
+
 class ListEmulator(collections.abc.MutableSequence):
     """
     simple list emulator implementation

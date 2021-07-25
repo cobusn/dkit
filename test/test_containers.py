@@ -26,17 +26,82 @@ from dkit.data.containers import (
     OrderedSet,
     RangeCounter,
     ReusableStack,
+    SizedMap,
     SortedCollection,
 )
 from random import shuffle
 from pathlib import Path
 
 
+class TestSizedMap(unittest.TestCase):
+
+    def setUp(self):
+        self.sample = {
+            i: i for i in range(5)
+        }
+
+    def test_specified_callback(self):
+        """
+        test class with specified callback
+        """
+        stack = []
+
+        def callback(key, value):
+            stack.append((key, value))
+
+        sm = SizedMap(3, callback)
+        sm.update(**self.sample)
+
+        self.assertEqual(
+            stack,
+            [(0, 0), (1, 1)]
+        )
+
+    def test_classmethod_callback(self):
+        """
+        test class with class method callback
+        """
+        class Cb:
+
+            def __init__(self):
+                self.stack = []
+
+            def callback(self, key, value):
+                self.stack.append((key, value))
+
+        cb = Cb()
+
+        sm = SizedMap(3, cb.callback)
+        sm.update(**self.sample)
+
+        self.assertEqual(
+            cb.stack,
+            [(0, 0), (1, 1)]
+        )
+
+    def test_derived_callback(self):
+
+        stack = []
+
+        class Deriv(SizedMap):
+
+            def on_discard(self, k, v):
+                stack.append((k, v))
+
+        sm = Deriv(3)
+        sm.update(**self.sample)
+
+        self.assertEqual(
+            stack,
+            [(0, 0), (1, 1)]
+        )
+
+
 class TestRangeCounter(unittest.TestCase):
 
     def test_init(self):
         c = RangeCounter(0, 5, 10, 15)
-        print(c.store.get(2))
+        # print(c.store.get(2))
         c.store.__init_subclass__
 
 
