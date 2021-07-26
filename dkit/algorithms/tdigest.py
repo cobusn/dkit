@@ -33,7 +33,8 @@ class TDigest:
         _lib.tdigest_compress(self._struct)
 
     @property
-    def compression(self): return self._struct.compression
+    def compression(self):
+        return self._struct.compression
 
     @property
     def threshold(self):
@@ -118,3 +119,22 @@ class TDigest:
             raise TypeError("'value' must be of type 'TDigest' or 'RawTDigest'")
 
         _lib.tdigest_merge(self._struct, other._struct)
+
+    def as_dict(self):
+        """return data as dictionary for serialisation"""
+        self._compress()
+        return {
+            "compression": self._struct.compression,
+            "centroids": list(self.centroids())
+        }
+
+    @classmethod
+    def from_dict(cls, source):
+        """rebuild from dictionary
+
+        ffi objects cannot be pickled
+        """
+        new_digest = cls(source["compression"])
+        for c in source["centroids"]:
+            new_digest.insert(c.mean, c.weight)
+        return new_digest
