@@ -75,7 +75,7 @@ def quantile_bins(values, n_quantiles=10, strict=False):
 class AbstractAccumulator(object):
     """base class for accumulators"""
 
-    def as_dict(self):
+    def as_map(self):
         """
         statistics as dictionary
 
@@ -274,6 +274,26 @@ class Accumulator(AbstractAccumulator):
         self._std: float = None
         self._tdigest = tdigest.TDigest()
         self.consume(values)
+
+    def as_dict(self):
+        """dict representation for serialisation
+
+        the t_digest cannot be pickled
+        """
+        rv = dict(self.__dict__)
+        rv["digest"] = rv.pop("_tdigest").as_dict()
+        return rv
+
+    @classmethod
+    def from_dict(cls, data):
+        rv = cls(precision=data["precision"])
+        rv._min = data["_min"]
+        rv._max = data["_max"]
+        rv._observations = data["_observations"]
+        rv._mean = data["_mean"]
+        rv._std = data["_std"]
+        rv._tdigest = tdigest.TDigest.from_dict(data["digest"])
+        return rv
 
     @property
     def mean(self):
