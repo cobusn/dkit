@@ -77,3 +77,10 @@ class DKitValidationException(DKitException):
     exception related to schema validation
     """
     pass
+
+
+class DkitFileLockException(Exception):
+    """
+    Thrown by FileLock when a lock could not
+    be aquired before timeout.
+    """
