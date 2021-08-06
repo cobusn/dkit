@@ -226,6 +226,10 @@ class BufferAccumulator(AbstractAccumulator):
         """
         self.buffer_.append(value)
 
+    def merge(self, other):
+        self.buffer.extend(other)
+        return self
+
 
 class Accumulator(AbstractAccumulator):
     """
@@ -274,6 +278,29 @@ class Accumulator(AbstractAccumulator):
         self._std: float = None
         self._tdigest = tdigest.TDigest()
         self.consume(values)
+
+    def __add__(self, o):
+        """merge two instances"""
+        a1 = self.from_dict(self.as_dict())
+
+        n1 = self.observations
+        n2 = o.observations
+
+        if n1 == 0 and n2 == 0:
+            return a1
+        if n1 == 0:
+            return o.from_dict(o.as_dict())
+        if n2 == 0:
+            return a1
+
+        a1._mean = (self._observations * self._mean + o._observations * o.mean) / \
+            (n1 + n2)
+        a1._std = math.sqrt((((n1-1)*(a1._std ** 2)) + ((n2-1)*(o._std ** 2)))/(n1+n2-2))
+        a1._min = min(self._min, o._min)
+        a1._max = max(self._max, o._max)
+        a1._observations = n1 + n2
+        a1._tdigest.merge(o._tdigest)
+        return a1
 
     def as_dict(self):
         """dict representation for serialisation
@@ -403,5 +430,4 @@ class Accumulator(AbstractAccumulator):
         else:
             self._mean = _value
             self._std = 0.0
-
         self._tdigest.insert(_value)
