@@ -446,6 +446,12 @@ def add_options_sampling(parser, n=defaults.DEFAULT_SAMPLE_SIZE):
     )
 
 
+def add_options_sampling_input_all(parser, k=0):
+    """options for input enpoint"""
+    add_options_sampling(parser, k)
+    add_options_inputs(parser)
+
+
 def add_options_sampling_input(parser, k=defaults.DEFAULT_SAMPLE_SIZE):
     """options for input enpoint"""
     add_options_sampling(parser, k)

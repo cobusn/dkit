@@ -26,7 +26,7 @@ import numpy as np
 import unittest
 import random
 import sys
-sys.path.insert(0, "..")
+sys.path.insert(0, "..")  # noqa
 from dkit.data.stats import BufferAccumulator, Accumulator
 from dkit.data.histogram import Histogram
 
@@ -115,12 +115,12 @@ class TestBufferAccumulator(AccumulatorTestAbstract):
             acc = abs(1 - self.a[i].stdev / np.std(self.values[i]))
             self.assertLessEqual(acc, self.accuracy)
 
-    def test_as_dict(self):
+    def test_as_map(self):
         """
         Test to_dict() function
         """
         for i in range(len(self.values)):
-            d = self.a[i].as_dict()
+            d = self.a[i].as_map()
             self.assertEqual(d["observations"], self.n)
 
     def test_iter(self):
@@ -159,6 +159,13 @@ class TestAccumulator(AccumulatorTestAbstract):
             # assert that all points are counted
             c = sum([i.count for i in hist.bins])
             self.assertEqual(c, self.n)
+
+    def test_merge(self):
+        a = Accumulator(i for i in range(1000))
+        b = Accumulator(i for i in range(1000))
+        c = a + b
+        print(a.as_map())
+        print(c.as_map())
 
 
 if __name__ == "__main__":

@@ -199,6 +199,21 @@ def datestamp(the_date: AnyDate) -> int:
     return int(d.strftime("%s"))
 
 
+def hourstamp(the_date: datetime) -> int:
+    """
+    timestamp of day (midnight)
+
+    args:
+        - date
+    """
+    d = datetime(the_date.year, the_date.month, the_date.day, the_date.hour)
+    return int(d.strftime("%s"))
+
+
+def hour_of_day(the_date: AnyDate) -> int:
+    return int(the_date.strftime("%H"))
+
+
 def to_datetime(the_date: date) -> datetime:
     """
     convert date to datetime
@@ -227,3 +242,42 @@ def fmt_std(the_date: datetime) -> str:
     string format YYYY-DD-MM HH:MM:SS
     """
     return the_date.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def day_id_from_int(timestamp: int):
+    """day identifier from unix timestamp
+
+    useful for database keys
+
+    args:
+        - timestamp: unix timestamp
+
+    returns:
+        timestamp of the day
+    """
+    ts = int(timestamp)
+    return ts - (ts % 86400)
+
+
+def hour_id_from_int(timestamp):
+    """day identifier from unix timestamp
+
+    useful for database keys
+
+    args:
+        - timestamp: unix timestamp
+
+    returns:
+        timestamp of the day
+    """
+    ts = int(timestamp)
+    return ts - (ts % 3600)
+
+
+def hour_of_day_from_int(timestamp: int, tz_adjust=0):
+    """
+    hour in day
+    """
+    return int(
+        (hour_id_from_int(timestamp) - day_id_from_int(timestamp)) / 3600
+    )

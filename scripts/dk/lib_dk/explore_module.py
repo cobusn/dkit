@@ -147,6 +147,25 @@ class ExploreModule(module.MultiCommandModule):
             t = [b.as_dict() for b in h.bins]
             self.tabulate(t)
 
+    def do_qhist(self):
+        """generate quick histogram for specified field"""
+        import plotille
+        from dkit.shell import console
+        width, _ = console.get_terminal_size()
+        # hack to extract only required field
+        self.args.fields = [self.args.field]
+        field_name = self.args.field
+        data = [i[field_name] for i in self.input_stream(self.args.input)]
+        self.print(
+            plotille.hist(
+                data,
+                width=75,
+                bins=self.args.bins,
+                lc="bright_green",
+                log_scale=self.args.log
+            )
+        )
+
     def do_match(self):
         """regex match (match from start of text)"""
         from dkit.data import filters
@@ -265,7 +284,7 @@ class ExploreModule(module.MultiCommandModule):
         parser_count = self.sub_parser.add_parser("count", help=self.do_count.__doc__)
         options.add_option_defaults(parser_count)
         options.add_option_field_name(parser_count)
-        options.add_options_sampling_input(parser_count)
+        options.add_options_sampling_input_all(parser_count)
         options.add_option_n(parser_count, -1)
         options.add_option_head(parser_count)
 
@@ -328,6 +347,18 @@ class ExploreModule(module.MultiCommandModule):
         parser_histogram.add_argument("-o", "--output", help="output to file", default=None)
         parser_histogram.add_argument("--script", help="gnuplot script file (optional)",
                                       default=None)
+
+        # qhist
+        parser_q_histogram = self.sub_parser.add_parser(
+            "qhist", help=self.do_qhist.__doc__
+        )
+        options.add_option_defaults(parser_q_histogram)
+        options.add_options_inputs(parser_q_histogram)
+        options.add_option_field_name(parser_q_histogram)
+        parser_q_histogram.add_argument("--log", default=False, action="store_true",
+                                        help="enable log scale")
+        parser_q_histogram.add_argument("--bins", default=10, type=int,
+                                        help="number of bins")
 
         # plot
         parser_plot = self.sub_parser.add_parser("plot", help=self.do_plot.__doc__)
