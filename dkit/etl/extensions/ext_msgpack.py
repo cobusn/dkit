@@ -125,7 +125,7 @@ class delete_me__MsgpackSink(sink.FileIteratorSink):
         self.encoder.pack(entry, out_stream)
 
 
-class MsgpackSink(sink.Sink):
+class MsgpackSink(sink.AbstractSink):
     """
     Serialize Dictionary Line to msgpack
 

@@ -641,7 +641,7 @@ class SQLAlchemyTemplateSource(SQLAlchemyAbstractSource, DictionaryEmulator):
         yield from self.iter_results(_sql)
 
 
-class SQLAlchemySink(sink.Sink):
+class SQLAlchemySink(sink.AbstractSink):
     """
     Insert records into database using SQLAlchemy
 

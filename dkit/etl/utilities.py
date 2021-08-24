@@ -89,7 +89,7 @@ class Dumper(object):
         return data
 
 
-def open_sink(uri: str, key=None) -> sink.Sink:
+def open_sink(uri: str, key=None) -> sink.AbstractSink:
     """
     parse uri string and open + return sink
     """
