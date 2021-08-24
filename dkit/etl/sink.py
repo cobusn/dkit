@@ -26,30 +26,32 @@ Todo
 """
 
 import csv
-import json
 import datetime
-import pickle
 import decimal
-import html
+import json
 import os
+import pickle
+from abc import ABC, abstractmethod
 
-from ..utilities import instrumentation
-from ..utilities import iff
+import html
 from ..data import json_utils as ju
 from ..data.iteration import chunker
+from ..utilities import instrumentation, iff
+
 
 # CONSTANTS
 DATE_FMT = '%Y-%m-%d'
 ISO8601_FMT = '%Y-%m-%dT%H:%M:%SZ'
 
 
-class Sink(object):
+class AbstractSink(ABC):
     """
     Abstract base class for sink objects
     """
     def __init__(self):
         self.stats = instrumentation.CounterLogger(logger=self.__class__.__name__)
 
+    @abstractmethod
     def process(self, the_iterator):
         pass
 
@@ -57,7 +59,7 @@ class Sink(object):
         self.process(the_iterator)
 
 
-class FileIteratorSink(Sink):
+class FileIteratorSink(AbstractSink):
     """
     Abstract base class
     """
@@ -237,7 +239,7 @@ class JsonlSafeSink(FileIteratorSink):
         )
 
 
-class JsonSink(Sink):
+class JsonSink(AbstractSink):
     """
     Abstract base class
     """
@@ -267,7 +269,7 @@ class JsonSink(Sink):
         return self
 
 
-class PickleSink(Sink):
+class PickleSink(AbstractSink):
     """
     Serialize to Pickle
     """
@@ -296,7 +298,7 @@ class PickleSink(Sink):
         return self
 
 
-class EncryptSink(Sink):
+class EncryptSink(AbstractSink):
     """
     Serialize to AES encrypted
     """
@@ -336,7 +338,7 @@ class EncryptSink(Sink):
             self.stats.stop()
 
 
-class NullSink(Sink):
+class NullSink(AbstractSink):
     """
     write to /dev/null
     """
@@ -351,7 +353,7 @@ class NullSink(Sink):
         return self
 
 
-def load(uri: str) -> Sink:
+def load(uri: str) -> AbstractSink:
     """
     parse uri string and open + return sink
     """

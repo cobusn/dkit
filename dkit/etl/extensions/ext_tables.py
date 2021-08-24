@@ -336,7 +336,7 @@ class PyTablesSource(source.AbstractRowSource):
         stats.stop()
 
 
-class PyTablesSink(sink.Sink):
+class PyTablesSink(sink.AbstractSink):
     """
     serialize iteratable of dicts to pytables table
 

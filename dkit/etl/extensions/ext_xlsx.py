@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class XlsxSink(sink.Sink):
+class XlsxSink(sink.AbstractSink):
     """
     Serialize Dictionary Line to Excel using openpyxl.
 
