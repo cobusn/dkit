@@ -188,7 +188,7 @@ class SQLAlchemyAccessor(object):
     def __init__(self, url: str, echo: bool = False, ):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.url = url
-        logger.debug("Accessing database with url: {self.url}")
+        logger.debug("connecting to database")
         self.engine = self.sqlalchemy.create_engine(
             url,
             echo=echo,
