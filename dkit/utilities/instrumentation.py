@@ -351,6 +351,12 @@ class CounterLogger(Counter, Timer):
         """
         self.__log_method()
 
+    def __log_string(self, log_template):
+        if log_template:
+            return self.__substitute(log_template)
+        else:
+            return self.__substitute(self.log_template)
+
     # ==========================================================================
     # Public Methods
     # ==========================================================================
@@ -359,41 +365,25 @@ class CounterLogger(Counter, Timer):
         """
         Perform 'info' log action.
         """
-        if log_template:
-            log_string = self.__substitute(log_template)
-        else:
-            log_string = self.__substitute(self.log_template)
-        self.logger.info(log_string)
+        self.logger.info(self.__log_string(log_template))
 
     def error(self, log_template=None):
         """
         Perform 'error' log action.
         """
-        if log_template:
-            log_string = self.__substitute(log_template)
-        else:
-            log_string = self.__substitute(self.log_template)
-        self.logger.error(log_string)
+        self.logger.error(self.__log_string(log_template))
 
     def warning(self, log_template=None):
         """
         Perform 'warning' log action.
         """
-        if log_template:
-            log_string = self.__substitute(log_template)
-        else:
-            log_string = self.__substitute(self.log_template)
-        self.logger.warning(log_string)
+        self.logger.warning(self.__log_string(log_template))
 
     def debug(self, log_template=None):
         """
         Perform 'debug' log action.
         """
-        if log_template:
-            log_string = self.__substitute(log_template)
-        else:
-            log_string = self.__substitute(self.log_template)
-        self.logger.debug(log_string)
+        self.logger.debug(self.__log_string(log_template))
 
     # ===========================================================================
     # Overloaded methods
@@ -421,7 +411,8 @@ class CounterLogger(Counter, Timer):
 
         :raises: TimerException
         """
-        super().stop()
+        Timer.stop(self)
+        # super().stop()
         self.__do_log()
         return self
 
