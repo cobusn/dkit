@@ -30,7 +30,6 @@ class DataTrie(object):
         current.closed = False
 
     def find(self, word):
-        breakpoint()
         """locate first complete prefix"""
         current = self.root
         for char in word:
