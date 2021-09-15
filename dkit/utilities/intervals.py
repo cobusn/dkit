@@ -51,6 +51,7 @@ DATE_MAP = {
     "friday": lambda: weekday("friday"),
     "saturday": lambda: weekday("saturday"),
     "sunday": lambda: weekday("sunday"),
+    #
     "today": lambda: today(),
     "tomorrow": lambda: tomorrow(),
     "last_month": lambda: last_month(),
