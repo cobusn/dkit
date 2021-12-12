@@ -18,8 +18,8 @@ schema = {
 
 src = ext_xml.XmlSource(
     [reader.BytesStringReader(xml)],
-    "row",
-    schema
+    boundary="row",
+    fields_dict=schema
 )
 
 for row in src:

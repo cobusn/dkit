@@ -36,6 +36,8 @@ from .stats import quantile_bins
 import typing
 import sys
 import random
+from tabulate import tabulate
+
 
 __all__ = [
     "chunker",
@@ -211,3 +213,13 @@ def iter_rename(input, rename_map):
         for k, v in rename_map.items():
             row[v] = row.pop(k)
         yield row
+
+
+def head(input_, n=10):
+    """display first n rows as a table"""
+    peek_ = []
+    for i, row in enumerate(input_):
+        if i < n:
+            peek_.append(row)
+
+    print(tabulate(peek_, headers="keys"))

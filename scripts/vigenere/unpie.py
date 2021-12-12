@@ -16,11 +16,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import sys
-from dkit.security import vigenere
+from dkit.utilities.security import Pie
 
 
 def main():
-    PieSlice = vigenere.Pie()
+    PieSlice = Pie()
     print(PieSlice.decrypt(sys.argv[1]))
 
 if __name__ == "__main__":
