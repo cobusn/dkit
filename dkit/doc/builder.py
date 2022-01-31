@@ -109,6 +109,7 @@ def is_plot(func):
             renderer = matplotlib.MPLBackend(
                 the_dict
             )
+            logger.info(f"rendering plot {the_dict['filename']}")
             return renderer.render("plots/" + the_dict["filename"])
         else:
             return jsonise(func(*args, **kwargs))

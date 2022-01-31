@@ -75,7 +75,7 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-class DictionaryEmulator(collections.MutableMapping):
+class DictionaryEmulator(collections.abc.MutableMapping):
     """
     Base class for emulating a dict without inheriting from dict
     """
@@ -576,7 +576,7 @@ class FlexShelve(_Shelve):
         super().__init__(dbm.open(filename, flag), protocol, writeback)
 
 
-class FastFlexShelve(collections.MutableMapping):
+class FastFlexShelve(collections.abc.MutableMapping):
     """
     lightweight shelve version that work with any opbject that can pickle as key
 
