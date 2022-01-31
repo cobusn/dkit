@@ -408,7 +408,8 @@ class MPLBackend(Backend):
             label=self.get_x_values(serie),
             value=values,
             alpha=serie["alpha"],
-            ax=ax
+            ax=ax,
+            text_kwargs={"fontsize": "xx-small"},
         )
         ax.axis("off")
 
