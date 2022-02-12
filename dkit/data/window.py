@@ -130,7 +130,9 @@ class Gradient(AbstractWindowFunction):
             row[self._alias] = self.na
             return False
         else:
-            row[self._alias] = linregress(range(self.lag), values)[0]
+            # found linregress will not work with Decimal values....
+            # f = [float(i) for i in values]
+            row[self._alias] = linregress(list(range(self.lag)), values)[0]
             return True
 
 

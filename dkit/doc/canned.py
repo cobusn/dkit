@@ -135,8 +135,8 @@ class BostonMatrix(object):
         """Add Moving Average and gradient over Window"""
         win_size = self.window_size
         w = win.MovingWindow(win_size).partition_by(self.id_field) \
-            + win.Median(self.field_value, na=0).alias(self.alias_ma) \
-            + win.Average(self.field_value, na=0).alias(self.alias_mean) \
+            + win.Median(self.field_value, na=0.0).alias(self.alias_ma) \
+            + win.Average(self.field_value, na=0.0).alias(self.alias_mean) \
             + win.Last(self.field_value).alias("last_value")
 
         w2 = win.MovingWindow(win_size).partition_by(self.id_field)  \
@@ -213,7 +213,7 @@ class BostonMatrix(object):
     def col_sparkline_values(self, title="History", width=2):
         """Create a sparkline of values"""
         return Table.SparkLine(
-            self.window(),
+            [i for i in self.window() if i[self.field_value] != 0.0],
             self.id_field,
             self.id_field,
             self.field_value,
@@ -224,7 +224,7 @@ class BostonMatrix(object):
     def col_sparkline_ma(self, title="Moving Average", width=2):
         """Create a sparkline of values"""
         return Table.SparkLine(
-            self.window(),
+            [i for i in self.window() if i[self.field_value] != 0.0],
             self.id_field,
             self.id_field,
             self.alias_ma,

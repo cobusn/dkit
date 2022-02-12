@@ -1,18 +1,22 @@
+import pprint
 import warnings
+from io import BytesIO
+from itertools import accumulate
+
 import matplotlib.pyplot as plt
-from matplotlib import cycler
-from matplotlib.ticker import StrMethodFormatter, PercentFormatter, MaxNLocator, FuncFormatter
-from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import squarify
-from itertools import accumulate
-from .base import Backend
+from matplotlib import cm, cycler
+from matplotlib.colors import Normalize
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.ticker import StrMethodFormatter, PercentFormatter, MaxNLocator, FuncFormatter
+
 from . import ggrammar
 from ..data.filters import ExpressionFilter
-from io import BytesIO
-# from ..exceptions import CkitGrammarException
+from .base import Backend
 
-import pprint
+
+# from ..exceptions import CkitGrammarException
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -77,17 +81,23 @@ class MPLBackend(Backend):
                 to_inch(style["width"]),
                 to_inch(style["height"])
             ))
-        if "axes" in style:
-            axes_ = style["axes"]
-            if "titlesize" in axes_:
-                plt.rc("axes", titlesize=axes_["titlesize"])
-            if "labelsize" in axes_:
-                plt.rc("axes", labelsize=axes_["labelsize"])
-            if "ticklabelsize" in axes_:
-                plt.rc("xtick", labelsize=axes_["ticklabelsize"])
-                plt.rc("ytick", labelsize=axes_["ticklabelsize"])
-            if "linewidth" in axes_:
-                plt.rc("axes", linewidth=axes_["linewidth"])
+
+        # RC (Run Configuration)
+        for group, value_map in style["rc"].items():
+            plt.rc(group, **value_map)
+
+        # if "axes" in style:
+        #     axes_ = style["axes"]
+            # for k, v in axes_.values():
+            # if "titlesize" in axes_:
+            #     plt.rc("axes", titlesize=axes_["titlesize"])
+            # if "labelsize" in axes_:
+            #     plt.rc("axes", labelsize=axes_["labelsize"])
+            # if "ticklabelsize" in axes_:
+            #     plt.rc("xtick", labelsize=axes_["ticklabelsize"])
+            #     plt.rc("ytick", labelsize=axes_["ticklabelsize"])
+            # if "linewidth" in axes_:
+            #     plt.rc("axes", linewidth=axes_["linewidth"])
 
         if "colors" in style:
             colors = style["colors"]
@@ -323,7 +333,13 @@ class MPLBackend(Backend):
         else:
             x_pos = [i for i, _ in enumerate(y_vals)]
 
-        ax.bar(
+        # Determine orientation
+        if "horizontal" in serie and serie["horizontal"]:
+            fn_bar = ax.barh
+        else:
+            fn_bar = ax.bar
+
+        fn_bar(
             x_pos,
             y_vals,
             width=1,
@@ -403,17 +419,36 @@ class MPLBackend(Backend):
         else:
             values = self.get_y_values(serie)
 
+        # padding
+        if serie["pad"]:
+            pad = serie["pad"]
+        else:
+            pad = True
+
+        # colors
+        if "color_map" in serie and serie["color_map"]:
+            alpha = serie["alpha"]
+            cmap = cm.get_cmap(serie["color_map"])
+            vals = self.get_y_values(serie)
+            norm = Normalize(vmin=min(vals), vmax=max(vals))
+            colors = [cmap(norm(value), alpha=alpha) for value in vals]
+        else:
+            colors = self.style_sheet["matplotlib"]["colors"]["palette"],
+
         squarify.plot(
             sizes=self.get_y_values(serie),
             label=self.get_x_values(serie),
+            pad=pad,
+            color=colors,
             value=values,
-            alpha=serie["alpha"],
+            # alpha=serie["alpha"],
             ax=ax,
             text_kwargs={"fontsize": "xx-small"},
         )
         ax.axis("off")
 
     def save(self, fig, file_name):
+        """Save as file"""
         fig.savefig(file_name)
 
     def apply_aesthetics(self):
