@@ -17,6 +17,7 @@
 * fix context manager for etl source and sink
 * allow source and sink to load from lists as well as
   single files
+* change cerberus to lazy loading
 
 ## Major features
 * data analyser feature

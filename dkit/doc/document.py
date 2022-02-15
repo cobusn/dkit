@@ -356,6 +356,7 @@ class Table(_AddElement):
 
 class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
 
+    Aesthetic = ggrammar.Aesthetic
     AnchoredText = ggrammar.AnchoredText
     GeomArea = ggrammar.GeomArea
     GeomBar = ggrammar.GeomBar
@@ -367,6 +368,7 @@ class Figure(ggrammar.PlotBase, _AddElement, SerDeMixin):
     GeomLine = ggrammar.GeomLine
     GeomScatter = ggrammar.GeomScatter
     GeomTreeMap = ggrammar.GeomTreeMap
+    GeomSlope = ggrammar.GeomSlope
     Title = ggrammar.Title
     XAxis = ggrammar.XAxis
     YAxis = ggrammar.YAxis

@@ -11,6 +11,7 @@ from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.ticker import StrMethodFormatter, PercentFormatter, MaxNLocator, FuncFormatter
 
+from . import matplotlib_extra as mpl_extra
 from . import ggrammar
 from ..data.filters import ExpressionFilter
 from .base import Backend
@@ -50,6 +51,7 @@ class MPLBackend(Backend):
             "geomheatmap": self.r_heatmap_plot,
             "geomhistogram": self.r_hist_plot,
             "geomline": self.r_line_plot,
+            "geomslope": self.r_slope_plot,
             "geomscatter": self.r_scatter_plot,
             "geomtreemap": self.r_treemap_plot,
             "hline": self.r_hline,
@@ -59,6 +61,7 @@ class MPLBackend(Backend):
         self.green_color = "#006747"
         if self.style_sheet:
             self._apply_style()
+        self.draw_title = True
 
     def initialise(self):
         """
@@ -110,7 +113,8 @@ class MPLBackend(Backend):
                 self.green_color = colors["green"]
 
     def set_title(self, ax):
-        ax.set_title(self.grammar["title"])
+        if self.draw_title:
+            ax.set_title(self.grammar["title"])
 
     def get_z_label(self, ax):
         axes = self.grammar["axes"]["2"]
@@ -400,6 +404,26 @@ class MPLBackend(Backend):
         )
         self.set_x_ticks(ax)
         self.set_labels(ax)
+
+    def r_slope_plot(self, ax, series):
+        """render slope plot"""
+        if not self.aes.width:
+            self.fig.set_size_inches(18, 6)
+        sp = mpl_extra.SlopePlot(
+            self.data,
+            series["series_field"],
+            series["pivot_field"],
+            series["y_data"],         # value field
+            series["title"],
+            None,                     # set to None, is set by this class
+            pivots=series["pivots"],
+            float_fmt=series["float_format"],
+            fig=self.fig,
+            ax=ax
+        )
+        self.set_labels(ax)
+        self.draw_title = False
+        sp.draw()
 
     def r_scatter_plot(self, ax, series):
         """render scatter plot"""

@@ -136,7 +136,8 @@ class AbstractGeom(PlotModifier):
         self.color = color
         self.alpha = alpha
         self.filter_ = _filter
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
+        super().__init__()
 
     @abstractmethod
     def primitive_type(self):
@@ -147,7 +148,7 @@ class AbstractGeom(PlotModifier):
 class GeomBar(AbstractGeom):
 
     def __init__(self, title: str,  x_data: str, y_data: str, color: str = None,
-                 horizontal=False, alpha: float = None, *args, **kwargs):
+                 horizontal: bool = False, alpha: float = None, *args, **kwargs):
         super().__init__(title, x_data, y_data, color, alpha, *args, **kwargs)
         self.primitive_type = "bar"
         self.isbox = True
@@ -187,8 +188,10 @@ class GeomHistogram(GeomBar):
     Plot a frequency distribution
     """
     def __init__(self, title: str, color: str = None, alpha: float = None,
-                 horizontal=False):
-        super().__init__(title, "left", "count", color, alpha, horizontal=horizontal)
+                 horizontal: bool = False):
+        super().__init__(
+            title, "left", "count", color=color, alpha=alpha, horizontal=horizontal
+        )
 
 
 class GeomLine(AbstractGeom):
@@ -199,6 +202,35 @@ class GeomLine(AbstractGeom):
         self.primitive_type = "line"
         self.line_style = line_style
         super().__init__(title, x_data, y_data, color, alpha, filter_, *args, **kwargs)
+
+
+class GeomSlope(AbstractGeom):
+    """
+    Slope plot that illustrate the difference between value over time
+
+    * series_field: Name of field that contain series names;
+    * pivot_field: Name of field used to pivot to columns;
+    * value_field: value
+    * title: plot title
+    * y_label: Y axis label
+    * pivots: use only pivots defined here.  If omitted then use all
+        columns
+    * line style:  line style
+    """
+
+    def __init__(self, title: str, series_field: str, pivot_field: str, value_field: str,
+                 pivots: List = None, float_format: str = "{:.0f}", color: str = None,
+                 alpha: float = None, filter_: str = None,
+                 *args, **kwargs):
+        super().__init__(
+            title, "", value_field, color=color, alpha=alpha,
+            filter_=filter_, *args, **kwargs
+        )
+        self.primitive_type = "line"
+        self.series_field = series_field
+        self.pivot_field = pivot_field
+        self.pivots = pivots
+        self.float_format = float_format
 
 
 class GeomFill(AbstractGeom):
