@@ -19,15 +19,16 @@
 # SOFTWARE.
 
 import sys; sys.path.insert(0, "..")  # noqa
-from unittest import TestCase, main
 from pathlib import Path
+from unittest import TestCase, main
 
+from dkit.etl import source
 from dkit.plot import ggrammar
 from dkit.plot.gnuplot import BackendGnuPlot
 from dkit.plot.matplotlib import MPLBackend
 from dkit.plot.plotly import PlotlyBackend
-from sample_data import plot_data, scatter_data, histogram_data, control_chart_data, gapminder
 from dkit.utilities.file_helper import yaml_load
+from sample_data import plot_data, scatter_data, histogram_data, control_chart_data, gapminder
 
 
 with open("stylesheet.yaml", "rt") as infile:
@@ -89,6 +90,20 @@ class AbstractPlot(object):
             + ggrammar.YAxis("Frequency") \
             + ggrammar.XAxis("bin")
         self.render(plt, "histogram_plot.svg")
+
+    def test_slope_plot(self):
+        if self.__class__.__name__ in ["TestMatplotlib"]:
+            with source.load("input_files/slope.jsonl") as src:
+                data = list(src)
+            plt = ggrammar.Plot(data) \
+                + ggrammar.GeomSlope(
+                    "Slope Plot example",
+                    "continent",
+                    "year",
+                    "value"
+                ) + ggrammar.YAxis("Value")
+
+            self.render(plt, "slope_plot.svg")
 
 
 class TestGnuPlot(AbstractPlot, TestCase):
