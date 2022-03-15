@@ -20,7 +20,6 @@
 
 import functools
 import logging
-import pathlib
 from importlib import import_module
 from pathlib import Path
 from string import Template
@@ -32,9 +31,8 @@ import yaml
 from IPython import get_ipython
 from IPython.display import HTML
 from tabulate import tabulate
-
 from . import json_renderer, latex_renderer, schemas
-from .. import __version__
+from .. import __version__, TABULATE_NO_FORMAT
 from ..data import json_utils as ju
 from ..etl import source
 from ..plot import matplotlib
@@ -102,6 +100,7 @@ def jsonise(fn) -> str:
 
 def is_plot(func):
     """Decorator that designate output as a plot"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if is_in_notebook():
@@ -110,7 +109,7 @@ def is_plot(func):
                 the_dict
             )
             logger.info(f"rendering plot {the_dict['filename']}")
-            return renderer.render("plots/" + the_dict["filename"])
+            return renderer.render(the_dict, "plots/" + the_dict["filename"])
         else:
             return jsonise(func(*args, **kwargs))
 
@@ -119,6 +118,7 @@ def is_plot(func):
 
 def is_table(func):
     """Decorator that designate report output as table"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if is_in_notebook():
@@ -127,7 +127,8 @@ def is_table(func):
                 tabulate(
                     the_dict["data"],
                     headers="keys",
-                    tablefmt="html"
+                    tablefmt="html",
+                    floatfmt=TABULATE_NO_FORMAT,
                 )
             )
         else:
@@ -262,11 +263,14 @@ class ReportBuilder(BuilderProxy):
         """
         load all slide templates
         """
-        for k, v in self.definition["presentations"].items():
-            logger.info(f"loading presentation template: {v}")
-            template_name = pathlib.Path.cwd() / v
-            with open(template_name) as tpl_data:
-                self.presentations[k] = jinja2.Template(tpl_data.read())
+        loader_path = Path().cwd() / self.configuration["template_folder"]
+        loader = jinja2.FileSystemLoader(str(loader_path))
+        self.environment = jinja2.Environment(loader=loader)
+
+        for template_name in self.definition["presentations"]:
+            doc_name = template_name.replace(".md", "")
+            logger.info(f"loading presentation template: {template_name}")
+            self.presentations[doc_name] = self.environment.get_template(template_name)
 
     def run(self):
         raise NotImplementedError
@@ -331,12 +335,16 @@ class ReportLabBuilder(ReportBuilder):
 class LatexReportBuilder(ReportBuilder):
 
     """ReportBuilder specialized for building Latex projects"""
-    def run(self, _name="tex/main.tex"):
+    def run(self):
         self.render_templates(latex_renderer.LatexDocRenderer, self.documents)
         self.render_templates(latex_renderer.LatexBeamerRenderer, self.presentations)
-        runner = LatexRunner(_name, output_folder="output")
-        runner.run()
-        runner.clean()
+
+        for ltx_doc in self.definition["latex"]:
+            logger.info(f"building tex file {ltx_doc}")
+            runner = LatexRunner(ltx_doc, output_folder="output")
+            runner.run()
+            logger.info(f"cleaning output for tex file {ltx_doc}")
+            runner.clean()
 
     def render_templates(self, renderer, documents):
         """

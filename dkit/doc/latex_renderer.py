@@ -166,6 +166,22 @@ class LatexBeamerRenderer(LatexDocRenderer):
         2: tex.FrameSubTitle,
     }
 
+    def __init__(self, data, style_sheet=None, plot_folder=None,
+                 plot_backend=mpl.MPLBackend, root_container=None):
+        super().__init__(data, style_sheet, plot_folder, plot_backend, root_container)
+        self.path = [self.root]
+
+    def _append_node(self, node):
+        """
+        append node to node hierarchy
+        """
+        if is_list(node):
+            for n in node:
+                self.path[-1].append(n)
+        else:
+            self.path[-1].append(node)
+        return node
+
     def make_heading(self, element):
         level = element["level"]
         if level == 1:
@@ -185,3 +201,16 @@ class LatexBeamerRenderer(LatexDocRenderer):
                 )
         elif level == 3:
             pass
+
+    def make_figure(self, grammar):
+        # Change width and Height to fit beamer
+        # aes = grammar["aes"]
+        # aes["width"] = 12
+        # aes["height"] = 7
+        filename = (self.plot_path / grammar["filename"]).relative_to(Path().cwd())
+        be = self.plot_backend(
+            terminal="pdf",
+            style_sheet=self.stylesheet
+        )
+        be.render(grammar, filename)
+        return tex.Image(filename, width=-1)

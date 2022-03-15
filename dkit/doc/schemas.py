@@ -48,13 +48,16 @@ documents:
     type: list
     schema:
         type: string
-presentations: &_dict
+presentations:
+    type: list
+    schema:
+        type: string
+dict_schema: &_dict
     type: dict
     keyschema:
         type: string
     valueschema:
         type: string
-presentations: *_dict
 document:
     type: dict
     schema:

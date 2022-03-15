@@ -26,29 +26,34 @@ Jan 2021    Cobus Nel       refactored iter_functions from manipulate.py
 Jan 2020    Cobus Nel       added take()
 =========== =============== =================================================
 """
-
-from itertools import chain, islice
-import fnmatch
-import uuid
 import base64
-from collections_extended import RangeMap
-from .stats import quantile_bins
-import typing
-import sys
+import fnmatch
 import random
+import sys
+import typing
+import uuid
+from collections import deque
+from itertools import chain, islice
+from typing import Iterable
+
+from collections_extended import RangeMap
 from tabulate import tabulate
+
+from .stats import quantile_bins
 
 
 __all__ = [
-    "chunker",
-    "glob_list",
-    "add_uuid_key",
     "add_key",
+    "add_uuid_key",
+    "chunker",
+    "first_n",
+    "glob_list",
     "iter_add_id",
     "iter_drop",
-    "iter_take",
     "iter_rename",
     "iter_sample",
+    "iter_take",
+    "last_n",
     "take",
 ]
 
@@ -98,6 +103,23 @@ def chunker(iterable, size=100):
     iterator = iter(iterable)
     for first in iterator:
         yield chain([first], islice(iterator, size - 1))
+
+
+def first_n(data: Iterable, n: int = 5):
+    """
+    return iterator to first n items in data
+    """
+    if n < 0:
+        return iter(())
+    else:
+        return islice(data, n)
+
+
+def last_n(data: Iterable, n: int = 5):
+    if n < 0:
+        iter(())
+    else:
+        yield from deque(data, n)
 
 
 def glob_list(iterable, glob_list, key=lambda x: x):

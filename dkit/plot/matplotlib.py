@@ -481,5 +481,6 @@ class MPLBackend(Backend):
             self.fig.set_figheight(self.aes.inch_height)
         if self.aes.width:
             self.fig.set_figwidth(self.aes.inch_width)
+
         self.fig.tight_layout()
         self.fig.subplots_adjust(top=0.85)
