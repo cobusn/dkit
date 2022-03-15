@@ -496,14 +496,19 @@ class Image(TexFoundation):
     def __get_image_opts(self):
         """Calculate image options"""
         options = ""
-        if self.width is not None:
+        if self.width == -1:
+            options = options + "width=0.9\\textwidth"
+        elif self.width is not None:
             options = options + "width=%s" % (str(self.width) + self.unit)
+
         if self.height is not None:
             if self.width is not None:
                 options = options + ","
             options = options + "height=%s" % (str(self.height) + self.unit)
+
         if len(options) > 0:
             options = "[%s]" % options
+
         return options
 
     def __get_image_alignment(self):

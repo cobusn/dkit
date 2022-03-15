@@ -13,7 +13,8 @@ from .builder import is_table, is_plot
 from .document import Table, Figure
 from ..utilities.file_helper import sanitise_name
 from .. import CURRENCY_FORMAT
-
+from dkit.data.helpers import md5_obj_hash
+from typing import Dict
 
 NWDT = 1.5  # width of numeric column
 
@@ -62,10 +63,130 @@ def histogram_plot(data, value_field, value_heading, entity_name, title=None, bi
     return g
 
 
+class ParetoAnalysis(object):
+    """
+    Perform Paret analysis
+
+    args:
+        - data: iterable of dicts
+        - value_field: field name of value tracked
+        - variable_name: name for display purpose
+        - y_lengend: legend for y axis
+        - float_format: float format used
+
+    This class require data to be pre-aggregated.
+    """
+
+    def __init__(self, data, value_field, variable_field, variable_name=None,
+                 y_legend="", float_format="R{x:,.0f}"):
+        self._data = data
+        self.value_field = value_field
+        self.variable_field = variable_field
+        self.variable_name = variable_name if variable_name else variable_field
+        self.y_legend = y_legend
+        self.float_format = float_format
+
+    @property
+    def title(self):
+        return f"Pareto Chart: {self.variable_field}" \
+            if self.variable_field else "Pareto Chart"
+
+    @property
+    def file_name(self):
+        h = md5_obj_hash(self.data)
+        return f"{sanitise_name(self.variable_name)}_{ h }_pareto.pdf"
+
+    @property
+    def data(self):
+        return sorted(
+            self._data,
+            key=lambda x: x[self.value_field],
+            reverse=True
+        )
+
+    @property
+    def calculated_data(self):
+        # add cumulative values
+        data = self.data[:]
+        cum = 0
+        total = sum(row[self.value_field] for row in data)
+
+        for row in data:
+            cum += row[self.value_field]
+            row["cumulative"] = cum
+            row["cum_percent"] = 100.0 * cum / total
+            row["percent"] = 100.0 * row[self.value_field] / total
+
+        return data
+
+    @is_plot
+    def plot(self):
+        """generate plot"""
+        g = Figure(self.data, filename=self.file_name) \
+            + Figure.GeomBar(self.variable_field, x_data=None, y_data=self.value_field) \
+            + Figure.GeomCumulative(f"Cumulative {self.y_legend}", self.value_field) \
+            + Figure.Title(self.title) \
+            + Figure.XAxis(f"{self.variable_name}", defeat=True) \
+            + Figure.YAxis(self.y_legend, float_format=self.float_format)
+
+        return g
+
+    def top_n(self, n: int = 5):
+        """top n rows"""
+        return self.calculated_data[:n]
+
+    def top_n_percent(self, n: float = 80.0):
+        """return up to the first row that matches n"""
+        data = []
+        for row in self.calculated_data:
+            if row["cum_percent"] <= n:
+                data.append(row)
+            else:
+                data.append(row)
+                break
+        return data
+
+    def top_n_percent_entities(self, n: float = 80.0) -> Dict[str, float]:
+        return {
+            i[self.variable_field]: i
+            for i in self.top_n_percent(n)
+        }
+
+    @is_table
+    def table(self, n=None, cum_percent=None):
+        """generate pareto table"""
+        if n:
+            data = self.top_n(n)
+        if cum_percent:
+            data = self.top_n_percent(cum_percent)
+
+        t = Table(
+            data,
+            [
+                Table.Field(self.variable_field, self.variable_name, 3),
+                Table.Field(self.value_field, "Value", 2, format_=self.float_format),
+                Table.Field("cumulative", "Cumulative", 2, format_=self.float_format),
+                Table.Field("percent", "%", format_=self.float_format),
+                Table.Field("cum_percent", "Cum %", format_=self.float_format),
+            ],
+            align="l"
+        )
+
+        return t
+
+
 @is_plot
 def pareto_plot(data, value_field, entity_name, y_legend,
                 float_format="R{x:,.0f}"):
-    """Pareto Plot"""
+    """Pareto Plot
+
+    args:
+        - data: iterable of dicts
+        - value_field: field name of value tracked
+        - entity_name: name for display purpose
+        - y_lengend: legend for y axis
+        - float_format: float format used
+    """
     filename = f"{sanitise_name(entity_name)}_pareto.pdf"
     title = f"Pareto Chart: {entity_name}" if entity_name else "Pareto chart"
     data = sorted(
@@ -80,6 +201,7 @@ def pareto_plot(data, value_field, entity_name, y_legend,
         + Figure.Title(title) \
         + Figure.XAxis(f"{entity_name}", defeat=True) \
         + Figure.YAxis(y_legend, float_format=float_format)
+
     return g
 
 

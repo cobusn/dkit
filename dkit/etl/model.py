@@ -784,11 +784,13 @@ class ETLServices(object):
         if kind == "dot":
             exporter = importlib.import_module("dkit.etl.extensions.ext_graphviz")
             exported = exporter.create_erd(entities, relations)
+
         elif kind == "spark":
             # pyspark
             exporter = importlib.import_module("dkit.etl.extensions.ext_spark")
             spark_entities = {k: v.as_entity_validator() for k, v in entities.items()}
             exported = exporter.SchemaGenerator(**spark_entities).create_schema()
+
         elif kind == "sql.select":
             # sql via sqlalchemy
             exporter = importlib.import_module("dkit.etl.extensions.ext_sql_alchemy")
@@ -797,6 +799,7 @@ class ETLServices(object):
                 opts["dialect"],
                 **sql_entities
             )
+
         elif kind == "sql.create":
             # sql vie sqlalchemy
             exporter = importlib.import_module("dkit.etl.extensions.ext_sql_alchemy")
@@ -805,6 +808,7 @@ class ETLServices(object):
                 opts["dialect"],
                 **sql_entities
             )
+
         else:
             exported = " An unknown Error occurred"
 

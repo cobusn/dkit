@@ -303,7 +303,6 @@ class ConfiguredApplication(ConfiguredObject):
 
     * `InitArgumentsMixin`;
     * `InitConfigMixin`;
-    * `InitLoggingMixin`
 
     .. include:: ../../examples/example_configured_application.py
         :literal:

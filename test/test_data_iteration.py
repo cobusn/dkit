@@ -1,7 +1,7 @@
 import sys
 import unittest
 sys.path.insert(0, "..")  # noqa
-from dkit.data.iteration import chunker, glob_list
+from dkit.data.iteration import chunker, glob_list, first_n, last_n
 
 
 class TestIterHelpers(unittest.TestCase):
@@ -27,6 +27,50 @@ class TestIterHelpers(unittest.TestCase):
         for chunk in chunker(input_data, size=100):
             c = list(chunk)
             self.assertEqual(len(c), 100)
+
+    def test_first_n(self):
+        l5 = first_n(range(100), 5)
+        self.assertEqual(
+            [0, 1, 2, 3, 4],
+            list(l5)
+        )
+
+        # Invalid input
+        l5 = first_n(range(100), -1)
+        self.assertEqual(
+            [],
+            list(l5)
+        )
+
+        # Empty input
+        l5 = first_n((), -1)
+        self.assertEqual(
+            [],
+            list(l5)
+        )
+
+    def test_last_n(self):
+
+        # Basic functionality
+        l5 = last_n(range(100), 5)
+        self.assertEqual(
+            [95, 96, 97, 98, 99],
+            list(l5)
+        )
+
+        # Invalid input
+        l5 = last_n(range(100), -1)
+        self.assertEqual(
+            [],
+            list(l5)
+        )
+
+        # Empty input
+        l5 = last_n((), -1)
+        self.assertEqual(
+            [],
+            list(l5)
+        )
 
     def test_glob_list(self):
         """test glob_list"""
