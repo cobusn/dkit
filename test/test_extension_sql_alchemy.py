@@ -278,7 +278,6 @@ class TestSQLServices(unittest.TestCase):
         """test sampling all data from a database"""
         services = ext_sql_alchemy.SQLServices.from_file("model.yml")
         sample = services.sample_from_db("northwind")
-        breakpoint()
         self.assertEqual(
             list(sample.keys()),
             NORTHWIND_TABLE_NAMES
