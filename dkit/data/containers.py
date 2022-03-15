@@ -44,7 +44,6 @@ class RangeCounter(object):
         self.store[value] = self.store[value] + 1
 
     def update(self, the_iterable):
-        breakpoint()
         for i in the_iterable:
             self.store[i] += 1
 
@@ -80,7 +79,7 @@ class DictionaryEmulator(collections.abc.MutableMapping):
     Base class for emulating a dict without inheriting from dict
     """
     def __init__(self, *args, **kwargs):
-        self.store = dict()
+        self.store = {}
         self.update(dict(*args, **kwargs))
 
     def __getitem__(self, key):

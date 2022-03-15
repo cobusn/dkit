@@ -137,6 +137,7 @@ class Entity(containers.DictionaryEmulator):
                 the_type,
                 cls.__encode_field(v)
             )
+
         return retval
 
     @staticmethod
@@ -163,7 +164,8 @@ class Entity(containers.DictionaryEmulator):
     def __str__(self):
         return yaml.dump(
             self.as_dict(),
-            default_flow_style=False
+            default_flow_style=False,
+            sort_keys=False
         )
 
     def __call__(self, the_iterable):
