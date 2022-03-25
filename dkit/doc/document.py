@@ -101,6 +101,26 @@ class Document(DocumentContainer):
         }
 
 
+class DictDocument(Document):
+    """Same as Document but elements are stored as dict
+
+    Used for json rendered documents
+    """
+    def as_dict(self):
+        return {
+            "library_version": __version__,
+            "report_version": __report_version__,
+            "title": self.title,
+            "sub_title": self.sub_title,
+            "author": self.author,
+            "data": self.store,
+            "email": self.email,
+            "contact": self.contact,
+            "date": self.date,
+            "elements": self.elements,
+        }
+
+
 class Element(SerDeMixin):
 
     def __init__(self, *kwds, **kwargs):
@@ -256,7 +276,6 @@ class Listing(_AddElement):
     def __init__(self, source, language, *kwds, **kwargs):
         super().__init__(source, *kwds, **kwargs)
         self.language = language
-
 
 
 class List(_AddElement):

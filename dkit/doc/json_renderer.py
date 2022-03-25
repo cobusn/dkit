@@ -29,7 +29,6 @@ Mistune Renderer that will render JSON document from markdown
 import mistune
 import json
 from . import document
-from ..parsers import html_parser
 
 
 class JSONRenderer(mistune.Renderer):
@@ -115,7 +114,14 @@ class JSONRenderer(mistune.Renderer):
 
     def image(self, src, title, text):
         """image"""
-        return [document.Image(src, title, text, alignment="center").as_dict()]
+        _title = title if title else text
+        return [
+            document.Image(
+                src,
+                _title,
+                align="center"
+            ).as_dict()
+        ]
 
     def list(self, body, ordered):
         rv = document.List(ordered)
@@ -135,9 +141,15 @@ class JSONRenderer(mistune.Renderer):
     def hrule(self):
         return [document.HRule().as_dict()]
 
-    def paragraph(self, text):
-        p = document.Paragraph(text)
-        return [p.as_dict()]
+    def paragraph(self, content):
+        # Images are parsed as part of a paragraph by mistune
+        # at this point the json format assumes that all para
+        # content are text, so return image instead in this case
+        if content[0]["~>"] == "image":
+            return content
+        else:
+            p = document.Paragraph(content)
+            return [p.as_dict()]
 
     def table_cell(self, content, **flags):
         return content
