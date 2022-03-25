@@ -333,8 +333,8 @@ class ReportLabBuilder(ReportBuilder):
 
 
 class LatexReportBuilder(ReportBuilder):
-
     """ReportBuilder specialized for building Latex projects"""
+
     def run(self):
         self.render_templates(latex_renderer.LatexDocRenderer, self.documents)
         self.render_templates(latex_renderer.LatexBeamerRenderer, self.presentations)

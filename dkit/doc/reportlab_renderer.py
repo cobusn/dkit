@@ -24,7 +24,7 @@ from ..data.containers import AttrDict
 from ..exceptions import DKitDocumentException
 from ..plot import matplotlib as mpl
 from ..utilities.introspection import is_list
-from .document import AbstractRenderer, Document
+from .document import AbstractRenderer, Document, DictDocument
 from .json_renderer import JSONRenderer
 from .. import messages
 
@@ -271,15 +271,23 @@ class RLStyler(object):
             print(k, v)
 
     def update_styles(self):
-        # Create Verbatim style
+        # print list of syles
         # print(list(self.style.byName.keys()))
-        h1 = dict(self.style.byName)["Heading1"]
-        # self.__print_style(h1)
+
+        # Create Verbatim style
         self.style.byName['Verbatim'] = ParagraphStyle(
             'Verbatim',
             parent=self.style['Normal'],
-            fontName="Times-Roman"
+            firstLineIndent=20,
+            leftIndent=20,
+            fontName="Times-Roman",
+            fontSize=8,
+            leading=8,
+            spaceAfter=10,
         )
+
+        # Print all attributes of Verbatim
+        self.__print_style(self.style.byName['BodyText'])
 
         # BlockQuote
         self.style.byName['BlockQuote'] = ParagraphStyle(
@@ -296,7 +304,7 @@ class RLStyler(object):
         code.spaceBefore = 10
         code.spaceAfter = 10
 
-        # Update style /provided local stylesheet
+        # Update style / provided local stylesheet
         for style, updates in self.local_style["reportlab"]["styles"].items():
             this = self.style.byName[style]
             for k, v in updates.items():
@@ -463,7 +471,6 @@ class ReportlabDocRenderer(AbstractRenderer):
         return Spacer(0, h)
 
     def make_entry(self, element):
-        print(element)
         if isinstance(element["data"], dict) and element["data"]["~>"] == "list":
             return self.make_list(element["data"])
         else:
@@ -495,8 +502,9 @@ class ReportlabDocRenderer(AbstractRenderer):
         return lf
 
     def make_link(self, element):
-        if not self.in_paragraph:
-            raise DKitDocumentException(messages.MSG_0027, str(element))
+        # not sure why this was required but it generated an error..
+        # if not self.in_paragraph:
+        #     raise DKitDocumentException(messages.MSG_0027, str(element))
         display = self._make(element["data"])
         address = f"<link href={element['url']}><u>{display}</u></link>"
         return address
@@ -549,7 +557,7 @@ class ReportlabDocRenderer(AbstractRenderer):
 
     def _make_all(self):
         yield PageBreak()
-        if isinstance(self.data, Document):
+        if isinstance(self.data, (Document, DictDocument)):
             content = self.data.as_dict()["elements"]
         else:
             content = self.data

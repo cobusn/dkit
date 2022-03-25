@@ -41,7 +41,12 @@ reportlab:
       alignment: 4                    # TA_JUSTIFY
       textColor: "#05386E"
     Verbatim: 
-      fontName: Times-Roman
+      fontName: Courier 
+      firstLineIndent: 20
+      leftIndent: 20
+      fontSize: small 
+      leading: 8
+      spaceAfter: 10
     BlockQuote: 
       fontName: Times-Italic
     Code:
