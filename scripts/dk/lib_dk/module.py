@@ -23,9 +23,9 @@ import codecs
 import configparser
 import getpass
 import itertools
+import logging
 import operator
 import os
-import logging
 import textwrap
 from typing import Dict, List, Iterable
 
@@ -33,8 +33,7 @@ import tabulate
 
 from . import defaults
 from dkit import exceptions
-from dkit.data import iteration
-from dkit.data import filters
+from dkit.data import iteration, filters
 from dkit.etl import transform, model
 from dkit.shell import console
 from dkit.utilities import cmd_helper, log_helper
