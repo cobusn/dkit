@@ -213,14 +213,23 @@ class StringReader(ClosedReader):
     Args:
         * param: the_string: String object
         * io_type: file type (Default is io.StringIO)
-
     """
     def __init__(self, the_string, io_type=io.StringIO):
         self.io = io_type
         self.the_string = the_string
+        self._buffer = self.io(self.the_string)
 
     def open(self):
-        return self.io(self.the_string)
+        return self
+
+    def __iter__(self):
+        yield from self._buffer
+
+    def __enter__(self):
+        return self.open()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 class BytesStringReader(StringReader):
