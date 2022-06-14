@@ -66,7 +66,7 @@ def add_option_backend_map(parser):
 
 def add_option_config(parser):
     """add config file option"""
-    parser.add_argument('--config', dest="config_uri", default=None,
+    parser.add_argument('--config', dest="config_uri", default="~/.dk.ini",
                         help="configuration file")
 
 
