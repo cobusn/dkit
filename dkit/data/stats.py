@@ -32,10 +32,12 @@ Statistical utilities
 import sys
 import cython
 from dkit.algorithms import tdigest
-import numpy
 import math
 from boltons.statsutils import Stats
 from decimal import Decimal
+from ..utilities.cmd_helper import LazyLoad
+
+numpy = LazyLoad("numpy")
 
 
 def quantile_bins(values, n_quantiles=10, strict=False):
