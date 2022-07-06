@@ -70,6 +70,7 @@ class CmdCompleter(Completer):
         Main completer entry point
         """
         line = document.current_line_before_cursor
+
         if complete_event.completion_requested:
 
             try:
@@ -117,6 +118,7 @@ class AsyncCmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
         """
         # use_asyncio_event_loop()
         session = PromptSession()
+        print("xx")
         # history = InMemoryHistory()
         while True:
             try:

@@ -478,7 +478,7 @@ class __PivotAbstract(object):
     """Abstract class for pivot classes"""
 
     def __init__(self, data, row_keys, col_key, value_key, function=sum,
-                 missing=0, ensure_cols=None):
+                 missing=0, ensure_cols=None, order_cols: bool = True):
         self._data = data
         self._missing = missing
         self._row_keys = row_keys
@@ -486,6 +486,7 @@ class __PivotAbstract(object):
         self._value_key = value_key
         self._function = function
         self._col_keys = set(ensure_cols) if ensure_cols else set()
+        self._order_cols = order_cols
         self._ds = self._create()
 
     def _create(self):
@@ -495,7 +496,10 @@ class __PivotAbstract(object):
         """
         Pivot column headings. Raw values
         """
-        return list(self._col_keys)
+        if self._order_cols:
+            return sorted(list(self._col_keys))
+        else:
+            return list(self._col_keys)
 
     #
     # Properties
@@ -513,7 +517,8 @@ class __PivotAbstract(object):
         """
         List containing row headings.
 
-        The list is **not** ordered.
+        The list is **not** ordered
+        set
         """
         return self._ds.keys()
 
@@ -560,11 +565,12 @@ class Pivot(__PivotAbstract):
         - function: function for pivot. must work on lists
         - missing: value to substitute for _missing value
         - ensure_cols: ensure these columns exist
+        - order_cols: sort columns in pivot
     """
     def __init__(self, data, row_keys, col_key, value_key, function=sum,
-                 missing=0, ensure_cols=None):
+                 missing=0, ensure_cols=None, order_cols: bool = False):
         super().__init__(data, row_keys, col_key, value_key,
-                         function, missing, ensure_cols)
+                         function, missing, ensure_cols, order_cols)
 
     #
     # Methods
