@@ -42,13 +42,14 @@ class DataKit(object):
         admin        maintain configuration and models
         connections  maintain connections
         endpoints    maintain endpoints
-        queries      maintain queries
         mapping      maintain entity relation mapping
+        queries      maintain queries
         schemas      maintain schemas
         transforms   mintain transforms
         XML          maintain XML rules
 
     action modules:
+        build        build document
         diff         find differences between two similar datasets
         run          run etl or query
         xplore       explore data
@@ -59,7 +60,7 @@ class DataKit(object):
     (use dk MODULE -h for details)
     """
 
-    modules = sorted(["admin", "connections", "diff", "endpoints", "run", "queries",
+    modules = sorted(["admin", "build", "connections", "diff", "endpoints", "run", "queries",
                       "mapping", "schemas", "transforms", "xplore", "XML"])
 
     def __init__(self, arguments):
@@ -67,6 +68,10 @@ class DataKit(object):
 
     def print(self, string):
         print(string)
+
+    def do_build(self):
+        from lib_dk import build_module
+        build_module.BuildModule(self.arguments[2:]).run()
 
     def do_admin(self):
         from lib_dk import admin_module

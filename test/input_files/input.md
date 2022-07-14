@@ -1,3 +1,17 @@
+# Markdown test document
+
+- Version: 0.1
+- Author: Cobus Nel
+
+# Extensions
+## Include files
+
+{{ include("input_files/sample.py") }}
+
+## Images
+
+{{ image("input_files/python-logo.png", width=4, align="left") }}
+
 # heading with **bold**
 This is a first paragraph testing the *viability* of
 the md to latex conversion.
@@ -61,7 +75,7 @@ Final
 # Image
 Here is an image:
 
-![w=12,h=5}](input_files/python-logo.png).
+![{w=12,h=5}](input_files/python-logo.png)
 
 # Math
 

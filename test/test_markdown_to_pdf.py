@@ -22,7 +22,7 @@ class TestCase(unittest.TestCase):
         )
         builder.build_from_files(
             "output/simple_doc.pdf",
-            "input_files/input.test.md"
+            "input_files/input.md"
         )
 
 
