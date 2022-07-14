@@ -20,10 +20,13 @@
 
 import functools
 import logging
+from abc import ABC
+from datetime import date
 from importlib import import_module
 from pathlib import Path
 from string import Template
-from abc import ABC
+from typing import List
+
 import inflect
 import jinja2
 import mistune
@@ -31,21 +34,22 @@ import yaml
 from IPython import get_ipython
 from IPython.display import HTML
 from tabulate import tabulate
+
 from . import json_renderer, latex_renderer, schemas
 from .. import __version__, TABULATE_NO_FORMAT
 from ..data import json_utils as ju
 from ..etl import source
 from ..plot import matplotlib
-from .document import Document, __report_version__
-from .lorem import Lorem
+from .document import Document, __report_version__, DictDocument, Image
+from .json_renderer import JSONRenderer
 from .latex import LatexRunner
+from .lorem import Lorem
+from .reportlab_renderer import ReportLabRenderer
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -368,3 +372,93 @@ class LatexReportBuilder(ReportBuilder):
             r = renderer(dict_, style_sheet=self.style_sheet, plot_folder=self.plot_folder)
             with open(f"output/{_name}.tex", "wt") as out_file:
                 out_file.write("".join(r))
+
+
+class SimpleDocRenderer(object):
+    """
+    Render a pdf file from markdown documents
+
+    args:
+        - author: name of author
+        - title: title of document
+        - sub_title: sub_title of document
+        - email: email address of author
+        - contact: contact number of author
+
+    """
+    def __init__(self, author, title, sub_title=None, email=None, contact=None,
+                 date_=None, renderer=ReportLabRenderer):
+        self.author = author
+        self.title = title
+        self.sub_title = sub_title
+        self.date = date_ if date_ else date.today()
+        self.email = email,
+        self.contact = contact
+        self.renderer = renderer
+
+    def _include_image(self, source,  title=None, width=None, height=None, align="center"):
+        """
+        include images
+        """
+        return jsonise(
+            Image(
+                source,
+                title,
+                align,
+                width,
+                height
+            )
+        )
+
+    def _include_file(self, filename):
+        """passed to jinja2
+
+        implements the {{ include(filename) }} function
+        """
+        rv = ["```\n"]
+        with open(filename, "rt") as infile:
+            for line in infile:
+                rv.append(f"{line}")
+        rv += ["```\n"]
+        return "".join(rv)
+
+    def _get_render_objects(self):
+        """generate python objects for jinja2"""
+        return {}
+
+    def load_doc_template(self, filename):
+        functions = {
+            "include": self._include_file,
+            "image": self._include_image,
+        }
+
+        with open(filename, "rt") as infile:
+            t = jinja2.Template(infile.read())
+            return t.render(self._get_render_objects(), **functions)
+
+    def _create_doc(self, elements):
+        """helper to create document"""
+        doc = DictDocument(
+            title=self.title,
+            sub_title=self.sub_title,
+            author=self.author,
+            date=self.date,
+            email=self.email,
+            contact=self.contact
+        )
+        doc.elements = elements
+        return doc
+
+    def build_from_files(self, output: str, *files: List[str]):
+        """
+        build document from files provided
+        """
+        elements = []
+        md = mistune.Markdown(renderer=JSONRenderer())
+        for f in files:
+            json_ = self.load_doc_template(f)
+            content = md(json_)
+            elements.extend(content)
+        doc = self._create_doc(elements)
+        renderer = self.renderer()
+        renderer.run(output, doc)

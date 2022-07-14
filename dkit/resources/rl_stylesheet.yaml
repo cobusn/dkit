@@ -45,7 +45,7 @@ reportlab:
       firstLineIndent: 20
       leftIndent: 20
       fontSize: small 
-      leading: 8
+      spaceBefore: 20 
       spaceAfter: 10
     BlockQuote: 
       fontName: Times-Italic
@@ -53,11 +53,15 @@ reportlab:
       fontName: Times-Roman 
       leading: 10
     UnorderedList:
-      textColor: "#378245"
+      textColor: "#05386E"
       spaceAfter: 4
+      fontName: SourceSansPro
+      fontSize: normalsize 
     OrderedList:
-      textColor: "#378245"
+      textColor: "#05386E"
       spaceAfter: 4
+      fontName: SourceSansPro
+      fontSize: normalsize 
 page:
   size: A4
   left: 20

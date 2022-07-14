@@ -59,7 +59,9 @@ Final
 2. Two
 
 # Image
-Here is an image ![w=12,h=5}](test.png).
+Here is an image:
+
+![w=12,h=5}](input_files/python-logo.png).
 
 # Math
 
