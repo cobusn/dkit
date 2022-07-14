@@ -386,6 +386,7 @@ class SimpleDocRenderer(object):
         - contact: contact number of author
 
     """
+
     def __init__(self, author, title, sub_title=None, email=None, contact=None,
                  date_=None, renderer=ReportLabRenderer):
         self.author = author
@@ -395,6 +396,10 @@ class SimpleDocRenderer(object):
         self.email = email,
         self.contact = contact
         self.renderer = renderer
+        self.functions = {
+            "include": self._include_file,
+            "image": self._include_image,
+        }
 
     def _include_image(self, source,  title=None, width=None, height=None, align="center"):
         """
@@ -422,19 +427,16 @@ class SimpleDocRenderer(object):
         rv += ["```\n"]
         return "".join(rv)
 
-    def _get_render_objects(self):
-        """generate python objects for jinja2"""
-        return {}
+    # def _get_render_objects(self):
+    #     """generate python objects for jinja2"""
+    #     return {}
 
     def load_doc_template(self, filename):
-        functions = {
-            "include": self._include_file,
-            "image": self._include_image,
-        }
 
         with open(filename, "rt") as infile:
             t = jinja2.Template(infile.read())
-            return t.render(self._get_render_objects(), **functions)
+            # return t.render(self._get_render_objects(), **functions)
+            return t.render(**self.functions)
 
     def _create_doc(self, elements):
         """helper to create document"""
