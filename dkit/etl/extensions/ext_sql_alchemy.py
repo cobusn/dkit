@@ -407,7 +407,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
                 "boolean":  self.sqlalchemy.Boolean,
                 "date":     self.sqlalchemy.Date,
                 "datetime": self.sqlalchemy.DateTime,
-                "binary": self.sqlalchemy.Binary,
+                "binary": self.sqlalchemy.LargeBinary,
         }
 
     def __get_dialect(self, dialect):
@@ -516,7 +516,7 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
         result = conn.execute(selector)
         chunk = result.fetchmany(self.chunk_size)
         while len(chunk) > 0:
-            yield from (dict(row.items()) for row in chunk)
+            yield from (dict(row._mapping.items()) for row in chunk)
             self.stats.increment(len(chunk))
             chunk = result.fetchmany(self.chunk_size)
         conn.close()

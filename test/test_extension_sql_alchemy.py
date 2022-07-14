@@ -33,12 +33,12 @@ name: {str_len: 22, type: string}
 score: {type: float}
 year: {type: integer}
 """
-NORTHWIND = "sqlite:///data/northwind.sqlite"
-NORTHWIND_TABLE_NAMES = [
-    'Categories', 'CustomerCustomerDemo', 'CustomerDemographics', 'Customers',
-    'EmployeeTerritories', 'Employees', 'Order Details', 'Orders', 'Products',
-    'Regions', 'Shippers', 'Suppliers', 'Territories', 'sqlite_sequence'
-]
+NORTHWIND = "sqlite:///data/Northwind_small.sqlite"
+NORTHWIND_TABLE_NAMES = list(sorted([
+    'Category', 'CustomerCustomerDemo', 'CustomerDemographic', 'Customer',
+    'EmployeeTerritory', 'Employee', 'OrderDetail', 'Order', 'Product',
+    'Region', 'Shipper', 'Supplier', 'Territory'
+]))
 
 
 class TestSQLAlchemyTemplate(unittest.TestCase):
@@ -50,7 +50,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
     def test_find_variables(self):
         """test locating undeclared variables in the template"""
         s = """
-        Select * from orders
+        Select * from [Order]
         where
             CustomerId={{ cid }}
             and EmployeeId={{ eid }}
@@ -66,7 +66,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
 
     def test_no_vars(self):
         """test test that template work with no vars."""
-        s = "Select * from orders"
+        s = "Select * from [Order]"
         t = ext_sql_alchemy.SQLAlchemyTemplateSource(
             self.accessor,
             s
@@ -78,7 +78,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
 
     def test_select_dict(self):
         s = """
-        Select * from orders
+        Select * from [Order]
         where
             CustomerId='{{ cid }}'
         """
@@ -92,7 +92,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
 
     def test_select(self):
         s = """
-        Select * from orders
+        Select * from [Order]
         where
             CustomerId='{{ cid }}'
         """
@@ -106,7 +106,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
 
     def test_select_raise(self):
         s = """
-        Select * from orders
+        Select * from [Order]
         where
             CustomerId='{{ cid }}'
         """
@@ -220,12 +220,12 @@ class TestSQLAlchemyReflection(TestSQLAlchemyBase):
         reflector = self._get_reflector()
         profile = reflector.extract_profile(*reflector.get_table_names())
         self.assertEqual(
-            list(profile.keys()),
+            list(sorted(profile.keys())),
             NORTHWIND_TABLE_NAMES
         )
         self.assertEqual(
             obj_md5(profile),
-            '6c46243915e4fa383ac536652dc0e974'
+            '4a03d293b21aab31de73dea5e4a937f9'
         )
 
 
@@ -286,10 +286,10 @@ class TestSQLServices(unittest.TestCase):
     def test_sample_specified(self):
         """test sampling all data from a database"""
         services = ext_sql_alchemy.SQLServices.from_file("model.yml")
-        sample = services.sample_from_db("northwind", "Categories", "Employees")
+        sample = services.sample_from_db("northwind", "Category", "Employee")
         self.assertEqual(
             list(sample.keys()),
-            ["Categories", "Employees"]
+            ["Category", "Employee"]
         )
 
 

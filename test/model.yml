@@ -2,7 +2,7 @@ __meta__:
   version: '0.2'
 connections:
   northwind:
-    database: data/northwind.sqlite
+    database: data/Northwind_small.sqlite
     dialect: sqlite
     driver: sqlite
 endpoints: {}
