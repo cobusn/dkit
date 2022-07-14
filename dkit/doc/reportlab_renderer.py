@@ -21,7 +21,6 @@ from reportlab.platypus import (
 )
 from . import fontsize_map
 from ..data.containers import AttrDict
-from ..exceptions import DKitDocumentException
 from ..plot import matplotlib as mpl
 from ..utilities.introspection import is_list
 from .document import AbstractRenderer, Document, DictDocument
@@ -259,6 +258,7 @@ class RLStyler(object):
         register_font("SourceSansPro", "SourceSansPro-Regular.ttf")
         register_font("SourceSansPro-Bold", "SourceSansPro-Bold.ttf")
         register_font("SourceSansPro-Italic", "SourceSansPro-Italic.ttf")
+        register_font("SourceSansPro-Ital", "SourceSansPro-Italic.ttf")
         register_font("SourceSansPro-BoldItalic", "SourceSansPro-BoldItalic.ttf")
         pdfmetrics.registerFontFamily(
             "SourceSansPro", "SourceSansPro", "SourceSansPro-Bold",
@@ -287,7 +287,7 @@ class RLStyler(object):
         )
 
         # Print all attributes of Verbatim
-        self.__print_style(self.style.byName['BodyText'])
+        # self.__print_style(self.style.byName['BodyText'])
 
         # BlockQuote
         self.style.byName['BlockQuote'] = ParagraphStyle(
@@ -391,6 +391,7 @@ class ReportlabDocRenderer(AbstractRenderer):
     pdf documents without littering the filesystem
     with tex files.
     """
+    text_nodes = ["text", "bold", "emphasis", "inline", "link"]
 
     def __init__(self, data, styler):
         super().__init__(data)
@@ -442,14 +443,20 @@ class ReportlabDocRenderer(AbstractRenderer):
 
     def make_image(self, element):
         """image"""
-        e = AttrDict(element)
-        _w = e.width * cm if e.width else None
-        _h = e.height * cm if e.height else None
-        if self._is_pdf(e.data):
-            img = PdfImage(e.data, width=_w, height=_h)
+        width = element["width"]
+        height = element["height"]
+        data = element["data"]
+        align = element["align"].upper()
+
+        _w = width * cm if width else None
+        _h = height * cm if height else None
+        if self._is_pdf(data):
+            img = PdfImage(data, width=_w, height=_h)
         else:
-            img = Image(e.data, width=_w, height=_h)
-        img.hAlign = e.align.upper()
+            img = Image(data, width=_w, height=_h)
+
+        img.hAlign = align
+
         return img
 
     def make_inline(self, element):
@@ -471,29 +478,48 @@ class ReportlabDocRenderer(AbstractRenderer):
         return Spacer(0, h)
 
     def make_entry(self, element):
-        if isinstance(element["data"], dict) and element["data"]["~>"] == "list":
-            return self.make_list(element["data"])
+
+        def regularise(entries, style):
+            """"merge text subsequent entries in a list and
+            return them as a paragraph
+            """
+            out = []
+            buf = []
+            for e in entries:
+                if isinstance(e, str):
+                    buf.append(e)
+                else:
+                    if buf:
+                        out.append(Paragraph(" ".join(buf), style=style))
+                        buf = []
+                    out.append(e)
+            if buf:
+                out.append(Paragraph(" ".join(buf), style=style))
+            return out
+
+        rv = [self.delegate(i) for i in element["data"]]
+        rv = regularise(rv, self.styler["Normal"])
+        if len(rv) == 1:
+            return rv[0]
         else:
-            # return ListItem(self.make_paragraph(element))
-            return ListItem(
-                Paragraph(
-                    self._make(element["data"]),
-                    style=self.styler["Normal"]
-                )
-            )
+            return rv
 
     def make_list(self, element):
         """ordered and unordered lists"""
+
+        # Styling
         if element["ordered"]:
             bt = "1"
             _style = "OrderedList"
         else:
             bt = "bullet"
             _style = "UnorderedList"
+
         items = [
             self.make_entry(i)
             for i in element["data"]
         ]
+
         lf = ListFlowable(
             items,
             bulletType=bt,
@@ -519,7 +545,10 @@ class ReportlabDocRenderer(AbstractRenderer):
 
     def make_listing(self, element):
         """code listings"""
-        return Preformatted(element["data"], self.styler["Code"])
+        return Preformatted(
+            element["data"],
+            self.styler["Code"]
+        )
 
     def make_markdown(self, element):
         """convert from markdown"""
@@ -539,21 +568,30 @@ class ReportlabDocRenderer(AbstractRenderer):
         return element["data"]
 
     def make_table(self, data):
+        """generate table"""
         t = TableHelper(data, self.styler.local_style)
         table = Table(t.extract_data(), colWidths=t.widths(), repeatRows=1)
         table.setStyle(t.table_style())
         return table
 
     def make_verbatim(self, element):
-        return Preformatted(element["data"], self.styler["Verbatim"])
+        """verbtim text"""
+        return Preformatted(
+            element["data"],
+            self.styler["Verbatim"]
+        )
 
-    def _make(self, item):
-        if is_list(item):
-            return "".join(self._make(i) for i in item)
-        elif isinstance(item, str):
+    def delegate(self, entry):
+        """call appropriate callback for entry"""
+        return self.callbacks[entry["~>"]](entry)
+
+    def _make(self, items):
+        if is_list(items):
+            return "".join(self._make(i) for i in items)
+        elif isinstance(items, str):
             return item
         else:
-            return self.callbacks[item["~>"]](item)
+            return self.callbacks[items["~>"]](items)
 
     def _make_all(self):
         yield PageBreak()
@@ -561,19 +599,32 @@ class ReportlabDocRenderer(AbstractRenderer):
             content = self.data.as_dict()["elements"]
         else:
             content = self.data
+        #  self.__write_debug_doc(content)
         for c in content:
-            i = self.callbacks[c["~>"]](c)
+            i = self.delegate(c)
             if is_list(i):
                 yield from i
             else:
                 yield i
+
+    def __write_debug_doc(self, doc):
+        """
+        write the input document to json file
+
+        for debugging purposes
+        """
+        import json
+        with open("debug.json", "wt") as outfile:
+            outfile.write(json.dumps(doc, indent=4))
 
     def __iter__(self):
         yield from self._make_all()
 
 
 class ReportLabRenderer(object):
-
+    """
+    Reportlab Document Renderer
+    """
     def __init__(self, styler=None, local_style=None):
         self.styler = styler if styler else RLStyler
         self.local_style = local_style
