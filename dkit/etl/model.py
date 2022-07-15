@@ -55,9 +55,11 @@ from ..utilities import template_helper, security
 
 
 CONFIG_SECTION = "DEFAULT"
+DOC_SECTION = "DOC"
 DEFAULT_MODEL_FILE = "model.yml"
 GLOBAL_CONFIG_FILE = "~/.dk.ini"
 LOCAL_CONFIG_FILE = "dk.ini"
+
 T = TypeVar('T', bound='A')
 
 
@@ -719,6 +721,11 @@ class ETLServices(object):
             config[CONFIG_SECTION] = {
                 "key": fernet.Fernet.generate_key().decode("utf-8"),
                 "default_model_name": DEFAULT_MODEL_FILE,
+            }
+            config[DOC_SECTION] = {
+                "author": "Author Name",
+                "email": "author@email.address",
+                "contact": "+11-111-1111",
             }
             with open(file_name, "w") as config_file:
                 config.write(config_file)

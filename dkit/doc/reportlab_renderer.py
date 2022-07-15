@@ -16,11 +16,10 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    Image, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer, Flowable,
+    Image, ListFlowable, Paragraph, SimpleDocTemplate, Spacer, Flowable,
     Table, TableStyle, Preformatted, PageBreak
 )
 from . import fontsize_map
-from ..data.containers import AttrDict
 from ..plot import matplotlib as mpl
 from ..utilities.introspection import is_list
 from .document import AbstractRenderer, Document, DictDocument
@@ -357,6 +356,16 @@ class RLStyler(object):
 
         canvas.restoreState()
 
+    @property
+    def contact_email(self):
+        rv = self.doc.contact if self.doc.contact else ""
+        if self.doc.email:
+            if self.doc.contact:
+                rv += f" / {self.doc.email}"
+            else:
+                rv = str(self.doc.email)
+        return rv
+
     def first_page(self, canvas: Canvas, style_sheet):
         """default function for first pages"""
         canvas.saveState()
@@ -376,6 +385,7 @@ class RLStyler(object):
         canvas.drawString(title_x, title_y - 22, self.doc.sub_title)
         canvas.setFont(self.author_font_name, 14)
         canvas.drawString(title_x, title_y - 44, f"by: {self.doc.author}")
+        canvas.drawString(title_x, title_y - 60, self.contact_email)
         canvas.setFont(self.author_font_name, 10)
         canvas.drawString(title_x, 160,  self.title_date)
         canvas.restoreState()
@@ -589,7 +599,7 @@ class ReportlabDocRenderer(AbstractRenderer):
         if is_list(items):
             return "".join(self._make(i) for i in items)
         elif isinstance(items, str):
-            return item
+            return items
         else:
             return self.callbacks[items["~>"]](items)
 
