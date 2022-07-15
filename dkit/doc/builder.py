@@ -393,8 +393,9 @@ class SimpleDocRenderer(object):
         self.title = title
         self.sub_title = sub_title
         self.date = date_ if date_ else date.today()
-        self.email = email,
+        self.email = email
         self.contact = contact
+        print(email, contact)
         self.renderer = renderer
         self.functions = {
             "include": self._include_file,
@@ -427,15 +428,10 @@ class SimpleDocRenderer(object):
         rv += ["```\n"]
         return "".join(rv)
 
-    # def _get_render_objects(self):
-    #     """generate python objects for jinja2"""
-    #     return {}
-
     def load_doc_template(self, filename):
-
+        """load template and return rendered objects"""
         with open(filename, "rt") as infile:
             t = jinja2.Template(infile.read())
-            # return t.render(self._get_render_objects(), **functions)
             return t.render(**self.functions)
 
     def _create_doc(self, elements):
