@@ -28,7 +28,10 @@ from logging.handlers import QueueHandler, QueueListener
 from .. import DEFAULT_LOG_MESSAGE
 
 
-def init_logger(message=None, name=None, level=logging.DEBUG, handler=None):
+DEFAULT_LOG_LEVEL = logging.INFO
+
+
+def init_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL, handler=None):
     """
     generic logger initialization function
     """
@@ -51,7 +54,7 @@ def init_null_logger(message=None, name=None):
     return logger
 
 
-def init_file_logger(filename, message=None, name=None, level=logging.DEBUG):
+def init_file_logger(filename, message=None, name=None, level=DEFAULT_LOG_LEVEL):
     """
     Return simple file logger
     """
@@ -59,7 +62,7 @@ def init_file_logger(filename, message=None, name=None, level=logging.DEBUG):
     return init_logger(message, name, level, handler)
 
 
-def init_stream_logger(stream, message=None, name=None, level=logging.DEBUG):
+def init_stream_logger(stream, message=None, name=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger
     """
@@ -67,21 +70,21 @@ def init_stream_logger(stream, message=None, name=None, level=logging.DEBUG):
     return init_logger(message, name, level, handler)
 
 
-def init_stderr_logger(message=None, name=None, level=logging.DEBUG):
+def init_stderr_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger to stderr
     """
     return init_stream_logger(sys.stderr, message=None, name=None, level=level)
 
 
-def init_stdout_logger(message=None, name=None, level=logging.DEBUG):
+def init_stdout_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger to stderr
     """
     return init_stream_logger(sys.stdout, message=None, name=None, level=level)
 
 
-def init_queue_logger(queue, name, level=logging.DEBUG):
+def init_queue_logger(queue, name, level=DEFAULT_LOG_LEVEL):
     """
     initialize queue logging for multi-processing
     """

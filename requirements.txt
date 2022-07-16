@@ -1,4 +1,5 @@
 boltons
+pdfrw
 cerberus
 cffi
 collections-extended
@@ -10,17 +11,14 @@ flask
 inflect
 ipython
 jinja2
-lxml
 lz4
 matplotlib
-mistune
+mistune==0.8.4
 msgpack
 nose
 openpyxl
 paramiko
 posix_ipc
-psycopg2-binary
-pyarrow
 pylint==2.5.2
 pyparsing
 python-dateutil
@@ -28,12 +26,9 @@ python-levenshtein
 pyyaml
 reportlab
 requests
-scipy
 sphinx
 sphinxcontrib-napoleon
-sqlalchemy
 squarify
-tables
 tabulate
 tqdm
 xlrd

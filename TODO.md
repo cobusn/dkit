@@ -1,9 +1,13 @@
 # Next
+* upgrade to mistune 2
 * AWS S3 integration
-* apache afro integration 
+* support for autolink in Reportlab Renderer
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 
 # Backlog 
+* update for Python 3.10
+* optimise imports
+* reportlab: document structure added to pdf 
 * table of contents for Reportlab documents
 * change major imports to lazy loading
 * integrate plantuml for documentation?

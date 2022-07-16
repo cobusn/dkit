@@ -395,7 +395,6 @@ class SimpleDocRenderer(object):
         self.date = date_ if date_ else date.today()
         self.email = email
         self.contact = contact
-        print(email, contact)
         self.renderer = renderer
         self.functions = {
             "include": self._include_file,
