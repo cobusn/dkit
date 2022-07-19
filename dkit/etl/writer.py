@@ -33,7 +33,7 @@ class Writer(object):
     """
     Base class for writers
     """
-    pass
+    is_open = None
 
 
 class OpenWriter(Writer):

@@ -5,6 +5,9 @@
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 
 # Backlog 
+* fix python/cannonical type conversion (e.g. python float must be double)
+* refactor etl.writer
+* factor out Cerberus for a more modern replacement
 * update for Python 3.10
 * optimise imports
 * reportlab: document structure added to pdf 
