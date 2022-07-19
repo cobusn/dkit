@@ -33,7 +33,7 @@ from dkit.etl.extensions.ext_avro import AvroSink
 from datetime import datetime
 
 
-ITERATIONS = 10_000
+ITERATIONS = 1_000
 
 
 class TestSinkPerformance(unittest.TestCase):
