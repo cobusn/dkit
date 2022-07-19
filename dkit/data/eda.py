@@ -1,3 +1,26 @@
+# Copyright (c) 2022 Cobus Nel
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+Exploratory Data Analysis
+"""
 from typing import Iterable, Dict, Any
 from matplotlib import cm
 from matplotlib.colors import hex2color
@@ -6,7 +29,7 @@ import datetime
 import decimal
 import matplotlib.pyplot as plt
 import numpy as np
-from .infer import ExtractTypes
+from .infer import ExtractSchemaInline
 
 
 class Normalizer(object):
@@ -145,7 +168,7 @@ class SchemaMap(object):
     def _create_processors(self, data, width=80):
         """set up processors"""
         processors: Dict[str, StructureMap] = {}
-        typemapper = ExtractTypes()
+        typemapper = ExtractSchemaInline()
         _types = typemapper(data)
         _data = list(typemapper)
         for name, _type in _types.items():

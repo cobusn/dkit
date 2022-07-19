@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 """
 Tools to infer data types from data.  For text data such as CSV, the
 library attempt to identify the types.
@@ -29,14 +28,12 @@ import datetime
 import statistics
 import dateutil.parser
 from itertools import islice
-# arrow is more strict
-# import arrow
-# from arrow.parser import ParserError
 from .iteration import iter_sample
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 __all__ = [
-    "InferTypes",
+    "ExtractSchemaInline",
+    "InferSchema",
     "infer_type"
 ]
 
@@ -56,40 +53,44 @@ def _get_main_type(types):
             return t
 
 
-class ExtractTypes(object):
+class ExtractSchemaInline(object):
     """
-    Extract types from a iterable
+    Extract types from a iterable while the iterable
+    can still be used as an iterable
 
     Does not consume the iterable and can be used
     to iterate through values
     """
 
-    def __init__(self, block_size=2000):
+    def __init__(self, data: Iterable, block_size: int = 2000):
         self._block_size = block_size
-        self._block = []
-        self._data = []
+        self._block: List = []
+        self._data = None
+        self.schema = None  # data schema stored here
+        self._run_(data)
 
-    def __call__(self, data):
+    def _run_(self, data):
+        """infer data types"""
         self._data = data
         self._block = islice(self._data, self._block_size)
         typemap = collections.defaultdict(lambda: [])
         for row in self._block:
             for k, v in row.items():
-                typemap[k].append(type(v))
-        return {k: _get_main_type(v) for k, v in typemap.items()}
+                typemap[k].append(infer_type(v))
+        self.schema = {k: _get_main_type(v) for k, v in typemap.items()}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable:
         for item in self._block:
             yield item
         for item in self._data:
             yield item
 
 
-class InferTypes(object):
+class InferSchema(object):
     """
-    infer types for a list of dictionaries.
+    infer schema for an iterable of  dictionary records.
 
-    additional data is collected
+    additional data is collected to describe the schema
     """
     __type_map = {
         None: "string",

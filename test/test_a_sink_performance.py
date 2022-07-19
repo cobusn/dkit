@@ -29,10 +29,11 @@ from dkit.etl.extensions.ext_xlsx import XlsxSink
 from dkit.etl.extensions.ext_msgpack import MsgpackSink
 from dkit.etl.extensions.ext_bxr import BXRSink
 from dkit.etl.utilities import Dumper
+from dkit.etl.extensions.ext_avro import AvroSink
 from datetime import datetime
 
 
-ITERATIONS = 1000
+ITERATIONS = 10_000
 
 
 class TestSinkPerformance(unittest.TestCase):
@@ -79,6 +80,21 @@ class TestSinkPerformance(unittest.TestCase):
         # obj.process(self.gen)
         # self.add_record("bsonl text", obj.stats)
         pass
+
+    def test_avro_deflate(self):
+        obj = AvroSink(FileWriter("output/speed_deflate.avro", "wb"), codec="deflate")
+        obj.process(self.gen)
+        self.add_record("avro deflate", obj.stats)
+
+    def test_avro_null(self):
+        obj = AvroSink(FileWriter("output/speed_null.avro", "wb"), codec="null")
+        obj.process(self.gen)
+        self.add_record("avro no compression", obj.stats)
+
+    def test_avro_snappy(self):
+        obj = AvroSink(FileWriter("output/speed_snappy.avro", "wb"))
+        obj.process(self.gen)
+        self.add_record("avro snappy", obj.stats)
 
     def test_json_text(self):
         obj = JsonSink(FileWriter("output/speed.json"))

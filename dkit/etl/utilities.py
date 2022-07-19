@@ -10,7 +10,8 @@ from .extensions import (
     ext_sql_alchemy,
     ext_tables,
     ext_xlsx,
-    ext_xls
+    ext_xls,
+    ext_avro
 )
 
 import gzip
@@ -19,7 +20,7 @@ import lzma
 import _pickle
 from ..parsers import uri_parser
 
-BINARY_DIALECTS = ["mpak", "pkl"]
+BINARY_DIALECTS = ["mpak", "pkl", "avro"]
 
 READER_MAP = {
     None: reader.FileReader,
@@ -30,6 +31,7 @@ READER_MAP = {
 }
 
 SOURCE_MAP = {
+    "avro": ext_avro.AvroSource,
     "bxr": ext_bxr.BXRSource,
     "csv": source.CsvDictSource,
     "json": source.JsonSource,
@@ -42,6 +44,7 @@ SOURCE_MAP = {
 }
 
 SINK_MAP = {
+    "avro": ext_avro.AvroSink,
     "bxr": ext_bxr.BXRSink,
     "csv": sink.CsvDictSink,
     "json": sink.JsonSink,

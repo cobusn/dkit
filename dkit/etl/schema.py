@@ -53,7 +53,7 @@ def parse_datetime(value):
 
 def parse_bool(value):
     try:
-        return bool(parser.parse(value))
+        return bool(value)
     except Exception:
         return None
 
@@ -163,7 +163,7 @@ class EntityValidator(cerberus.Validator):
             p: probability of evaluating a record
             stop: stop after n rows
         """
-        sniffer = infer.InferTypes(strict)
+        sniffer = infer.InferSchema(strict)
         sniffer(the_iterable, strict, p=p, stop=stop)
         dict_schema = collections.OrderedDict()
         for key, stats in sniffer.summary.items():

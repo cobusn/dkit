@@ -20,7 +20,8 @@ import sys; sys.path.insert(0, "..")   # noqa
 import unittest
 import datetime
 
-from dkit.data.infer import infer_type, InferTypes
+from dkit.data.infer import infer_type, InferSchema, ExtractSchemaInline
+from dkit.etl import source
 import common
 
 
@@ -87,11 +88,37 @@ class TestInferTypes(common.TestBase):
             {"_str": "Str", "_int": "10", "_float": "10.2", "_datetime": "5 Jan 2016"},
             {"_str": "String", "_float": "100.2", "_datetime": "5 February 2017"},
         ]
-        checker = InferTypes()
-        types = checker(data)
-        print(types)
+        checker = InferSchema()
+        checker(data)
         for row in checker.summary.values():
             print(row)
+
+
+mtcars_schema = {
+    'car': str,
+    'mpg': float,
+    'cyl': int,
+    'disp': float,
+    'hp': int,
+    'drat': float,
+    'wt': float,
+    'qsec': float,
+    'vs': int,
+    'am': int,
+    'gear': int,
+    'carb': int
+}
+
+
+class TestExtractTypes(unittest.TestCase):
+
+    def test_1(self):
+        with source.load("data/mtcars.csv") as src:
+            data_before = list(src)
+            e = ExtractSchemaInline(src)
+            print(e.schema)
+            self.assertEqual(len(data_before), len(list(e)))
+            self.assertEqual(e.schema, mtcars_schema)
 
 
 if __name__ == '__main__':
