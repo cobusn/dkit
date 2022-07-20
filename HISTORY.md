@@ -1,3 +1,7 @@
+# 22.7.3
+* added performance tests for avro extension
+* fixed bug in avro extension
+
 # 22.7.2
 * ability to read and write avro files
 * added ability to read document author,email,contact information from
