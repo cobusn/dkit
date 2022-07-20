@@ -33,7 +33,7 @@ from dkit.etl.extensions.ext_avro import AvroSink
 from datetime import datetime
 
 
-ITERATIONS = 1_000
+ITERATIONS = 10_000
 
 
 class TestSinkPerformance(unittest.TestCase):
@@ -97,26 +97,41 @@ class TestSinkPerformance(unittest.TestCase):
         self.add_record("avro snappy", obj.stats)
 
     def test_json_text(self):
-        obj = JsonSink(FileWriter("output/speed.json"))
-        obj.process(self.gen)
-        self.add_record("json text", obj.stats)
+        if self.iterations <= 10_000:
+            obj = JsonSink(FileWriter("output/speed.json"))
+            obj.process(self.gen)
+            self.add_record("json text", obj.stats)
+        else:
+            print("skipping json test")
 
     def test_jsonl_text(self):
-        obj = JsonlSink(FileWriter("output/speed.jsonl"))
-        obj.process(self.gen)
-        self.add_record("jsonl text", obj.stats)
+        if self.iterations <= 10_000:
+            obj = JsonlSink(FileWriter("output/speed.jsonl"))
+            obj.process(self.gen)
+            self.add_record("jsonl text", obj.stats)
+        else:
+            print("skipping jsonl test")
 
     def test_jsonl_bzip2(self):
-        obj = JsonlSink(Bz2Writer("output/speed.jsonl.bz2"))
-        self.add_record("jsonl bz2", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = JsonlSink(Bz2Writer("output/speed.jsonl.bz2"))
+            self.add_record("jsonl bz2", obj.process(self.gen).stats)
+        else:
+            print("skipping json bzip tests")
 
     def test_jsonl_lzma(self):
-        obj = JsonlSink(LzmaWriter("output/speed.jsonl.xz"))
-        self.add_record("jsonl lzma", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = JsonlSink(LzmaWriter("output/speed.jsonl.xz"))
+            self.add_record("jsonl lzma", obj.process(self.gen).stats)
+        else:
+            print("skipping json lzma tests")
 
     def test_jsonl_gzip(self):
-        obj = JsonlSink(GzipWriter("output/speed.jsonl.gz"))
-        self.add_record("jsonl gzip", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = JsonlSink(GzipWriter("output/speed.jsonl.gz"))
+            self.add_record("jsonl gzip", obj.process(self.gen).stats)
+        else:
+            print("skipping json gzip tests")
 
     def test_bxr(self):
         if self.iterations <= 10_000:
@@ -133,8 +148,11 @@ class TestSinkPerformance(unittest.TestCase):
             print("skipping BXR tests")
 
     def test_bxr_lzma(self):
-        obj = BXRSink(LzmaWriter("output/speed.bxr.xz"))
-        self.add_record("bxr lzma sink", obj.process(self.gen).stats)
+        if self.iterations <= 10_000:
+            obj = BXRSink(LzmaWriter("output/speed.bxr.xz"))
+            self.add_record("bxr lzma sink", obj.process(self.gen).stats)
+        else:
+            print("skipping BXR lzma tests")
 
     def test_pickle(self):
         obj = PickleSink(FileWriter("output/speed.pkl", "wb"))

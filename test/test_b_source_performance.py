@@ -38,6 +38,7 @@ from dkit.etl.source import (
 from dkit.etl.extensions.ext_msgpack import MsgpackSource
 from dkit.etl.extensions.ext_xlsx import XLSXSource
 from dkit.etl.extensions.ext_bxr import BXRSource
+from dkit.etl.extensions.ext_avro import AvroSource
 from test_a_sink_performance import ITERATIONS
 
 
@@ -85,6 +86,11 @@ class TestSourcePerformance(unittest.TestCase):
         r = JsonlSource([GzipReader("output/speed.jsonl.gz")])
         self.assertEqual(len(list(r)), ITERATIONS)
         self.add_record("jsonl gzip", r)
+
+    def test_avro_snappy(self):
+        r = AvroSource([FileReader("output/speed_snappy.avro", "rb")])
+        self.assertEqual(len(list(r)), ITERATIONS)
+        self.add_record("avro snappy", r)
 
     def test_csv_text(self):
         r = CsvDictSource([FileReader("output/speed.csv")])

@@ -3,6 +3,7 @@
 #
 all: 
 	nosetests \
+		-v \
 		--logging-level=ERROR \
 		--with-coverage \
 		--cover-erase \

@@ -20,6 +20,8 @@
 
 import unittest
 import sys;  sys.path.insert(0, "..") # noqa
+from datetime import datetime, date, timezone
+from decimal import Decimal
 
 from dkit.etl.extensions.ext_avro import AvroSink, AvroSource
 from dkit.etl.writer import FileWriter
@@ -33,15 +35,41 @@ with source.load("data/mtcars.jsonl") as infile:
     MTCARS = list(infile)
 
 
+def gen_logical_type_data():
+    """generate data for logical types"""
+    rv = []
+    for i in range(100):
+        rv.append(
+            {
+                "_date": date.today(),
+                "_datetime": datetime.now(timezone.utc),
+                "_decimal": Decimal(10),
+            }
+        )
+    return rv
+
+
 class AvroTest(unittest.TestCase):
 
-    def _assert_file(self, compare_to):
+    def _assert_file(self, compare, compare_list):
         """assert that compare_to is the same as the original"""
-        for i, row in enumerate(compare_to):
-            self.assertEqual(row, MTCARS[i])
+        for i, row in enumerate(compare):
+            self.assertEqual(row, compare_list[i])
 
 
 class A_TestAvroSink(AvroTest):
+
+    def test_extended_types(self):
+        """test type compatibility"""
+        data = gen_logical_type_data()
+        with sink.load("data/compat.avro") as snk:
+            snk.process(data)
+        with source.load("data/compat.avro") as src:
+            for i, record in enumerate(src):
+                for f in record:
+                    self.assertTrue(
+                        record[f] == data[i][f]
+                    )
 
     def test_provided_schema(self):
         """test avro writer with provided schema"""
@@ -51,7 +79,7 @@ class A_TestAvroSink(AvroTest):
         snk = AvroSink(w, schema=e)
         snk.process(MTCARS)
         with source.load("data/mtcars1.avro") as src:
-            self._assert_file(src)
+            self._assert_file(src, MTCARS)
 
     def test_avro_sink_auto_schema(self):
         """test auto generated schema"""
@@ -64,7 +92,7 @@ class A_TestAvroSink(AvroTest):
         with sink.load("data/mtcars1.avro") as snk:
             snk.process(MTCARS)
         with source.load("data/mtcars1.avro") as src:
-            self._assert_file(src)
+            self._assert_file(src, MTCARS)
 
 
 class B_TestAvroSource(AvroTest):
@@ -72,14 +100,14 @@ class B_TestAvroSource(AvroTest):
     def test_avro_source(self):
         """test auto generated schema"""
         r = FileReader(AVRO_FILE, "rb")
-        self._assert_file(AvroSource([r]))
+        self._assert_file(AvroSource([r]), MTCARS)
 
     def test_avro_source_autoload(self):
         """
         with source
         """
         with source.load(AVRO_FILE) as src:
-            self._assert_file(src)
+            self._assert_file(src, MTCARS)
 
     def test_avro_source_some_fields(self):
         """
