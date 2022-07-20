@@ -18,7 +18,7 @@
 from datetime import date, datetime, timedelta, timezone
 from typing import Iterable
 import time
-from ..typing import AnyDate, Iterator
+from typing import AnyDate, Iterator
 from dateutil.relativedelta import relativedelta
 
 
