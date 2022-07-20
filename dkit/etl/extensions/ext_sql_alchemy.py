@@ -46,11 +46,11 @@ def _rfc_1738_quote(text):
 
 
 VALID_DIALECTS = [
-    "firebird", "mssql", "mysql", "oracle", "postgresql", "sqlite", "sybase",
-    "impala"
+    "firebird", "mssql", "mysql", "oracle",
+    "postgresql", "sqlite", "sybase", "impala"
 ]
 
-# map between SQL types and closest Python type
+# map between SQL types and closest Canonnical type
 TYPE_MAP = {
     "BINARY": "binary",
     "BIGINT": "int64",

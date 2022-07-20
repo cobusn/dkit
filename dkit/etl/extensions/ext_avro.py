@@ -25,6 +25,8 @@ References:
 
 * https://avro.apache.org/
 * https://fastavro.readthedocs.io/en/latest/
+
+NO
 """
 from itertools import islice, chain
 from typing import Iterable
@@ -65,11 +67,18 @@ AVRO_TYPEMAP = {
     "binary":  "bytes",
     "datetime": {
         "type": "long",
-        "logicalType": "timestamp-millis"
+        "logicalType": "timestamp-micros"
     },
-    #   "date":                   fixme
-    #   "datetime"                fixme:
-    #   "Decimal":                fixme
+    "date": {
+        "type": "int",
+        "logicalType": "date"
+    },
+    "decimal": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 16,
+        "scale": 4,
+    }
 }
 
 
@@ -91,7 +100,7 @@ def make_avro_schema(cannonical_schema: Entity, name="auto.generated"):
     }
 
 
-def infer_avro_schema(iterable, n=100):
+def infer_avro_schema(iterable, n=50):
     """
     infer schema from iterable
 
@@ -123,7 +132,7 @@ class AvroSink(sink.FileIteratorSink):
 
     def __write(self, stream: writer.Writer, the_iterable: Iterable):
         """internal write function"""
-        schema, iterable = self._get_schema(the_iterable)
+        schema, the_iterable = self._get_schema(the_iterable)
         parsed_schema = parse_schema(schema)
         avro_writer(
             stream,
