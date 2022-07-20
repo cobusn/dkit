@@ -15,11 +15,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from datetime import date, datetime, timedelta, timezone
-from typing import Iterable
 import time
-from typing import AnyDate, Iterator
+from datetime import date, datetime, timedelta, timezone
+from typing import Iterable, Iterator
+
 from dateutil.relativedelta import relativedelta
+
+from ..typing import AnyDate
 
 
 class TimeSequence(object):
