@@ -18,7 +18,7 @@
 from datetime import date, datetime, timedelta, timezone
 from typing import Iterable
 import time
-from ..typing import AnyDate
+from ..typing import AnyDate, Iterator
 from dateutil.relativedelta import relativedelta
 
 
@@ -93,7 +93,7 @@ class TimeSequence(object):
     def format(self, obj, format_spec):
         return TimeSequence.__get_formatter(format_spec)(obj)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[datetime]:
         incr = relativedelta(**{self.kind: self.inc})
         d = self.start
         while d < self.stop:
