@@ -42,7 +42,7 @@ class TimeSequence(object):
 
     CHOICES = ["years", "months", "days", "minutes", "seconds"]
 
-    def __init__(self, start: datetime, stop: datetime, kind: str = "month",
+    def __init__(self, start: datetime, stop: datetime, kind: str = "months",
                  inc: int = 1, pairs: bool = False):
         self.start = start
         self.stop = stop

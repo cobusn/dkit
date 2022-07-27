@@ -122,6 +122,16 @@ class AvroSink(sink.FileIteratorSink):
 
     The class can automatically generate a schema,
     or use a schema provided in cannonical format.
+
+    WARNING: all datetime objects will be converted to
+             UTF.
+
+    args:
+        * writer: writer object
+        * schema: Entity object
+        * schema_name: default to 'generated'
+        * codec: one of 'snappy', 'deflate', 'null'
+
     """
     def __init__(self, writer, schema: Entity = None, schema_name="generated",
                  codec="snappy"):
