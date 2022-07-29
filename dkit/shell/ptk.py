@@ -28,7 +28,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
 from .. import base
 from ..exceptions import DKitApplicationException, DKitArgumentException, DKitShellException
-from .console import echo
+from .console import echo, columnize
 
 
 """
@@ -221,8 +221,10 @@ class HelpCmd(ProxyCmd):
 
     def run(self, args):
         if len(args) == 1:
-            for command in self.map_commands.keys():
-                echo(command)
+            # for command in self.map_commands.keys():
+            #   echo(command)
+            commands = list(self.map_commands.keys())
+            echo(columnize(commands))
         else:
             help_text = self.map_commands[args[-1]].get_help()
             if help_text is not None:

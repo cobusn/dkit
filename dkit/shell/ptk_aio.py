@@ -118,7 +118,7 @@ class AsyncCmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
         """
         # use_asyncio_event_loop()
         session = PromptSession()
-        print("xx")
+
         # history = InMemoryHistory()
         while True:
             try:
