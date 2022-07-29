@@ -1,3 +1,6 @@
+# 22.7.4
+* bugfix in avro extension
+
 # 22.7.3
 * added performance tests for avro extension
 * fixed bug in avro extension
