@@ -26,7 +26,6 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
-from .. import base
 from ..exceptions import DKitApplicationException, DKitArgumentException, DKitShellException
 from .console import echo, columnize
 
@@ -36,7 +35,7 @@ Prompt Toolkit extensions
 """
 
 
-class ProxyCmd(base.ConfiguredObject, metaclass=ABCMeta):
+class ProxyCmd(metaclass=ABCMeta):
 
     cmd = ""
 
@@ -58,7 +57,7 @@ class CmdCompleter(Completer):
     def __init__(self, lst_commands):
         self.cmd_map = {i.cmd: i for i in lst_commands}
         self.cmd_map["help"] = HelpCmd(self)
-        self.cmd_map["clear"] = ClearCmd(self)
+        self.cmd_map["clear"] = ClearCmd()
 
     @property
     def commands(self):
@@ -100,19 +99,17 @@ class CmdCompleter(Completer):
         yield from (Completion(i, start_position=-pos) for i in completions)
 
 
-class CmdApplication(base.ConfiguredApplication, base.InitArgumentsMixin):
+class CmdApplication(object):
     """
     Abstract Base Class for Async Command Applications
 
     args:
         lst_commands: list of commmands
-        repository: repository instance
         debug: True to defeat error handling
 
     """
-    def __init__(self, commands=None, repository=None, debug=False, **kwargs):
+    def __init__(self, commands=None, debug=False):
         self.debug = debug
-        super().__init__(repository, **kwargs)
         self.completer = CmdCompleter([])
         self.quit = False
         self.commands = commands
@@ -205,8 +202,7 @@ class HelpCmd(ProxyCmd):
     """
     cmd = "help"
 
-    def __init__(self, completer, *kwds, **kwargs):
-        super().__init__(*kwds, **kwargs)
+    def __init__(self, completer):
         self.completer = completer
         self.map_commands = completer.cmd_map
 
