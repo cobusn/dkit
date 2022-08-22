@@ -1,6 +1,7 @@
 # Next
+
 * upgrade to mistune 2
-* AWS S3 integration
+* AWS S3 integration (s3fs..)
 * support for autolink in Reportlab Renderer
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 

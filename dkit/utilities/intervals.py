@@ -58,7 +58,7 @@ DATE_MAP = {
     "next_week": lambda: next_week(),
     "next_month": lambda: next_month(),
     "this_week": lambda: this_week(),
-    "this_month": lambda: last_month(),
+    "this_month": lambda: this_month(),
     "yesterday": lambda: yesterday(),
 }
 

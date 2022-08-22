@@ -42,7 +42,7 @@ SQL_DRIVERS = {
     "mssql": "mssql+pymssql",
     "mysql": "mysql+mysqldb",
     "oracle": "oracle+cx_oracle",
-    "postgres": "postgres",
+    "postgres": "postgresql",
     "sqlite": "sqlite",
 }
 
