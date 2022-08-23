@@ -16,9 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import unittest
-import sys
-
-sys.path.insert(0, "..")
+import sys;  sys.path.insert(0, "..")  # noqa
 from faker import Faker
 from dkit.data import fake_helper
 
@@ -54,6 +52,10 @@ class TestFake(unittest.TestCase):
             application = fake_gen.application()
             self.assertTrue(len(application) > 0)
 
+    def test_type_rows(self):
+        typemap = list(fake_helper.generate_test_rows(100))
+        self.assertEqual(len(typemap), 100)
+        print(typemap)
 
 if __name__ == '__main__':
     unittest.main()

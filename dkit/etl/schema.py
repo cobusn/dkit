@@ -30,7 +30,6 @@ from dkit.data import infer
 from dateutil import parser
 import decimal
 
-
 class ModelFactory(object):
 
     def __init__(self, default_str_len=255):

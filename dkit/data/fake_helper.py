@@ -9,8 +9,8 @@ from faker.providers import BaseProvider
 from . import helpers
 from .. import DEFAULT_LOCALE
 import logging
-
-
+import numpy as np
+import decimal
 #
 # Faker is generating too much logging
 #
@@ -117,6 +117,48 @@ def persons(n=1000, split=0.5):
             retval["gender"] = "female"
         i += 1
         yield retval
+
+
+CANNONICAL_ROW_SCHEMA = {
+    "float": "Float()",
+    "double": "Double()",
+    "integer": "Integer()",
+    "int8": "Int8()",
+    "int32": "Int32()",
+    "int64": "Int64()",
+    "string": "String()",
+    "boolean": "Boolean()",
+    "binary": "Binary()",
+    "datetime": "DateTime()",
+    "date": "Date()",
+    "decimal": "Decimal()",
+}
+
+
+def generate_test_rows(n=1000):
+    """
+    generate rows for datatypes supported by
+    canonical schema
+
+    useful for testing schema conversions
+    """
+    fake = Factory.create(locale=DEFAULT_LOCALE)
+    for i in range(n):
+        yield {
+            "float": random.random() * 1000,
+            "double": random.random() * 100000,
+            "integer": random.randint(-10000, 10000),
+            "int8": np.random.randint(0, 100, dtype=np.int8),
+            "int16": np.random.randint(0, 10000, dtype=np.int16),
+            "int32": np.random.randint(0, 1000, dtype=np.int32),
+            "int64": np.random.randint(0, 1000, dtype=np.int64),
+            "string": fake.sentence(),
+            "boolean": random.choice([True, False]),
+            "binary": b"abcdefh1243",
+            "datetime": fake.date_time_between(),
+            "date": fake.date_between(),
+            "decimal": decimal.Decimal(random.randrange(10000))/100
+        }
 
 
 def za_id_number(person):

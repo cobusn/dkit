@@ -6,6 +6,7 @@
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 
 # Backlog 
+* type guesser guesses numpy ints as string (should it generate an error)
 * fix python/cannonical type conversion (e.g. python float must be double)
 * refactor etl.writer
 * factor out Cerberus for a more modern replacement

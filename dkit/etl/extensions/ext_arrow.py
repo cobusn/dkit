@@ -1,4 +1,3 @@
-
 # Copyright (c) 2019 Cobus Nel
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,8 +29,61 @@ Julk 2019   Cobus Nel       Initial version
 
 
 from ..writer import ClosedWriter
-
+from ...data.iteration import chunker
+from ..model import Entity
+from itertools import islice, chain
 import pyarrow as pa
+
+__all__ = ["OSFileWriter"]
+
+# convert cannonical to arrow
+ARROW_TYPEMAP = {
+    "float":   pa.float32(),
+    "double":  pa.float64(),
+    "integer": pa.int32(),
+    "int8":    pa.int16(),    # int8 not available
+    "int16":   pa.int16(),
+    "int32":   pa.int32(),
+    "int64":   pa.int64(),
+    "string":  pa.string(),
+    "boolean": pa.bool_(),
+    "binary":  pa.binary(),
+    # "datetime":  pa.time32("s"),
+    "datetime":  pa.timestamp("s"),
+    "date": pa.date32(),
+    "decimal": pa.decimal128(11, 3),   # this probably need optimisation
+}
+
+
+def make_arrow_schema(cannonical_schema: Entity):
+    """create an Arrow schema from cannonical Entity"""
+    fields = []
+    validator = cannonical_schema.as_entity_validator()
+    for name, definition in validator.schema.items():
+        fields.append(
+            pa.field(
+                name,
+                ARROW_TYPEMAP[definition["type"]]
+            )
+        )
+    return pa.schema(fields)
+
+
+def infer_arrow_schema(iterable, n=50):
+    """
+    infer schema from iterable
+
+    returns:
+        * arrow schema
+        * a reconstructed iterable
+    """
+    i = iter(iterable)
+    buffer = list(islice(i, n))
+    schema = make_arrow_schema(
+        Entity.from_iterable(buffer, p=1.0, k=n)
+    )
+    return schema, chain(buffer, i)
+
 
 class OSFileWriter(ClosedWriter):
     """
@@ -49,4 +101,16 @@ class OSFileWriter(ClosedWriter):
         return self.pa.OSFile(self.path, self.mode)
 
 
-__all__ = [OSFileWriter]
+def build_table(data, schema=None, micro_batch_size=100_000) -> pa.Table:
+    """build pyarrow table"""
+
+    def iter_batch():
+        for chunk in chunker(data, size=micro_batch_size):
+            yield pa.RecordBatch.from_pylist(
+                list(chunk),
+                schema=schema
+            )
+
+    return pa.Table.from_batches(
+        iter_batch()
+    )
