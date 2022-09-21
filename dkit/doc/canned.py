@@ -65,7 +65,7 @@ def histogram_plot(data, value_field, value_heading, entity_name, title=None, bi
 
 class ParetoAnalysis(object):
     """
-    Perform Paret analysis
+    Perform Pareto analysis
 
     args:
         - data: iterable of dicts
@@ -153,23 +153,32 @@ class ParetoAnalysis(object):
         }
 
     @is_table
-    def table(self, n=None, cum_percent=None):
+    def table(self, n=None, cum_percent=None, table_align="c"):
         """generate pareto table"""
         if n:
             data = self.top_n(n)
-        if cum_percent:
+        elif cum_percent:
             data = self.top_n_percent(cum_percent)
+        else:
+            data = self.calculated_data
 
+        # slightly different format required than matplotlib
+        float_format = self.float_format.replace("x", "")
         t = Table(
             data,
             [
-                Table.Field(self.variable_field, self.variable_name, 3),
-                Table.Field(self.value_field, "Value", 2, format_=self.float_format),
-                Table.Field("cumulative", "Cumulative", 2, format_=self.float_format),
-                Table.Field("percent", "%", format_=self.float_format),
-                Table.Field("cum_percent", "Cum %", format_=self.float_format),
+                Table.Field(self.variable_field, self.variable_name, 5),
+                Table.Field(self.value_field, "Value", 2,
+                            format_=float_format, align="right"),
+                Table.Field("cumulative", "Cumulative", 2,
+                            format_=float_format, align="right"),
+                Table.Field("percent", "%", format_=float_format + "%",
+                            align="right"),
+                Table.Field("cum_percent", "Cum %",
+                            format_=float_format + "%",
+                            align="right"),
             ],
-            align="l"
+            align=table_align
         )
 
         return t

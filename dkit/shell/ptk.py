@@ -54,10 +54,12 @@ class CmdCompleter(Completer):
     """
     Command dispatcher and completer
     """
+    cmd_map = {}
+
     def __init__(self, lst_commands):
-        self.cmd_map = {i.cmd: i for i in lst_commands}
-        self.cmd_map["help"] = HelpCmd(self)
-        self.cmd_map["clear"] = ClearCmd()
+        # self.cmd_map["clear"] = ClearCmd()
+        # self.cmd_map["help"] = HelpCmd(self),
+        self.cmd_map.update({i.cmd: i for i in lst_commands})
 
     @property
     def commands(self):
