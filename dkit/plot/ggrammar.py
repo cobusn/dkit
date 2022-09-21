@@ -169,7 +169,7 @@ class GeomTreeMap(GeomBar):
           colors are used
         - pad: pad around the rectangles
     """
-    def __init__(self, path: List[str], size_field: str, color_field: str = None,
+    def __init__(self, path: str, size_field: str, color_field: str = None,
                  color_map: str = "RdYlGn_r", alpha: float = 0.85, str_format=None,
                  pad: bool = True, *args, **kwargs):
         super().__init__(None, path, size_field, alpha, *args, **kwargs)
