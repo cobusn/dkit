@@ -288,12 +288,12 @@ class _SourceIterFactory(object):
         """instantiate an hdf5 source"""
         accessor = ext_tables.PyTablesAccessor(uri_struct["database"], mode="r")
         full_path = uri_struct["entity"]
-        where_clause = self.where_clause if self.where_clause else uri_struct["filter"]
+        # where_clause = self.where_clause if self.where_clause else uri_struct["filter"]
         self.cleanup.append(accessor)
         return ext_tables.PyTablesSource(
             accessor,
             full_path,
-            where_clause,
+            # where_clause,
             field_names=self.field_names,
         )
 
@@ -305,7 +305,7 @@ class _SourceIterFactory(object):
         return ext_sql_alchemy.SQLAlchemyTableSource(
             accessor,
             uri_struct["entity"],
-            where_clause=self.where_clause if self.where_clause else uri_struct["filter"],
+            # where_clause=self.where_clause if self.where_clause else uri_struct["filter"],
             field_names=self.field_names,
         )
 

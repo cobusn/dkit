@@ -24,6 +24,7 @@
 import importlib
 import logging
 import re
+from urllib.parse import urlencode
 from datetime import datetime
 from typing import Dict, List
 import itertools
@@ -108,7 +109,7 @@ class URL(object):
 
     """create SQlAlchemy URL from parameters"""
     def __init__(self, driver, username=None, password=None, host=None, port=None,
-                 database=None, options=None, **kwargs):
+                 database=None, parameters=None, **kwargs):
         self.drivername = driver
         self.username = username
         self.password = password
@@ -118,7 +119,7 @@ class URL(object):
         else:
             self.port = None
         self.database = database
-        self.options = options
+        self.parameters = parameters
 
     @property
     def _user(self):
@@ -156,8 +157,8 @@ class URL(object):
 
     @property
     def _options(self):
-        if self.options is not None:
-            return "?" + self.options
+        if self.parameters is not None:
+            return "?" + urlencode(self.parameters)
         else:
             return ""
 
