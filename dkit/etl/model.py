@@ -196,6 +196,8 @@ class Connection(map_db.Object):
     compression: str = None
     encryption: str = None
     options: str = None
+    parameters: Dict[str,str] = None
+    entity: str = None
 
     @staticmethod
     def get_listing(container):
@@ -214,8 +216,8 @@ class Connection(map_db.Object):
     def from_uri(cls, uri):
         """parse from uri"""
         uri_struct = uri_parser.parse(uri)
-        del uri_struct["entity"]
-        del uri_struct["filter"]
+        # del uri_struct["entity"] should no longer be there
+        # del uri_struct["filter"] should no longer be there
         return cls(**uri_struct)
 
     def as_uri(self):

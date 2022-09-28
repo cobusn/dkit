@@ -29,8 +29,8 @@ class TestEtlFactories(unittest.TestCase):
 
     def test_sink_db_driver(self):
         uri_list = [
-            "hdf5:///input_files/sample.h5?/data",
-            "sqlite:///input_files/sample.db?data",
+            "hdf5:///input_files/sample.h5#/data",
+            "sqlite:///input_files/sample.db#data",
         ]
         for the_uri in uri_list:
             uri_struct = uri_parser.parse(the_uri)
@@ -63,8 +63,8 @@ class TestEtlFactories(unittest.TestCase):
 
     def test_source_db_driver(self):
         uri_list = [
-            "hdf5:///input_files/sample.h5?/data#[score>10]",
-            "sqlite:///input_files/sample.db?data#[score>10]",
+            "hdf5:///input_files/sample.h5#/data",
+            "sqlite:///input_files/sample.db#data"
         ]
         for the_uri in uri_list:
             self.verify_list_from_uri(the_uri)

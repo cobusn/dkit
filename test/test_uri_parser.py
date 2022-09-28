@@ -44,9 +44,8 @@ class TestEndpointFactory(unittest.TestCase):
             "password": None,
             "host": None,
             "port": None,
+            "parameters": None,
             "entity": None,
-#            "encryption": None,
-            "filter": None
         }
 
     def test_file_dialects(self):
@@ -80,10 +79,10 @@ class TestEndpointFactory(unittest.TestCase):
         """file based sqlite dialect"""
         data = self.blank.copy()
         data["driver"] = "sqlite"
-        data["entity"] = "sales"
         data["dialect"] = "sqlite"
         data["database"] = "input_files/sample.db"
-        s = parse("sqlite:///input_files/sample.db?sales")
+        data["entity"] = "sales"
+        s = parse("sqlite:///input_files/sample.db#sales")
         self.assertEqual(data, s)
 
     def test_stdout_data(self):
@@ -135,29 +134,70 @@ class TestEndpointFactory(unittest.TestCase):
         """hdf5 based file dialect"""
         data = self.blank.copy()
         data["driver"] = "hdf5"
-        data["entity"] = "/sales/jan"
         data["dialect"] = "hdf5"
         data["database"] = "input_files/sample.h5"
-        data["filter"] = "name=='piet'"
-        s = parse("hdf5:///input_files/sample.h5?/sales/jan#[name=='piet']")
+        s = parse("hdf5:///input_files/sample.h5")
         self.assertEqual(data, s)
+
+    def test_t(self):
+        uri = (
+            "mysql://user:now#zzy@sample-db.co.za:99/database"
+            "?sales=10"
+            "&name=piet"
+        )
+        parse(uri)
 
     def test_network_db_endpoint_function(self):
         """sql based dialect"""
         tests = [
             [
-                "mysql://user:now#zzy@sample-db.co.za:99/database?sales#[a=10]",
-                {'username': 'user', 'password': 'now#zzy', 'host': 'sample-db.co.za',
-                 'port': '99', 'database': 'database', 'entity': 'sales',
-                 'dialect': "mysql", 'filter': 'a=10', 'driver': "mysql+mysqldb",
-                 'compression': None}
+                "mysql://user:now#zzy@sample-db.co.za:99/database",
+                {
+                    'username': 'user',
+                    'password': 'now#zzy',
+                    'host': 'sample-db.co.za',
+                    'port': '99',
+                    'database': 'database',
+                    'dialect': "mysql",
+                    'driver': "mysql+mysqldb",
+                    'compression': None,
+                    'parameters': None,
+                    'entity': None,
+                }
             ],
             [
                 "sybase://user:now#zzy@sample-db.co.za:99/database",
-                {'username': 'user', 'password': 'now#zzy', 'host': 'sample-db.co.za',
-                 'port': '99', 'database': 'database', 'entity': None,
-                 'dialect': "sybase", 'filter': None, 'driver': "sqlalchemy_sqlany",
-                 'compression': None}
+                {
+                    'username': 'user',
+                    'password': 'now#zzy',
+                    'host': 'sample-db.co.za',
+                    'port': '99',
+                    'database': 'database',
+                    'dialect': "sybase",
+                    'driver': "sqlalchemy_sqlany",
+                    'compression': None,
+                    'parameters': None,
+                    'entity': None,
+                }
+            ],
+            [
+                (
+                    "athena://access_key:secret_key@athena."
+                    "af-south-1.amazonaws.com:443/db"
+                    "?s3_staging_dir=s3://test/results"
+                ),
+                {
+                    'dialect': "athena",
+                    'username': 'access_key',
+                    'password': 'secret_key',
+                    'host': 'athena.af-south-1.amazonaws.com',
+                    'port': '443',
+                    'database': 'db',
+                    'driver': "awsathena+rest",
+                    'compression': None,
+                    'parameters': {'s3_staging_dir': 's3://test/results'},
+                    'entity': None,
+                }
             ],
         ]
         for test in tests:

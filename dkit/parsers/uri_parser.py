@@ -33,8 +33,11 @@ FILE_DIALECTS = [
 ]
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]
-NETWORK_DIALECTS = ["sybase", "mysql", "oracle", "mssql", "postgres", "impala"]
+NETWORK_DIALECTS = [
+    "athena", "sybase", "mysql", "oracle", "mssql", "postgres", "impala"
+]
 SQL_DRIVERS = {
+    "athena": "awsathena+rest",
     "firebird": "firebird+fdb",
     "sybase": "sqlalchemy_sqlany",
     "hdf5": "hdf5",
@@ -52,9 +55,10 @@ class URIStruct:
     Helper class that ensure parsed dictionary contains the correct
     fields.
     """
-    def __init__(self, dialect=None, driver=None, database=None, username=None, password=None,
-                 host=None, port=None, compression=None, entity=None, filter=None):
-        # encryption=None):
+    def __init__(self, dialect=None, driver=None, database=None,
+                 username=None, password=None, host=None, port=None,
+                 compression=None, parameters=None, entity=None):
+        # encryption=None:
         self.dialect = dialect
         self.driver = driver
         self.database = database
@@ -63,9 +67,8 @@ class URIStruct:
         self.host = host
         self.port = port
         self.compression = compression
+        self.parameters = parameters
         self.entity = entity
-        # self.encryption = encryption
-        self.filter = filter
 
     @classmethod
     def from_uri(cls, uri):
@@ -160,7 +163,8 @@ def _parse_file_db_endpoint(host_string):
     # user:password@hostname:port/database::entity[filter]
     rx = (
         r"(?P<database>[a-zA-Z0-9_./]+)"                 # file
-        r"(?:\?(?P<entity>[a-zA-Z0-9/_-]+)(?:#\[(?P<filter>.+)\])?)?"  # entity
+        r"(?:\#(?P<entity>[a-zA-Z0-9/_-]+))?"             # entity
+        # r"(?:#\[(?P<filter>.+)\])?)?"                  # filter
         r"$"                                             # end of rx
     )
     m = re.match(rx, host_string)
@@ -170,21 +174,36 @@ def _parse_file_db_endpoint(host_string):
         return None
 
 
+def _parse_uri_parameters(inner_text):
+    """parse uri parameters"""
+    if not inner_text:
+        return None
+    rv = {}
+    inner = r"(\?|\&)([^=]+)\=([^&]+)"
+    for i in re.findall(inner, inner_text):
+        rv[i[1]] = i[2]
+    return rv
+
+
 def _parse_network_db(host_string):
     """parse host details including port etc."""
     # user:password@hostname:port/database?entity[filter]
     rx = (
         r"(?P<dialect>{}):\/\/".format("|".join(NETWORK_DIALECTS)) +
-        r"(?:(?P<username>.+):(?P<password>.*)@)?"       # username / password
-        r"(?P<host>[a-zA-Z0-9_.-]+)"                      # host
-        r"(?::(?P<port>[0-9]+))?"                        # port
-        r"(?:\/(?P<database>[-.\w]+))?"                      # database
-        r"(?:\?(?P<entity>[\w_]+)(?:#\[(?P<filter>.+)\])?)?"  # entity
-        r"$"                                             # end of rx
+        r"(?:(?P<username>.+):(?P<password>.*)@)?"   # username / password
+        r"(?P<host>[a-zA-Z0-9_.-]+)"                 # host
+        r"(?::(?P<port>[0-9]+))?"                    # port
+        r"(?:\/(?P<database>[-.\w]+))?"              # database
+        r"(?P<parameters>\?[\w\d_\-=&\s.|/:()*%]+)?"   # parameters
+        r"$"                                         # end of rx
     )
     m = re.match(rx, host_string)
     if m is not None:
-        retval = URIStruct(**m.groupdict()).as_dict()
+        results = m.groupdict()
+        results["parameters"] = _parse_uri_parameters(
+            results["parameters"]
+        )
+        retval = URIStruct(**results).as_dict()
         retval["driver"] = SQL_DRIVERS[retval["dialect"]]
         return retval
     else:
