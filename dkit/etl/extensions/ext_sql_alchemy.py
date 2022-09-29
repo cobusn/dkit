@@ -35,6 +35,7 @@ from ...exceptions import DKitETLException
 from ...utilities.cmd_helper import LazyLoad
 from ...utilities import identifier
 from ...data.containers import DictionaryEmulator
+from ...parsers.uri_parser import SQL_DRIVERS
 
 jinja2 = LazyLoad("jinja2")
 ora = LazyLoad("cx_Oracle")
@@ -47,8 +48,7 @@ def _rfc_1738_quote(text):
 
 
 VALID_DIALECTS = [
-    "firebird", "mssql", "mysql", "oracle",
-    "postgresql", "sqlite", "sybase", "impala"
+    k for k in sorted(SQL_DRIVERS.keys())
 ]
 
 # map between SQL types and closest Canonnical type
@@ -414,8 +414,8 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
     def __get_dialect(self, dialect):
         if dialect not in VALID_DIALECTS:
             raise DKitETLException(
-                messages.MSG_0020.format(dialect)
-            )
+               messages.MSG_0020.format(dialect)
+           )
         _module_name = f"sqlalchemy.dialects.{dialect}"
         return importlib.import_module(_module_name)
 
