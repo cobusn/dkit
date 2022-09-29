@@ -95,7 +95,11 @@ class SchemaModule(module.CRUDModule):
         do_close = False    # used to close file, if opened
         services = self.load_services()
         all_entity_names = list(services.model.entities.keys())
-        entity_names = list(sorted(iteration.glob_list(all_entity_names, self.args.glob)))
+        entity_names = list(
+            sorted(
+                iteration.glob_list(all_entity_names, self.args.glob)
+            )
+        )
 
         # export model
         if self.args.type == "model":
@@ -225,10 +229,13 @@ class SchemaModule(module.CRUDModule):
         options.add_option_yes(parser_rm)
 
         # export
-        parser_export = self.sub_parser.add_parser("export", help=self.do_export.__doc__)
+        parser_export = self.sub_parser.add_parser(
+            "export", help=self.do_export.__doc__
+        )
         options.add_option_defaults(parser_export)
         parser_export.add_argument(
             "-t", "--type", choices=[
+                'pyarrow',
                 'dot',
                 'model',
                 'spark',
@@ -237,9 +244,13 @@ class SchemaModule(module.CRUDModule):
             ],
             help="export type", required=True
         )
-        parser_export.add_argument("--dialect", default=None,
-                                   choices=sa.VALID_DIALECTS)
-        parser_export.add_argument("-o", "--output", help="Export to file", default=None)
+        parser_export.add_argument(
+            "--dialect", default=None, choices=sa.VALID_DIALECTS,
+            help="Dialects for SQL schema exports"
+        )
+        parser_export.add_argument(
+            "-o", "--output", help="Export to file", default=None
+        )
         options.add_option_glob(parser_export)
 
         # grep

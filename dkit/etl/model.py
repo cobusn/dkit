@@ -80,7 +80,7 @@ class Entity(containers.DictionaryEmulator):
     @classmethod
     def from_iterable(cls, iter_src: source.AbstractSource, p: float, k: int):
         """
-        infer Entity schema from input iterable
+        Constructor that infer Entity schema from input iterable
 
         Args:
             src: source instance
@@ -92,6 +92,19 @@ class Entity(containers.DictionaryEmulator):
         """
         cerberus_schema = schema.EntityValidator.dict_from_iterable(iter_src,  p=p, stop=k)
         return cls.from_cerberus(cerberus_schema)
+
+    @classmethod
+    def from_encoded_dict(cls, encoded_dict):
+        """
+        constructor that create instance from a shorthand encoded
+        dictionary such as read from a yaml file
+        """
+        retval = cls()
+        # object is decoded and then encoded to validate  it
+        retval.store = cls.encode(
+            cls.decode(encoded_dict)
+        )
+        return retval
 
     @classmethod
     def from_cerberus(cls, cerberus_dict):
@@ -111,7 +124,7 @@ class Entity(containers.DictionaryEmulator):
 
     def as_entity_validator(self):
         """
-        Create SchemaValidator instance from self
+        Create a Cerberus SchemaValidator instance from self
         """
         d = self.as_dict()
         decoded = self.decode(d)
@@ -196,7 +209,7 @@ class Connection(map_db.Object):
     compression: str = None
     encryption: str = None
     options: str = None
-    parameters: Dict[str,str] = None
+    parameters: Dict[str, str] = None
     entity: str = None
 
     @staticmethod
@@ -791,16 +804,23 @@ class ETLServices(object):
 
         """
         entities, relations = self.__get_entity_relations(entity_names)
-        # export to graphviz
-        if kind == "dot":
+        # export schema
+        if kind == "pyarrow":
+            exporter = importlib.import_module("dkit.etl.extensions.ext_arrow")
+            arrow_entities = {
+                k: v.as_entity_validator() for k, v in entities.items()
+            }
+            exported = exporter.ArrowSchemaGenerator(**arrow_entities).create_schema()
+
+        elif kind == "dot":
             exporter = importlib.import_module("dkit.etl.extensions.ext_graphviz")
             exported = exporter.create_erd(entities, relations)
 
         elif kind == "spark":
             # pyspark
             exporter = importlib.import_module("dkit.etl.extensions.ext_spark")
-            spark_entities = {k: v.as_entity_validator() for k, v in entities.items()}
-            exported = exporter.SchemaGenerator(**spark_entities).create_schema()
+            arrow_entities = {k: v.as_entity_validator() for k, v in entities.items()}
+            exported = exporter.SchemaGenerator(**arrow_entities).create_schema()
 
         elif kind == "sql.select":
             # sql via sqlalchemy

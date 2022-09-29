@@ -1,13 +1,37 @@
 import unittest
 import sys; sys.path.insert(0, "..")  # noqa
 
-from dkit.etl.extensions.ext_arrow import build_table, infer_arrow_schema, make_arrow_schema
+from dkit.etl.extensions.ext_arrow import (
+    build_table, infer_arrow_schema, make_arrow_schema,
+    ArrowSchemaGenerator
+)
 from dkit.data.fake_helper import persons, generate_test_rows, CANNONICAL_ROW_SCHEMA
 import pyarrow as pa
 from dkit.etl.model import Entity
+from dkit.etl.schema import EntityValidator
+from zlib import adler32
 
 
-class TestCase(unittest.TestCase):
+class TestPyArrowSchemaExport(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = EntityValidator(
+            {
+                "name": {"type": "string"},
+                "surname": {"type": "string"},
+                "age": {"type": "integer"},
+            }
+        )
+
+    def test_schema(self):
+        g = ArrowSchemaGenerator(client=self.client)
+        print(g.create_schema())
+        h = adler32(g.create_schema().encode())
+        # self.assertTrue(h in (3394729576, 3313858152))
+
+
+class TestPyArrowExtension(unittest.TestCase):
 
     def test_create_table_noschema(self):
         """create table from data"""

@@ -347,6 +347,14 @@ def add_option_entity(parser):
     parser.add_argument('-e', '--entity', help="entity name", required=True)
 
 
+def add_option_entity_or_yaml(parser):
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-e', '--entity', help="entity name")
+    group.add_argument(
+        '--yaml', help="entity from yaml instead of model"
+    )
+
+
 def add_arg_entities(parser):
     """list of entities"""
     parser.add_argument("entities", metavar="entity", nargs="+",

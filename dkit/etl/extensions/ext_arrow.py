@@ -23,7 +23,7 @@
 Extension for pyarrow
 
 =========== =============== =================================================
-Julk 2019   Cobus Nel       Initial version
+July 2019   Cobus Nel       Initial version
 =========== =============== =================================================
 """
 
@@ -33,8 +33,36 @@ from ...data.iteration import chunker
 from ..model import Entity
 from itertools import islice, chain
 import pyarrow as pa
+from jinja2 import Template
 
 __all__ = ["OSFileWriter"]
+
+str_template = """
+import pyarrow as pa
+
+{% for entity, typemap in entities.items() %}
+
+# {{ entity }}
+schema_{{ entity }} = pa.schema(
+    [
+        {% for field, props in typemap.schema.items() -%}
+          {% if "nullable" in props -%}
+            {% set nullable = ", " + str(props["nullable"]) -%}
+          {% else -%}
+            {% set nullable = "" -%}
+        {% endif -%}
+        pa.field("{{ field }}", pa.{{ tm[props["type"]] }}(){{ nullable }}),
+        {% endfor -%}
+    ]
+)
+{%- endfor %}
+
+entity_map = {
+{%- for entity in entities.keys() %}
+    "{{ entity }}": schema_{{ entity }},
+{%- endfor %}
+}
+"""
 
 # convert cannonical to arrow
 ARROW_TYPEMAP = {
@@ -67,6 +95,47 @@ def make_arrow_schema(cannonical_schema: Entity):
             )
         )
     return pa.schema(fields)
+
+
+class ArrowSchemaGenerator(object):
+    """
+    Create .py file that define pyarrow schema fromm
+    cannonical entity schema (s).
+    """
+
+    def __init__(self, **entities):
+        self.__entities = entities
+        self.type_map = {
+            k: self.str_name(v)
+            for k, v in
+            ARROW_TYPEMAP.items()
+        }
+
+    @staticmethod
+    def str_name(obj):
+        """appropriate string name for pyarrow object"""
+        sn = str(obj)
+        if sn == "float":
+            sn = f"{sn}{obj.bit_width}"
+        return sn
+
+    @property
+    def entities(self):
+        """
+        dictionary of entities
+        """
+        return self.__entities
+
+    def create_schema(self):
+        """
+        Create python code to define pyarrow schema
+        """
+        template = Template(str_template)
+        return template.render(
+            entities=self.entities,
+            tm=self.type_map,
+            str=str
+        )
 
 
 def infer_arrow_schema(iterable, n=50):
