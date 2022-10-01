@@ -62,69 +62,6 @@ class MsgpackSource(source.AbstractMultiReaderSource):
         self.stats.stop()
 
 
-class LegacyMsgpackSource(source.AbstractMultiReaderSource):
-
-    def __init__(self, reader_list, field_names=None, encoder=msgpack_utils.MsgpackEncoder):
-        super().__init__(reader_list, field_names)
-        self.encoder = encoder()
-
-    def iter_some_fields(self, field_names):
-        self.stats.start()
-        for o_reader in self.reader_list:
-            if o_reader.is_open:
-                yield from (
-                    {k: r[k] for k in field_names}
-                    for r in self.encoder.unpacker(o_reader)
-                )
-                self.stats.increment()
-            else:
-                with o_reader.open() as in_file:
-                    yield from (
-                        {k: r[k] for k in field_names}
-                        for r in self.encoder.unpacker(in_file)
-                    )
-                    self.stats.increment()
-        self.stats.stop()
-
-    def iter_all_fields(self):
-        self.stats.start()
-        for o_reader in self.reader_list:
-            if o_reader.is_open:
-                for row in self.encoder.unpacker(o_reader):
-                    yield row
-                    self.stats.increment()
-            else:
-                with o_reader.open() as in_file:
-                    for row in self.encoder.unpacker(in_file):
-                        yield row
-                        self.stats.increment()
-        self.stats.stop()
-
-
-class delete_me__MsgpackSink(sink.FileIteratorSink):
-    """
-    Serialize Dictionary Line to msgpack
-
-    http://msgpack.org/index.html/
-    """
-    def __init__(self, writer, field_names=None):
-        super().__init__(writer)
-        self.field_names = field_names
-        if field_names is not None:
-            self.process_line = self.__process_line_selected_fields
-        self.encoder = __import__("msgpack")
-
-    def __process_line_selected_fields(self, entry, out_stream):
-        """
-        Monkey patching waring...
-        """
-        out_record = {k: entry[k] for k in self.field_names}
-        self.encoder.pack(out_record, out_stream)
-
-    def process_line(self, entry, out_stream):
-        self.encoder.pack(entry, out_stream)
-
-
 class MsgpackSink(sink.AbstractSink):
     """
     Serialize Dictionary Line to msgpack

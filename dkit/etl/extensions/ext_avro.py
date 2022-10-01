@@ -30,15 +30,11 @@ NO
 """
 from itertools import islice, chain
 from typing import Iterable
-
-from fastavro import (
-    writer as avro_writer,
-    reader as avro_reader,
-    parse_schema
-)
-
+from ...utilities.cmd_helper import LazyLoad
 from .. import sink, writer, source
 from ..model import Entity
+
+fast_avro = LazyLoad("fastavro")
 
 """
 Avro core types:
@@ -143,8 +139,8 @@ class AvroSink(sink.FileIteratorSink):
     def __write(self, stream: writer.Writer, the_iterable: Iterable):
         """internal write function"""
         schema, the_iterable = self._get_schema(the_iterable)
-        parsed_schema = parse_schema(schema)
-        avro_writer(
+        parsed_schema = fast_avro.parse_schema(schema)
+        fast_avro.writer(
             stream,
             parsed_schema,
             the_iterable,
@@ -191,12 +187,12 @@ class AvroSource(source.AbstractMultiReaderSource):
         stats = self.stats.start()
         for o_reader in self.reader_list:
             if o_reader.is_open:
-                for record in avro_reader(o_reader):
+                for record in fast_avro.reader(o_reader):
                     yield({k: v for k, v in record.items() if k in field_names})
                     stats.increment()
             else:
                 with o_reader.open() as in_file:
-                    for record in avro_reader(in_file):
+                    for record in fast_avro.reader(in_file):
                         yield({k: v for k, v in record.items() if k in field_names})
                         stats.increment()
         stats.stop()
@@ -208,12 +204,12 @@ class AvroSource(source.AbstractMultiReaderSource):
         stats = self.stats.start()
         for o_reader in self.reader_list:
             if o_reader.is_open:
-                for record in avro_reader(o_reader):
+                for record in fast_avro.reader(o_reader):
                     yield record
                     stats.increment()
             else:
                 with o_reader.open() as in_file:
-                    for record in avro_reader(in_file):
+                    for record in fast_avro.reader(in_file):
                         yield record
                         stats.increment()
         stats.stop()
