@@ -1,15 +1,29 @@
-import unittest
 import sys; sys.path.insert(0, "..")  # noqa
+import unittest
+from zlib import adler32
 
-from dkit.etl.extensions.ext_arrow import (
-    build_table, infer_arrow_schema, make_arrow_schema,
-    ArrowSchemaGenerator
-)
-from dkit.data.fake_helper import persons, generate_test_rows, CANNONICAL_ROW_SCHEMA
 import pyarrow as pa
+
+from dkit.data.fake_helper import (
+    persons, generate_test_rows, CANNONICAL_ROW_SCHEMA
+)
+from dkit.etl import source
+from dkit.etl.extensions.ext_arrow import (
+    build_table,
+    infer_arrow_schema,
+    make_arrow_schema,
+    ArrowSchemaGenerator,
+    ParquetSink,
+    ParquetSource
+)
 from dkit.etl.model import Entity
 from dkit.etl.schema import EntityValidator
-from zlib import adler32
+from dkit.etl.writer import FileWriter
+from dkit.etl.reader import FileReader
+
+PARQUET_FILE = "output/mtcars.parquet"
+with source.load("data/mtcars.jsonl") as infile:
+    MTCARS = list(infile)
 
 
 class TestPyArrowSchemaExport(unittest.TestCase):
@@ -26,9 +40,8 @@ class TestPyArrowSchemaExport(unittest.TestCase):
 
     def test_schema(self):
         g = ArrowSchemaGenerator(client=self.client)
-        print(g.create_schema())
         h = adler32(g.create_schema().encode())
-        # self.assertTrue(h in (3394729576, 3313858152))
+        self.assertTrue(h in (3140830570,))
 
 
 class TestPyArrowExtension(unittest.TestCase):
@@ -96,6 +109,39 @@ class TestPyArrowExtension(unittest.TestCase):
             len(list(i)),
             100
         )
+
+
+class A_TestParquetSink(unittest.TestCase):
+
+    def test_parquet_sink_auto_schema(self):
+        """test writing to parquet with auto generated schema"""
+        w = FileWriter(PARQUET_FILE, "wb")
+        snk = ParquetSink(w)
+        snk.process(MTCARS)
+
+
+class B_TestParquetSource(unittest.TestCase):
+
+    def test_parquet_source(self):
+        """test writing to parquet with auto generated schema"""
+        r = FileReader(PARQUET_FILE, "rb")
+        src = ParquetSource([r])
+        data = list(src)
+        self.assertEqual(
+            data,
+            MTCARS
+        )
+
+    def test_parquet_source_some_fields(self):
+        """test writing to parquet with auto generated schema"""
+        r = FileReader(PARQUET_FILE, "rb")
+        src = ParquetSource([r], field_names=["disp", "drat"])
+        data = list(src)
+        rows = [
+            {k: row[k] for k in ["disp", "drat"]}
+            for row in MTCARS
+        ]
+        self.assertEqual(data, rows)
 
 
 if __name__ == '__main__':

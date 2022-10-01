@@ -11,7 +11,8 @@ from .extensions import (
     ext_tables,
     ext_xlsx,
     ext_xls,
-    ext_avro
+    ext_avro,
+    ext_arrow
 )
 
 import gzip
@@ -20,7 +21,7 @@ import lzma
 import _pickle
 from ..parsers import uri_parser
 
-BINARY_DIALECTS = ["mpak", "pkl", "avro"]
+BINARY_DIALECTS = ["mpak", "pkl", "avro", "parquet"]
 
 READER_MAP = {
     None: reader.FileReader,
@@ -31,6 +32,7 @@ READER_MAP = {
 }
 
 SOURCE_MAP = {
+    "parquet": ext_arrow.ParquetSource,
     "avro": ext_avro.AvroSource,
     "bxr": ext_bxr.BXRSource,
     "csv": source.CsvDictSource,
@@ -44,6 +46,7 @@ SOURCE_MAP = {
 }
 
 SINK_MAP = {
+    "parquet": ext_arrow.ParquetSink,
     "avro": ext_avro.AvroSink,
     "bxr": ext_bxr.BXRSink,
     "csv": sink.CsvDictSink,

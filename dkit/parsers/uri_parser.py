@@ -23,13 +23,13 @@ import re
 from .. import exceptions, messages
 
 
-COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4', "snappy"]
+COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4']  # , "snappy"]
 ENCRYPTION_FORMATS = ['aes']
 RE_COMRESSION_FORMATS = "|".join(COMPRESSION_FORMATS)
 RE_ENCRYPTION_FORMATS = "|".join(ENCRYPTION_FORMATS)
 FILE_DIALECTS = [
     'csv', 'jsonl', 'json', 'tsv', 'xlsx', 'xls', 'xml', 'bxr',
-    'pkl', 'mpak', 'pke', 'avro'
+    'pkl', 'mpak', 'pke', 'avro', 'parquet'
 ]
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]

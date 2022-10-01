@@ -24,18 +24,26 @@ Extension for pyarrow
 
 =========== =============== =================================================
 July 2019   Cobus Nel       Initial version
+Sept 2022   Cobus Nel       Added:
+                            - schema create tools
+                            - Parquet source and sinks
 =========== =============== =================================================
 """
-
-
-from ..writer import ClosedWriter
+from ... import CHUNK_SIZE
+from ...utilities.cmd_helper import LazyLoad
+from .. import source, sink
 from ...data.iteration import chunker
 from ..model import Entity
 from itertools import islice, chain
-import pyarrow as pa
 from jinja2 import Template
 
-__all__ = ["OSFileWriter"]
+# import pyarrow as pa
+pa = LazyLoad("pyarrow")
+
+# import pyarrow.parquet as pq
+pq = LazyLoad("pyarrow.parquet")
+
+__all__ = []
 
 str_template = """
 import pyarrow as pa
@@ -154,23 +162,7 @@ def infer_arrow_schema(iterable, n=50):
     return schema, chain(buffer, i)
 
 
-class OSFileWriter(ClosedWriter):
-    """
-    pyarrow OSWriter abstraction
-
-    :param path: file path
-    :param mode: file mode
-    """
-    def __init__(self, path, mode="rb"):
-        self.path = path
-        self.mode = mode
-        self.pa = pa
-
-    def open(self):
-        return self.pa.OSFile(self.path, self.mode)
-
-
-def build_table(data, schema=None, micro_batch_size=100_000) -> pa.Table:
+def build_table(data, schema=None, micro_batch_size=CHUNK_SIZE) -> pa.Table:
     """build pyarrow table"""
 
     def iter_batch():
@@ -183,3 +175,119 @@ def build_table(data, schema=None, micro_batch_size=100_000) -> pa.Table:
     return pa.Table.from_batches(
         iter_batch()
     )
+
+
+class ParquetSource(source.AbstractMultiReaderSource):
+    """
+    Read parquet sources and convert to dict record format
+    using the pyarrow library with record batches.
+
+    Parameters:
+        - reader_list: list of reader objects
+        - field_names: extract only these fields
+        - chunk_size: number of rows per batch (default 64K)
+
+    """
+    def __init__(self, reader_list, field_names=None, chunk_size=CHUNK_SIZE):
+        super().__init__(reader_list, field_names)
+        self.chunk_size = chunk_size
+
+    def iter_some_fields(self, field_names):
+        """convert parquet to dict records and yield per record
+
+        only return required records
+        """
+        self.stats.start()
+
+        for o_reader in self.reader_list:
+
+            if o_reader.is_open:
+                parq_file = pq.ParquetFile(o_reader)
+                for batch in parq_file.iter_batches(
+                    self.chunk_size, columns=self.field_names
+                ):
+                    yield from batch.to_pylist()
+                    self.stats.increment(self.chunk_size)
+            else:
+                with o_reader.open() as in_file:
+                    parq_file = pq.ParquetFile(in_file)
+                    for batch in parq_file.iter_batches(
+                        self.chunk_size, columns=self.field_names
+                    ):
+                        yield from batch.to_pylist()
+                        self.stats.increment(self.chunk_size)
+
+        self.stats.stop()
+
+    def iter_all_fields(self):
+        """convert parquet to dict records and yield per record"""
+        self.stats.start()
+
+        for o_reader in self.reader_list:
+
+            if o_reader.is_open:
+                parq_file = pq.ParquetFile(o_reader)
+                for batch in parq_file.iter_batches(self.chunk_size):
+                    yield from batch.to_pylist()
+                    self.stats.increment(self.chunk_size)
+            else:
+                with o_reader.open() as in_file:
+                    parq_file = pq.ParquetFile(in_file)
+                    for batch in parq_file.iter_batches(self.chunk_size):
+                        yield from batch.to_pylist()
+                        self.stats.increment(self.chunk_size)
+
+        self.stats.stop()
+
+
+class ParquetSink(sink.AbstractSink):
+    """
+    serialize dict records data to parquet
+
+    using the pyarrow library
+    """
+    def __init__(self, writer, field_names=None, schema=None,
+                 chunk_size=50_000, compression="snappy"):
+        super().__init__()
+        self.writer = writer
+        self.chunk_size = chunk_size
+        self.schema = schema
+        self.compression = compression
+        if field_names is not None:
+            raise NotImplementedError("field_names not implemented")
+
+    def __write_all(self, writer, the_iterator):
+        """write data to parquet"""
+        table = self.__build_table(the_iterator, self.schema, self.chunk_size)
+        pq.write_table(
+            table,
+            writer,
+            compression=self.compression,
+        )
+
+    def __build_table(self, data, schema, micro_batch_size) -> pa.Table:
+        """ build pyarrow table """
+        # the same code as the standalone build_table function
+        # but add code for incrementing counters
+
+        def iter_batch():
+            for chunk in chunker(data, size=micro_batch_size):
+                yield pa.RecordBatch.from_pylist(
+                    list(chunk),
+                    schema=schema
+                )
+                self.stats.increment(micro_batch_size)
+
+        return pa.Table.from_batches(
+            iter_batch()
+        )
+
+    def process(self, the_iterator):
+        self.stats.start()
+        if self.writer.is_open:
+            self.__write_all(self.writer, the_iterator)
+        else:
+            with self.writer.open() as out_stream:
+                self.__write_all(out_stream, the_iterator)
+        self.stats.stop()
+        return self

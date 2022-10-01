@@ -121,7 +121,11 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_head(self):
         """print first n entries with optional sampling"""
-        self.tabulate(self.input_stream(self.args.input))
+        self.tabulate(
+            self.input_stream(
+                self.args.input
+            )
+        )
 
     def do_histogram(self):
         """generate histogram for field"""
