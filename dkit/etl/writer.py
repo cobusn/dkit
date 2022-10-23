@@ -23,10 +23,12 @@ import bz2
 import codecs
 import lzma
 import gzip
-import posix_ipc
 import io
 import mmap
 from ..exceptions import DKitETLException
+from ..utilities.cmd_helper import LazyLoad
+
+posix_ipc = LazyLoad("posix_ipc")
 
 
 class Writer(object):
