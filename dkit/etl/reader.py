@@ -26,11 +26,12 @@ import re
 import sys
 import tarfile
 import mmap
-import posix_ipc
 import logging
 from . import DEFAULT_READ_CHUNK_SIZE
+from ..utilities.cmd_helper import LazyLoad
 
 
+posix_ipc = LazyLoad("posix_ipc")
 logger = logging.getLogger(__name__)
 
 

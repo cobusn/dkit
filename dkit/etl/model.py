@@ -403,7 +403,11 @@ def load_config(config):
         return c
 
 
-def load_model(cls, model_filename, config):
+def _load_model(cls, model_filename, config):
+    """helper function
+
+    do not call directly
+    """
     if model_filename is None:
         model_filename = DEFAULT_MODEL_FILE
 
@@ -458,7 +462,7 @@ class ModelManager(map_db.FileObjectMapDB):
             - model_filename: filename for model.yml file (assume model.yml)
             - config_instance: configuration file instance
         """
-        return load_model(
+        return _load_model(
             cls,
             model_filename,
             load_config(config),
@@ -679,7 +683,7 @@ class ETLServices(object):
         """
         _config = load_config(config_filename)
         return cls(
-            load_model(ModelManager, model_filename, _config),
+            _load_model(ModelManager, model_filename, _config),
             _config
         )
 
