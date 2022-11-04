@@ -51,9 +51,9 @@ float           types.Float32
 
 # convert cannonical to avro
 AVRO_TYPEMAP = {
-    "float":   "double",
-    "double":  "double",
-    "integer": "long",
+    "float":   "float",   # 32 bit
+    "double":  "double",  # 64 bit
+    "integer": "int",
     "int8":    "int",
     "int16":   "int",
     "int32":   "int",

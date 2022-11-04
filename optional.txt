@@ -1,5 +1,4 @@
 tables
-sqlalchemy
 scipy
 pyarrow
 psycopg2-binary
@@ -8,3 +7,4 @@ impyla
 sqlalchemy-pyodbc-mssql
 cx_Oracle
 mysqlclient
+awswrangler

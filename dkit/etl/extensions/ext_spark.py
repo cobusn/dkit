@@ -66,7 +66,7 @@ class SchemaGenerator(object):
         "decimal": "DecimalType",
         "float": "FloatType",
         "double": "Doubleype",
-        "integer": "LongType",
+        "integer": "IntegerType",
         "int8": "ByteType",
         "int16": "ShortType",
         "int32": "IntegerType",

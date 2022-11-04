@@ -30,6 +30,7 @@ from dkit.data import infer
 from dateutil import parser
 import decimal
 
+
 class ModelFactory(object):
 
     def __init__(self, default_str_len=255):
@@ -95,6 +96,24 @@ class EntityValidator(cerberus.Validator):
         "datetime": parse_datetime,
         "date": parse_datetime,
         "decimal": parse_decimal,
+    }
+    # This list is just a reminder of what types are
+    # defined, it is used by `dk schema show_types`
+    type_description = {
+        "string": "string",
+        "binary": "sequence of 8bit bytes",
+        "int8": "8 bit integer",
+        "int16": "16 bit integer",
+        "int32": "32 bit integer",
+        "int64": "64 bit integer",
+        "integer": "32 bit integer",
+        "boolean": "boolean",
+        "decimal": "Decimal",
+        "float": "32 bit float",
+        "double": "64 bit float",
+        "date": "datetime.date",
+        "datetime": "datetime.datetime",
+        "time": "datetime.time",
     }
 
     def _validate_str_len(self, strlen, field, value):
