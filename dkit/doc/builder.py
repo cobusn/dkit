@@ -96,7 +96,11 @@ def jsonise(fn) -> str:
         ju.DateCodec(),
         ju.Decimal2FloatCodec()
     )
-    j = encoder.dumps(fn.as_dict())
+    try:
+      j = encoder.dumps(fn.as_dict())
+    except Exception as E:
+      print(fn.as_dict())
+      breakpoint()
     return f"```jsoninclude\n{j}\n```\n"
 
 

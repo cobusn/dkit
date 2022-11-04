@@ -671,7 +671,7 @@ class LongTable(TexFoundation):
             return "".join(["({},{})".format(i, v) for i, v in enumerate(data)])
 
         def tikz(self, row):
-            raw = self.child_data(row)
+            raw = [round(i,3) for i in self.child_data(row)]
             n = len(raw)
             if n > 0:
                 _max = max(raw)
