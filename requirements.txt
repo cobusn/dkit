@@ -1,5 +1,4 @@
 boltons
-pdfrw
 cerberus
 cffi
 collections-extended
@@ -18,6 +17,7 @@ msgpack
 nose
 openpyxl
 paramiko
+pdfrw
 posix_ipc
 pylint==2.5.2
 pyparsing
@@ -28,6 +28,7 @@ reportlab
 requests
 sphinx
 sphinxcontrib-napoleon
+sqlalchemy
 squarify
 tabulate
 tqdm

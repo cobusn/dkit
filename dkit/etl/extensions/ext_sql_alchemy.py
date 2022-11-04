@@ -415,7 +415,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
         if dialect not in VALID_DIALECTS:
             raise DKitETLException(
                messages.MSG_0020.format(dialect)
-           )
+            )
         _module_name = f"sqlalchemy.dialects.{dialect}"
         return importlib.import_module(_module_name)
 
