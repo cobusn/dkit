@@ -17,6 +17,7 @@
 #
 import time
 from datetime import date, datetime, timedelta, timezone
+import calendar
 from typing import Iterable, Iterator
 
 from dateutil.relativedelta import relativedelta
@@ -188,6 +189,18 @@ def first_day_of_month(the_date: AnyDate) -> date:
     returns date of first day of month
     """
     return date(the_date.year, the_date.month, 1)
+
+
+def last_day_of_month(the_date: AnyDate) -> date:
+    """
+    returns last day of month given any date
+
+    reference:
+        https://stackoverflow.com/questions/42950/how-to-get-the-last-day-of-the-month
+
+    """
+    day = calendar.monthrange(the_date.year, the_date.month)[1]
+    return date(the_date.year, the_date.month, day)
 
 
 def datestamp(the_date: AnyDate) -> int:

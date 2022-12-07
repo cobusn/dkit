@@ -10,6 +10,7 @@ flask
 inflect
 ipython
 jinja2
+lxml
 lz4
 matplotlib
 mistune==0.8.4
@@ -19,6 +20,7 @@ openpyxl
 paramiko
 pdfrw
 posix_ipc
+pyarrow
 pylint==2.5.2
 pyparsing
 python-dateutil

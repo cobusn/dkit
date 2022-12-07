@@ -76,6 +76,18 @@ class TestTimeHelper(common.TestBase):
             date(2019, 12, 1)
         )
 
+    def test_last_day_of_month(self):
+        tests = [
+           (date(2022, 1, 4), date(2022, 1, 31)),
+           (datetime(2022, 1, 4), date(2022, 1, 31)),
+           (datetime(2024, 2, 1), date(2024, 2, 29)),
+        ]
+        for test in tests:
+            self.assertEqual(
+                time_helper.last_day_of_month(test[0]),
+                test[1]
+            )
+
     def test_date_range_pairs(self):
         """
         daterange()
