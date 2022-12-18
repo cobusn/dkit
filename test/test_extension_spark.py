@@ -39,7 +39,7 @@ class TestExtSpark(unittest.TestCase):
     def test_schema(self):
         g = SchemaGenerator(client=self.client)
         h = adler32(g.create_schema().encode())
-        self.assertTrue(h in (3394729576, 3313858152))
+        self.assertTrue(h in (446724324, 436173028))
 
 
 if __name__ == '__main__':

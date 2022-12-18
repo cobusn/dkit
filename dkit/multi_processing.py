@@ -23,9 +23,10 @@ Utilities to assist with running multiprocessing applications.
 
 This library provides for two types of multiprocessing applications:
 
-    * **list oriented** pipelines where operations are completed on lists of similar objectsgt
-    * **task oriented** pipelines where a task is performed based on the parameters of
-      each entry and the result stored in the `result` property
+    * **list oriented** pipelines where operations are completed on lists
+    of similar objects
+    * **task oriented** pipelines where a task is performed based on the
+    parameters of each entry and the result stored in the `result` property
 
 """
 import logging
