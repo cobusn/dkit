@@ -19,10 +19,13 @@
 # SOFTWARE.
 
 import logging
-
-import xlrd
+from typing import List, Callable
 
 from .. import source, DEFAULT_LOG_TRIGGER
+from ...utilities.cmd_helper import LazyLoad
+
+
+xlrd = LazyLoad("xlrd")
 
 
 logger = logging.getLogger(__name__)
@@ -35,17 +38,32 @@ class XLSSource(source.AbstractSource):
     This class assumes that the column headings is in the first row.
 
     skip_lines is ignored if field_names is None
+
+    Arguments:
+        - file_name_list: provide headings
+        - work_sheet: name of worksheet
+        - field_names: headings
+        - skip_lines: skip n lines before headings
+        - log_trigger: number of lines on which to log progress
+        - stop_fn: stop when this function return True
     """
 
-    def __init__(self, file_name_list, work_sheet=None,
-                 field_names=None, skip_lines=0, log_trigger=DEFAULT_LOG_TRIGGER):
+    def __init__(
+        self,
+        file_name_list: List[str],
+        work_sheet: str = None,
+        field_names: List[str] = None,
+        skip_lines: int = 0,
+        log_trigger: int = DEFAULT_LOG_TRIGGER,
+        stop_fn: Callable = None
+    ):
         super().__init__(log_trigger=log_trigger)
         self.xlrd = xlrd
-        # self.xlrd = __import__('xlrd')
         self.file_names = file_name_list
         self.__field_names = field_names
         self.skip_lines = skip_lines
         self.work_sheet = work_sheet
+        self.stop_fn = stop_fn if stop_fn else lambda x: False
 
     def __get_headings(self, row):
         if self.__field_names:
@@ -56,6 +74,8 @@ class XLSSource(source.AbstractSource):
 
     def __it(self):
         stats = self.stats.start()
+        empty = [xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK]
+
         for file_name in self.file_names:
             logger.info(file_name)
             wb = self.xlrd.open_workbook(file_name)
@@ -75,12 +95,18 @@ class XLSSource(source.AbstractSource):
                 try:
                     row = ws.row(self.idx_row)
                     stats.increment()
-                    candidate = {k: v for k, v in zip(headings, [i.value for i in row])}
+                    row = [None if i.ctype in empty else i.value for i in row]
+                    candidate = {k: v for k, v in zip(headings, row)}
                     for key, value in candidate.items():
                         if isinstance(value, str):
                             # Fix strange unicode issues..
                             candidate[key] = value.encode('ascii', 'ignore')\
                                 .decode('utf-8', errors="ignore")
+
+                    if self.stop_fn(candidate):
+                        # stop if stop_fn return true.
+                        break
+
                     yield candidate
                     self.idx_row += 1
                 except StopIteration:
