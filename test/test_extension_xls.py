@@ -22,7 +22,7 @@ import os
 import unittest
 import sys
 sys.path.insert(0, "..") # noqa
-
+import datetime
 from dkit.etl.extensions import ext_xls
 
 
@@ -30,6 +30,7 @@ class TestXLSSource(unittest.TestCase):
 
     def setUp(self):
         self.excel1 = os.path.join("input_files", "excel_1.xls")
+        self.excel_break = os.path.join("input_files", "excel_break.xls")
 
     def _test_data_types(self, as_dict):
         # self.assertEqual(as_dict[0]["DATE"], datetime.datetime(2010, 1, 2, 0, 0))
@@ -61,6 +62,17 @@ class TestXLSSource(unittest.TestCase):
         t.reset()
         l2 = list(t)
         self.assertEqual(len(ll), len(l2))
+
+    def test_exit_fn(self):
+
+        def stop_fn(row):
+            if row["INT"] is None:
+                return True
+            return False
+
+        t = list(ext_xls.XLSSource([self.excel_break], stop_fn=stop_fn))
+        print(t)
+        self.assertEqual(len(t), 3)
 
 
 if __name__ == '__main__':
