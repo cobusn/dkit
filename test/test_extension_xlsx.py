@@ -29,6 +29,7 @@ class TestXLSXSource(unittest.TestCase):
 
     def setUp(self):
         self.excel1 = os.path.join("input_files", "excel_1.xlsx")
+        self.excel_break = os.path.join("input_files", "excel_break.xlsx")
 
     def _test_data_types(self, as_dict):
         self.assertEqual(as_dict[0]["DATE"], datetime.datetime(2010, 1, 2, 0, 0))
@@ -45,6 +46,19 @@ class TestXLSXSource(unittest.TestCase):
         t = ext_xlsx.XLSXSource([self.excel1, self.excel1])
         self._test_data_types(list(t))
         self.assertEqual(list(t)[2]["DATE"], datetime.datetime(2010, 1, 4, 0, 0))
+
+    def test_exit_fn(self):
+        def stop_fn(row):
+            if row["INT"] is None:
+                return True
+            return False
+
+        t = list(ext_xlsx.XLSXSource([self.excel_break], stop_fn=stop_fn))
+        self.assertEqual(len(t), 3)
+        self.assertEqual(
+            t[-1],
+            {'INT': 3, 'FLOAT': 3.1, 'DATE': datetime.datetime(2010, 1, 4, 0, 0), 'STR': 'C'}
+        )
 
     def test_worksheet_name(self):
         t = ext_xlsx.XLSXSource([self.excel1], work_sheet="Sheet2")

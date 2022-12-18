@@ -32,11 +32,12 @@ if __name__ == "__main__":
     init_stderr_logger(level=logging.INFO)
     pipeline = ListPipeline(
         {
-            Worker1: 10,
+            Worker1: 5,
             Worker2: 10,
         },
         worker_args={"value": 10},
-        queue_size=100
+        queue_size=100,
+        chunk_size=100,
     )
 
     result = list(pipeline({"a": 10} for i in range(5_000)))

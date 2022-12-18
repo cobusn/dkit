@@ -1,25 +1,30 @@
+# Copyright (c) 2022 Cobus Nel
 #
-# Copyright (C) 2016  Cobus Nel
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 #
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from .. import source, sink, DEFAULT_LOG_TRIGGER
+from ...utilities.cmd_helper import LazyLoad
 from datetime import datetime, date
 from decimal import Decimal
 import logging
-
+from typing import List, Callable
+pyxl = LazyLoad("openpyxl")
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +35,8 @@ class XlsxSink(sink.AbstractSink):
 
     [openpyxl](https://openpyxl.readthedocs.io/en/default/optimized.html)
     """
-    def __init__(self, file_name, field_names=None):
+    def __init__(self, file_name: str, field_names: List[str] = None):
         super().__init__()
-        self.openpyxl = __import__('openpyxl')
         self.file_name = file_name
         self.field_names = field_names
 
@@ -48,7 +52,7 @@ class XlsxSink(sink.AbstractSink):
         worksheet.
         """
         stats = self.stats.start()
-        wb = self.openpyxl.Workbook(write_only=True)
+        wb = pyxl.Workbook(write_only=True)
 
         for name, the_iterable in the_dict.items():
             logger.info(f"writing sheet '{name}'")
@@ -69,7 +73,7 @@ class XlsxSink(sink.AbstractSink):
 
     def process(self, the_iterable):
         stats = self.stats.start()
-        wb = self.openpyxl.Workbook(write_only=True)
+        wb = pyxl.Workbook(write_only=True)
         ws = wb.create_sheet()
 
         for i, row in enumerate(the_iterable):
@@ -96,29 +100,45 @@ class XLSXSource(source.AbstractSource):
     This class assumes that the column headings is in the first row.
 
     skip_lines is ignored if field_names is None
+
+    Arguments:
+        - file_name_list: provide headings
+        - work_sheet: name of worksheet
+        - field_names: headings
+        - skip_lines: skip n lines before headings
+        - log_trigger: number of lines on which to log progress
+        - stop_fn: stop when this function return True
+
     """
 
-    def __init__(self, file_name_list, work_sheet=None,
-                 field_names=None, skip_lines=0, log_trigger=DEFAULT_LOG_TRIGGER):
-        super(XLSXSource, self).__init__(log_trigger=log_trigger)
-        self.openpyxl = __import__('openpyxl')
+    def __init__(
+        self,
+        file_name_list: List[str],
+        work_sheet: str = None,
+        field_names: List[str] = None,
+        skip_lines: int = 0,
+        log_trigger: int = DEFAULT_LOG_TRIGGER,
+        stop_fn: Callable = None
+    ):
+        super().__init__(log_trigger=log_trigger)
         self.file_names = file_name_list
-        self.__field_names = field_names
+        self.headings = field_names
         self.skip_lines = skip_lines
         self.work_sheet = work_sheet
+        self.stop_fn = stop_fn
 
     def __get_headings(self, rows):
-        if self.__field_names:
-            return self.__field_names
+        if self.headings:
+            return self.headings
         else:
             heading_row = next(rows)
-            return [i.value for i in heading_row]
+            return [str(i.value) for i in heading_row]
 
-    def __it(self):
+    def __iter__(self):
         stats = self.stats.start()
         for file_name in self.file_names:
-            logger.info(file_name)
-            wb = self.openpyxl.load_workbook(file_name, read_only=True)
+            logger.info(f"reading: {file_name}")
+            wb = pyxl.load_workbook(file_name, read_only=True)
             if self.work_sheet is None:
                 ws_name = wb.sheetnames[0]
             else:
@@ -132,32 +152,31 @@ class XLSXSource(source.AbstractSource):
                 next(rows)
 
             # get headings
-            headings = [str(i) for i in self.__get_headings(rows)]
+            headings = self.__get_headings(rows)
             row = next(rows)
             while row:
                 try:
                     stats.increment()
-                    # yield {k: v for k,v in zip(headings, [i.value for i in row])}
-                    candidate = {k: v for k, v in zip(headings, [i.value for i in row])}
+                    candidate = dict(zip(headings, [i.value for i in row]))
                     for key, value in candidate.items():
                         if isinstance(value, str):
-                            # Fix strange unicode issues..
+                            # Fix occasional strange unicode issues..
                             candidate[key] = value.encode('ascii', 'ignore')\
                                 .decode('utf-8', errors="ignore")
+                    if self.stop_fn:
+                        if self.stop_fn(candidate):
+                            # stop if stop_fn return true.
+                            break
                     yield candidate
                     row = next(rows)
                 except StopIteration:
                     row = None
         stats.stop()
 
-    def __iter__(self):
-        yield from self.__it()
-
     def reset(self):
-        """
-        Does nothing..
-        """
+        """not applicable"""
         pass
 
     def close(self):
+        """not applicable"""
         pass

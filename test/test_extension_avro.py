@@ -54,7 +54,8 @@ class AvroTest(unittest.TestCase):
     def _assert_file(self, compare, compare_list):
         """assert that compare_to is the same as the original"""
         for i, row in enumerate(compare):
-            self.assertEqual(row, compare_list[i])
+            for k in row:
+                self.assertAlmostEqual(row[k], compare_list[i][k], 4)
 
 
 class A_TestAvroSink(AvroTest):
@@ -118,7 +119,8 @@ class B_TestAvroSource(AvroTest):
         out = AvroSource([r], field_names=fields)
         for i, record in enumerate(out):
             a = {k: MTCARS[i][k] for k in fields}
-            self.assertEqual(a, record)
+            for k in a:
+                self.assertAlmostEqual(a[k], record[k], 4)
 
 
 if __name__ == '__main__':
