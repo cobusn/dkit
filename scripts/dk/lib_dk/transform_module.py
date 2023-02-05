@@ -94,6 +94,17 @@ class TransformModule(module.MultiCommandModule):
             del etl_model.transforms[self.args.transform]
             services.save_model_file(etl_model, self.args.model_uri)
 
+    def do_list_functions(self):
+        """list available functions"""
+        from dkit.parsers.infix_parser import ExpressionParser
+        p = ExpressionParser()
+        fn = [f"{fn}(x)" for fn in p._f1_map.keys()]
+        fn.extend([f"{fn}(x1, x2)" for fn in p._f2_map.keys()])
+        fn = sorted(fn)
+        help_text = "Available Functions:\n\n"
+        help_text = help_text + "\n".join([f" * {i}" for i in fn])
+        self.print(help_text)
+
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser("maintain and run transforms")
@@ -143,5 +154,11 @@ class TransformModule(module.MultiCommandModule):
                                  help="UUID Field name.")
         options.add_options_inputs(parser_uuid)
         options.add_option_output_uri(parser_uuid)
+
+        # ls_functions
+        self.sub_parser.add_parser(
+            "list_functions",
+            help=self.do_list_functions.__doc__
+        )
 
         super().parse_args()

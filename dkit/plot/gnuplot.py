@@ -36,6 +36,8 @@ set yrange [{{ util.get_axis_range() }}]
 set xlabel "{{ plot.axes[1].title }}"
 {% endif %}
 \
+set xtics autofreq rotate by -45
+
 {# -- aesthetic section ---------------------------------------------------- #}
 {% if plot.series[0].isbox %}
 set boxwidth {{ plot.aes.box_width }} relative

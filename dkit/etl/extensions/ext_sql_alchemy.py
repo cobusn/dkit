@@ -515,11 +515,14 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
         conn = self.accessor.engine.connect().\
             execution_options(stream_results=True)
         result = conn.execute(selector)
-        chunk = result.fetchmany(self.chunk_size)
-        while len(chunk) > 0:
-            yield from (dict(row._mapping.items()) for row in chunk)
-            self.stats.increment(len(chunk))
+        try:
             chunk = result.fetchmany(self.chunk_size)
+            while len(chunk) > 0:
+                yield from (dict(row._mapping.items()) for row in chunk)
+                self.stats.increment(len(chunk))
+                chunk = result.fetchmany(self.chunk_size)
+        except self.sqlalchemy.exc.ResourceClosedError:
+            logger.info("query did not return any rows")
         conn.close()
         self.stats.stop()
 
@@ -739,7 +742,21 @@ class SQLServices(model.ETLServices):
         accessor = self.get_sql_accessor(conn_name)
         return accessor.inspect.get_table_names()
 
-    def get_sql_table_schema(self, conn_name: str, table_name: str, append=False):
+    def get_sql_table_schema(
+        self, conn_name: str, table_name: str, append=False
+    ) -> model.Entity:
+        """
+        infer schema from database
+
+        args:
+            * conn_name: connection name
+            * table_name: table name
+            * append: append to model if True
+
+        returns:
+            schema
+
+        """
         accessor = self.get_sql_accessor(conn_name)
         reflector = SQLAlchemyReflector(accessor)
         _entity = reflector.reflect_entity(table_name)
