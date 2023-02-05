@@ -189,6 +189,7 @@ def _sink_factory(uri_struct, key=None):
         "hdf5": make_hdf5_sink,
         "sqlite": make_sqla_sink,
         "mysql": make_sqla_sink,
+        "mysql+mysqldb": make_sqla_sink,
         "mysql+mysqlconnector": make_sqla_sink,
         "postgres": make_sqla_sink,
     }
@@ -283,6 +284,7 @@ class _SourceIterFactory(object):
             "sqlite": self.__make_sqla_source,
             "mysql+mysqlconnector": self.__make_sqla_source,
             "mysql": self.__make_sqla_source,
+            "mysql+mysqldb": self.__make_sqla_source,
             "postgres": self.__make_sqla_source,
         }
         return dispatcher[uri_struct["driver"]](uri_struct)

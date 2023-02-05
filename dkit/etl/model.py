@@ -183,6 +183,13 @@ class Entity(containers.DictionaryEmulator):
             sort_keys=False
         )
 
+    def iter_validate(self, the_iterable):
+        """validate each row"""
+        validator = self.as_entity_validator()
+        for row in the_iterable:
+            validator.validate(row)
+            yield row
+
     def __call__(self, the_iterable):
         """
         yield rows from input that is coerced to schema

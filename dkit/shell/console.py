@@ -240,3 +240,7 @@ class Colors(object):
         purple = '\033[45m'
         cyan = '\033[46m'
         lightgrey = '\033[47m'
+
+
+def runner(method, debug=False):
+    """

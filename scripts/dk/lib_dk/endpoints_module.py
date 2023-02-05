@@ -48,7 +48,7 @@ class EndpointsModule(module.CRUDModule):
             endpoint_name = self.args.endpoint
             conn_name = self.args.connection
             entity_name = self.args.entity
-            table_name = self.args.table
+            table_name = self.args.table if self.args.table else self.args.entity
             container[endpoint_name] = model.Endpoint(
                 connection=conn_name,
                 entity=entity_name,

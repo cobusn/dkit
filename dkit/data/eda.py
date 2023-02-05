@@ -168,8 +168,8 @@ class SchemaMap(object):
     def _create_processors(self, data, width=80):
         """set up processors"""
         processors: Dict[str, StructureMap] = {}
-        typemapper = ExtractSchemaInline()
-        _types = typemapper(data)
+        typemapper = ExtractSchemaInline(data)
+        _types = typemapper.schema
         _data = list(typemapper)
         for name, _type in _types.items():
             this_data = [row[name] for row in _data]
