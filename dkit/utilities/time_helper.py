@@ -18,7 +18,7 @@
 import time
 from datetime import date, datetime, timedelta, timezone
 import calendar
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Tuple
 
 from dateutil.relativedelta import relativedelta
 
@@ -295,4 +295,54 @@ def hour_of_day_from_int(timestamp: int, tz_adjust=0):
     """
     return int(
         (hour_id_from_int(timestamp) - day_id_from_int(timestamp)) / 3600
+    )
+
+
+def get_tz(hours: int, minutes: int = 0) -> timezone:
+    """get tzone object by specifying offset"""
+    tz = timezone(
+        timedelta(hours=hours, minutes=minutes)
+    )
+    return tz
+
+
+def month_day_id(date_time: datetime) -> Tuple[int, int]:
+    """calculate month_id and date_id
+
+    This function is timezone aware
+
+    args:
+        * date_time: datetime object
+
+    returns:
+        month_id: int
+        day_id: int
+
+    """
+    month = datetime(
+        date_time.year, date_time.month, 1, tzinfo=date_time.tzinfo
+    )
+    day = datetime(
+        date_time.year, date_time.month, date_time.day,
+        tzinfo=date_time.tzinfo
+    )
+    return (
+        int(month.timestamp()),
+        int(day.timestamp()),
+    )
+
+
+def month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:
+    """calculate month_id and date_id
+    args:
+        * timestamp: unix timestamp
+        * time_zone: timezone
+
+    returns:
+        month_id: int
+        day_id: int
+
+    """
+    return month_day_id(
+        from_unixtime(timestamp, time_zone)
     )
