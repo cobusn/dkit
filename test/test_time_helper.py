@@ -103,6 +103,31 @@ class TestTimeHelper(common.TestBase):
             (date(2019, 12, 1), date(2020, 1, 1))
         )
 
+    def test_month_day_id(self):
+        """
+        month_day_id
+        """
+        m_id = 1672524000
+        d_id = 1672610400
+        tz = time_helper.get_tz(2)
+        d1 = datetime(2023, 1, 2, tzinfo=tz)
+
+        m1, d1 = time_helper.month_day_id(d1)
+        self.assertEqual(m1, m_id)
+        self.assertEqual(d1, d_id)
+
+    def test_month_day_id_2(self):
+        """
+        month_day_id_2
+        """
+        m_id = 1672524000
+        d_id = 1672610400
+        ts = d_id + 200
+        tz = time_helper.get_tz(2)
+        m1, d1 = time_helper.month_day_id_2(ts, tz)
+        self.assertEqual(m1, m_id)
+        self.assertEqual(d1, d_id)
+
 
 if __name__ == '__main__':
     unittest.main()
