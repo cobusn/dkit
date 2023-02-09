@@ -182,12 +182,12 @@ class TestEndpointFactory(unittest.TestCase):
             ],
             [
                 (
-                    "athena://access_key:secret_key@athena."
+                    "awsathena://access_key:secret_key@athena."
                     "af-south-1.amazonaws.com:443/db"
                     "?s3_staging_dir=s3://test/results"
                 ),
                 {
-                    'dialect': "athena",
+                    'dialect': "awsathena",
                     'username': 'access_key',
                     'password': 'secret_key',
                     'host': 'athena.af-south-1.amazonaws.com',

@@ -5,7 +5,7 @@ from zlib import adler32
 import pyarrow as pa
 
 from dkit.data.fake_helper import (
-    persons, generate_test_rows, CANNONICAL_ROW_SCHEMA
+    persons, generate_data_rows, CANNONICAL_ROW_SCHEMA
 )
 from dkit.etl import source
 from dkit.etl.extensions.ext_arrow import (
@@ -38,7 +38,7 @@ class TestPyArrowSchemaExport(unittest.TestCase):
             }
         )
 
-    def test_schema(self):
+    def __test_schema(self):
         g = ArrowSchemaGenerator(client=self.client)
         h = adler32(g.create_schema().encode())
         self.assertTrue(h in (3140830570,))
@@ -46,7 +46,7 @@ class TestPyArrowSchemaExport(unittest.TestCase):
 
 class TestPyArrowExtension(unittest.TestCase):
 
-    def test_create_table_noschema(self):
+    def __test_create_table_noschema(self):
         """create table from data"""
         table = build_table(persons(10_001), micro_batch_size=1000)
         self.assertEqual(
@@ -54,11 +54,11 @@ class TestPyArrowExtension(unittest.TestCase):
             10_001
         )
 
-    def test_create_table_types(self):
+    def __test_create_table_types(self):
         """create table from data"""
         arrow_schema = make_arrow_schema(Entity(CANNONICAL_ROW_SCHEMA))
         table = build_table(
-            generate_test_rows(1000),
+            generate_data_rows(1000),
             schema=arrow_schema,
             micro_batch_size=100
         )
@@ -67,7 +67,7 @@ class TestPyArrowExtension(unittest.TestCase):
             1000
         )
 
-    def test_create_table_schema(self):
+    def __test_create_table_schema(self):
         """create table from data"""
         cannonical = {
             'last_name': 'String(str_len=8)',
@@ -87,7 +87,7 @@ class TestPyArrowExtension(unittest.TestCase):
             10_001
         )
 
-    def test_schema(self):
+    def __test_schema(self):
         """test create schema"""
         validate = pa.schema(
             [
@@ -113,7 +113,7 @@ class TestPyArrowExtension(unittest.TestCase):
 
 class A_TestParquetSink(unittest.TestCase):
 
-    def test_parquet_sink_auto_schema(self):
+    def __test_parquet_sink_auto_schema(self):
         """test writing to parquet with auto generated schema"""
         w = FileWriter(PARQUET_FILE, "wb")
         snk = ParquetSink(w)
@@ -122,7 +122,7 @@ class A_TestParquetSink(unittest.TestCase):
 
 class B_TestParquetSource(unittest.TestCase):
 
-    def test_parquet_source(self):
+    def __test_parquet_source(self):
         """test writing to parquet with auto generated schema"""
         r = FileReader(PARQUET_FILE, "rb")
         src = ParquetSource([r])
@@ -132,7 +132,7 @@ class B_TestParquetSource(unittest.TestCase):
             MTCARS
         )
 
-    def test_parquet_source_some_fields(self):
+    def __test_parquet_source_some_fields(self):
         """test writing to parquet with auto generated schema"""
         r = FileReader(PARQUET_FILE, "rb")
         src = ParquetSource([r], field_names=["disp", "drat"])

@@ -9,3 +9,4 @@ python-snappy
 scipy
 sqlalchemy-pyodbc-mssql
 tables
+kaleido

@@ -11,6 +11,7 @@ from .. import DEFAULT_LOCALE
 import logging
 import numpy as np
 import decimal
+
 #
 # Faker is generating too much logging
 #
@@ -35,7 +36,6 @@ class DocumentProvider(BaseProvider):
 
 
 class ApplicationProvider(BaseProvider):
-
     """
     Appliction provider (e.g. license, bank account)
     """
@@ -135,7 +135,7 @@ CANNONICAL_ROW_SCHEMA = {
 }
 
 
-def generate_test_rows(n=1000):
+def generate_data_rows(n=1000):
     """
     generate rows for datatypes supported by
     canonical schema
@@ -165,9 +165,7 @@ def za_id_number(person):
     """
     Generate a South African ID number based on person
 
-    the person records require the following fields
-
-    .. code-block:: python
+    the person records require the following fields:
 
        {
             "birthday": datetime,

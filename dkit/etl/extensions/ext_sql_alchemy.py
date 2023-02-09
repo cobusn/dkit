@@ -416,8 +416,8 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
             raise DKitETLException(
                messages.MSG_0020.format(dialect)
             )
-        _module_name = f"sqlalchemy.dialects.{dialect}"
-        return importlib.import_module(_module_name)
+        dialects = importlib.import_module("sqlalchemy.dialects")
+        return dialects.registry.load(dialect)
 
     def create_sql_select(self, dialect: str,
                           **entities: Dict[str, model.Entity]) -> str:
@@ -456,7 +456,14 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
         for i, (_name, type_map) in enumerate(entities.items()):
             retval += f"\n\n--\n-- {_name}\n--\n"
             _model = self.create_model(type_map.schema)
-            t_instance = _Table(_name, _metadata, *_model)
+            if dialect == "awsathena":
+                # athena require the location parameter
+                t_instance = _Table(
+                    _name, _metadata, *_model,
+                    awsathena_location="/path"
+                )
+            else:
+                t_instance = _Table(_name, _metadata, *_model)
             _statement = _CreateTable(t_instance)
             retval += str(_statement.compile(dialect=_dialect)).strip() + ";"
             # create indexes
@@ -469,7 +476,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
     def _create_metadata(self, dialect):
         _metadata = self.sqlalchemy.MetaData()
         if dialect is not None:
-            _dialect = self.__get_dialect(dialect).dialect()
+            _dialect = self.__get_dialect(dialect)()
         else:
             _dialect = None
         return _metadata, _dialect

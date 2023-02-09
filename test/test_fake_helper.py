@@ -53,7 +53,7 @@ class TestFake(unittest.TestCase):
             self.assertTrue(len(application) > 0)
 
     def test_type_rows(self):
-        typemap = list(fake_helper.generate_test_rows(100))
+        typemap = list(fake_helper.generate_data_rows(100))
         self.assertEqual(len(typemap), 100)
         print(typemap)
 
