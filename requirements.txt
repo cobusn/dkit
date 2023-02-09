@@ -30,7 +30,7 @@ reportlab
 requests
 sphinx
 sphinxcontrib-napoleon
-sqlalchemy
+sqlalchemy>=1.4.46,<2.0
 squarify
 tabulate
 tqdm

@@ -34,19 +34,19 @@ FILE_DIALECTS = [
 SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite"]
 NETWORK_DIALECTS = [
-    "athena", "sybase", "mysql", "oracle", "mssql", "postgres", "impala"
+    "awsathena", "sybase", "mysql", "oracle", "mssql", "postgres", "impala"
 ]
 SQL_DRIVERS = {
-    "athena": "awsathena+rest",
-    "firebird": "firebird+fdb",
     "sybase": "sqlalchemy_sqlany",
+    # "firebird": "firebird+fdb",
     "hdf5": "hdf5",
     "impala": "impala",
     "mssql": "mssql+pymssql",
     "mysql": "mysql+mysqldb",
     "oracle": "oracle+cx_oracle",
-    "postgres": "postgresql",
+    "postgresql": "postgresql",
     "sqlite": "sqlite",
+    "awsathena": "awsathena+rest",
 }
 
 
