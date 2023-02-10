@@ -1,7 +1,9 @@
 import sys
 import unittest
 sys.path.insert(0, "..")  # noqa
-from dkit.data.iteration import chunker, glob_list, first_n, last_n, pairwise
+from dkit.data.iteration import (
+    chunker, glob_list, first_n, last_n, pairwise, long_range
+)
 
 
 class TestIterHelpers(unittest.TestCase):
@@ -82,6 +84,20 @@ class TestIterHelpers(unittest.TestCase):
         self.assertEqual(
             a,
             [('a', 'b'), ('b', 'c'), ('c', 'd')]
+
+        )
+
+    def test_long_range(self):
+        ans = list(long_range(0, 5, 1))
+        self.assertEqual(
+            ans,
+            [0, 1, 2, 3, 4, 5]
+        )
+
+        ans = list(long_range(0, 50, 10))
+        self.assertEqual(
+            ans,
+            [0, 10, 20, 30, 40, 50]
         )
 
 

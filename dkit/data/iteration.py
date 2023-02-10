@@ -25,6 +25,7 @@ Aug 2019    Cobus Nel       Added uuid_key function
 Jan 2021    Cobus Nel       refactored iter_functions from manipulate.py
 Jan 2020    Cobus Nel       added take()
 Feb 2022    Cobus Nel       added pairwise()
+                            added long_range()
 =========== =============== =================================================
 """
 import base64
@@ -42,7 +43,6 @@ from tabulate import tabulate
 
 from .stats import quantile_bins
 
-
 __all__ = [
     "add_key",
     "add_uuid_key",
@@ -55,8 +55,18 @@ __all__ = [
     "iter_sample",
     "iter_take",
     "last_n",
+    "long_range",
     "take",
 ]
+
+
+def long_range(start, stop, increment=1):
+    """alternative to range that include the last element
+
+    # long_range(0, 2, 1) = (0, 1, 2)
+
+    """
+    return range(start, stop + increment, increment)
 
 
 def pairwise(iterable):
