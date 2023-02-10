@@ -2,11 +2,12 @@ awswrangler
 cx_Oracle
 fastavro
 impyla
+kaleido
 mysqlclient
+plotly
 psycopg2-binary
 pyarrow
 python-snappy
 scipy
 sqlalchemy-pyodbc-mssql
 tables
-kaleido
