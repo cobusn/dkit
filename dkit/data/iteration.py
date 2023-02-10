@@ -24,6 +24,7 @@ utilities for iteration tasks
 Aug 2019    Cobus Nel       Added uuid_key function
 Jan 2021    Cobus Nel       refactored iter_functions from manipulate.py
 Jan 2020    Cobus Nel       added take()
+Feb 2022    Cobus Nel       added pairwise()
 =========== =============== =================================================
 """
 import base64
@@ -33,7 +34,7 @@ import sys
 import typing
 import uuid
 from collections import deque
-from itertools import chain, islice
+from itertools import chain, islice, tee
 from typing import Iterable
 
 from collections_extended import RangeMap
@@ -56,6 +57,19 @@ __all__ = [
     "last_n",
     "take",
 ]
+
+
+def pairwise(iterable):
+    """
+    Return successive overlapping pairs taken from the input iterable.
+
+    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+
+    From python 3.10 documentation
+    """
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 
 def take(row, *fields):

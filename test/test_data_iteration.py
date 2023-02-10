@@ -1,7 +1,7 @@
 import sys
 import unittest
 sys.path.insert(0, "..")  # noqa
-from dkit.data.iteration import chunker, glob_list, first_n, last_n
+from dkit.data.iteration import chunker, glob_list, first_n, last_n, pairwise
 
 
 class TestIterHelpers(unittest.TestCase):
@@ -76,6 +76,13 @@ class TestIterHelpers(unittest.TestCase):
         """test glob_list"""
         c = glob_list(self.data, ["j*", "at*"], lambda x: x["name"])
         self.assertEqual(len(list(c)), 3)
+
+    def test_pairwise(self):
+        a = list(pairwise("abcd"))
+        self.assertEqual(
+            a,
+            [('a', 'b'), ('b', 'c'), ('c', 'd')]
+        )
 
 
 if __name__ == "__main__":
