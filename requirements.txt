@@ -15,7 +15,6 @@ lz4
 matplotlib
 mistune==0.8.4
 msgpack
-nose
 openpyxl
 paramiko
 pdfrw
@@ -23,6 +22,8 @@ posix_ipc
 pyarrow
 pylint==2.5.2
 pyparsing
+pytest
+pytest-cov
 python-dateutil
 python-levenshtein
 pyyaml
