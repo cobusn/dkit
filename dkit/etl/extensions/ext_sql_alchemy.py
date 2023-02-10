@@ -530,6 +530,7 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
                 chunk = result.fetchmany(self.chunk_size)
         except self.sqlalchemy.exc.ResourceClosedError:
             logger.info("query did not return any rows")
+        logger.info("closing sql connection")
         conn.close()
         self.stats.stop()
 
