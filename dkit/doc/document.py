@@ -28,10 +28,17 @@ Create Document Artifacts
 from .. import __version__
 from ..utilities.mixins import SerDeMixin
 from ..plot import ggrammar
-import collections
 import textwrap
 from abc import ABC, abstractmethod
 from datetime import datetime
+import sys
+
+if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+    from collections.abc import MutableMapping, MutableSequence
+else:
+    from collections import MutableMapping, MutableSequence
+
+
 __report_version__ = "0.2"
 
 
@@ -42,7 +49,7 @@ def _map_align(align):
     return align
 
 
-class DocumentContainer(collections.MutableMapping):
+class DocumentContainer(MutableMapping):
 
     def __init__(self, *args, **kwargs):
         self.elements = []
@@ -134,7 +141,7 @@ class Modifier(Element):
         super().__init__(*kwds, **kwargs)
 
 
-class ListModifier(Element, collections.MutableSequence):
+class ListModifier(Element, MutableSequence):
 
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
