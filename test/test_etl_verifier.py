@@ -38,7 +38,7 @@ class TestVerifier(unittest.TestCase):
         self.assertEqual(list(lst), self.alpha)
 
     def test_b_check_key(self):
-        test = all([self.v.test_completed(i) for i in self.alpha])
+        test = all([self.v._test_completed(i) for i in self.alpha])
         self.assertEqual(test, True)
 
     def test_c_iter_not_completed(self):
@@ -51,7 +51,7 @@ class TestVerifier(unittest.TestCase):
         self.assertEqual(all([i in self.num for i in lst]), True)
         self.assertEqual(len(lst), len(self.num))
         # Now all items should be completed
-        self.assertEqual(all([self.v.test_completed(i) for i in self.alphanum]), True)
+        self.assertEqual(all([self.v._test_completed(i) for i in self.alphanum]), True)
 
 
 if __name__ == '__main__':

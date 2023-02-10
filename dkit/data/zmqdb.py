@@ -3,7 +3,12 @@ import pickle
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from collections import MutableMapping
+import sys
+if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
+
 
 logger = logging.getLogger(__name__)
 

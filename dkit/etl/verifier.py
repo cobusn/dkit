@@ -54,11 +54,18 @@ class ShelveVerifier(object):
     def __del__(self):
         self.db.close()
 
-    def test_completed(self, key):
+    def test(self, item, getter=None):
+        get_key = getter if getter else self.getter
+        key = get_key(item)
+        return self._test_completed(key)
+
+    def _test_completed(self, key):
         """Test if one item is completed"""
         if key is not None and key in self.db:
+            logger.info(f"{key} is completed")
             return True
         else:
+            logger.info(f"{key} not completed")
             return False
 
     def iter_not_completed(self, the_iterator, getter=None):
@@ -66,7 +73,7 @@ class ShelveVerifier(object):
         get_key = getter if getter else self.getter
         for row in the_iterator:
             key = get_key(row)
-            if not self.test_completed(key):
+            if not self._test_completed(key):
                 logger.info("{} not completed. processing..".format(key))
                 yield row
             else:
@@ -80,16 +87,21 @@ class ShelveVerifier(object):
         get_key = getter if getter else self.getter
         for row in the_iterator:
             key = get_key(row)
-            if not self.test_completed(key):
-                self.mark_as_complete(key)
+            if not self._test_completed(key):
+                self._mark_as_complete(key)
                 yield row
 
-    def mark_as_complete(self, key, value=VerifierRecord()):
+    def complete(self, item, getter=None):
+        _getter = getter if getter else self.getter
+        self._mark_as_complete(_getter(item))
+
+    def _mark_as_complete(self, key):
         """
         mark row as completed
 
         Used internally by api.
         """
-        if key is not None:
-            self.db[key] = value
+        if key is not None and key not in self.db:
+            logger.info(f"marking {key} as complete")
+            self.db[key] = VerifierRecord()
             self.stats.increment()

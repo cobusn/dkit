@@ -55,6 +55,11 @@ import statistics
 import sys
 import typing
 
+if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
+
 
 __all__ = [
     "Indexer",
@@ -386,7 +391,7 @@ def merge(left, right, by_l, by_r, all_l=False, all_r=False, backend=None,
     yield from _Merge(left, right, _by_left, _by_right, all_l, all_r, backend, null)
 
 
-class Indexer(collections.MutableMapping):
+class Indexer(MutableMapping):
 
     def __init__(self, backend=None):
         if backend is not None:
