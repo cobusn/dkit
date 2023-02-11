@@ -460,7 +460,9 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
                 # athena require the location parameter
                 t_instance = _Table(
                     _name, _metadata, *_model,
-                    awsathena_location="/path"
+                    awsathena_location="${PATH}",
+                    awsathena_file_format="PARQUET",
+                    awsathena_compression="SNAPPY"
                 )
             else:
                 t_instance = _Table(_name, _metadata, *_model)
