@@ -128,6 +128,32 @@ class TestTimeHelper(common.TestBase):
         self.assertEqual(m1, m_id)
         self.assertEqual(d1, d_id)
 
+    def test_short_month_day_id(self):
+        """
+        short_month_day_id
+        """
+        m_id = 20230101
+        d_id = 20230102
+        tz = time_helper.get_tz(2)
+        d1 = datetime(2023, 1, 2, tzinfo=tz)
+
+        m1, d1 = time_helper.short_month_day_id(d1)
+        self.assertEqual(m1, m_id)
+        self.assertEqual(d1, d_id)
+
+    def test_short_month_day_id_2(self):
+        """
+        short_month_day_id_2
+        """
+        m_id = 20230101
+        d_id = 20230102
+        tz = time_helper.get_tz(2)
+        d1 = datetime(2023, 1, 2, tzinfo=tz)
+        ts = time_helper.to_unixtime(d1) + 200
+        m1, d1 = time_helper.short_month_day_id_2(ts, tz)
+        self.assertEqual(m1, m_id)
+        self.assertEqual(d1, d_id)
+
 
 if __name__ == '__main__':
     unittest.main()
