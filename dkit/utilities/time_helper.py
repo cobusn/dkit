@@ -346,3 +346,45 @@ def month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:
     return month_day_id(
         from_unixtime(timestamp, time_zone)
     )
+
+
+def short_month_day_id(date_time: datetime) -> Tuple[int, int]:
+    """calculate month_id and date_id
+
+    This function is timezone aware
+
+    args:
+        * date_time: datetime object
+
+    returns:
+        month_id: int in format YYYYMMDD
+        day_id: int in format YYYYMMDD
+
+    """
+    month = datetime(
+        date_time.year, date_time.month, 1, tzinfo=date_time.tzinfo
+    )
+    day = datetime(
+        date_time.year, date_time.month, date_time.day,
+        tzinfo=date_time.tzinfo
+    )
+    return (
+        int(month.strftime("%Y%m%d")),
+        int(day.strftime("%Y%m%d"))
+    )
+
+
+def short_month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:
+    """calculate month_id and date_id
+    args:
+        * timestamp: unix timestamp
+        * time_zone: timezone
+
+    returns:
+        month_id: int
+        day_id: int
+
+    """
+    return short_month_day_id(
+        from_unixtime(timestamp, time_zone)
+    )
