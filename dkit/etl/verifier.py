@@ -65,7 +65,7 @@ class ShelveVerifier(object):
             logger.info(f"{key} is completed")
             return True
         else:
-            logger.info(f"{key} not completed")
+            logger.info(f"{key} is not completed")
             return False
 
     def iter_not_completed(self, the_iterator, getter=None):
