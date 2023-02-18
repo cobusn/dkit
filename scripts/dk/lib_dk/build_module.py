@@ -126,7 +126,7 @@ class BuildModule(module.MultiCommandModule):
         parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
         options.add_option_model(parser_template)
         options.add_options_extension(parser_template)
-        options.add_option_uri_dict(parser_template)
+        options.add_option_kw_data(parser_template)
         options.add_option_template(parser_template)
         options.add_option_output_uri(parser_template)
 
