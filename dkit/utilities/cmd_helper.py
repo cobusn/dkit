@@ -21,6 +21,9 @@
 #
 import argparse
 import importlib
+from typing import Dict
+from ast import literal_eval
+from ..parsers.helpers import parse_kv_pairs
 
 
 class LazyLoad(object):
@@ -95,3 +98,19 @@ class StoreDict(argparse.Action):
             k, v = kv.split("=")
             my_dict[k] = v
         setattr(namespace, self.dest, my_dict)
+
+
+def build_kw_dict(*items: str) -> Dict:
+    """
+    build dictionary from string in format:
+
+        'A=1,B=two'
+
+    args:
+        - items: stings in format variable=value,..
+        - literal: if true, convert to types
+    """
+    retval = {}
+    for item in items:
+        retval.update(parse_kv_pairs(item))
+    return retval

@@ -23,6 +23,8 @@
 from dkit.utilities import cmd_helper
 from dkit.etl import model
 from . import defaults
+import argparse
+import sys
 
 
 def add_arg_uri(parser, n="*"):
@@ -358,7 +360,7 @@ def add_option_entity_or_yaml(parser):
 
 
 def add_arg_entities(parser):
-    """list of entities"""
+    """ltst of entities"""
     parser.add_argument("entities", metavar="entity", nargs="+",
                         default=[],
                         type=str, help=add_arg_entities.__doc__)
@@ -430,11 +432,12 @@ def add_option_query_name(parser):
     parser.add_argument("-q", "--query", dest="query", required=True, help=__doc__)
 
 
-def add_option_uri_dict(parser):
+def add_option_kw_data(parser):
     """input uri's as key value pair"""
     parser.add_argument(
         '--data', dest="data_dict", action="append",
-        metavar="KEY1=URI1,KEY2=URI2", help=add_option_uri_dict.__doc__
+        metavar="KEY1=URI1,KEY2=URI2", help=add_option_kw_data.__doc__,
+        default=[]
     )
 
 

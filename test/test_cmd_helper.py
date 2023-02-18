@@ -15,11 +15,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import sys
-sys.path.insert(0, "..")
+import sys; sys.path.insert(0, "..")  # noqa
 import unittest
 import argparse
-from dkit.utilities.cmd_helper import StoreDict
+from dkit.utilities.cmd_helper import StoreDict, build_kw_dict
 
 
 class TestCmdHelper(unittest.TestCase):
@@ -33,6 +32,16 @@ class TestCmdHelper(unittest.TestCase):
         parser.add_argument("--pairs", action=StoreDict, metavar="KEY1=VAL1,KEY2=VAL2...")
         parsed_args = parser.parse_args(args)
         self.assertEqual(parsed_args.pairs, test)
+
+    def test_build_dict(self):
+        d1 = build_kw_dict(
+            "K1='10',K2=10",
+            "K3=hello"
+        )
+        self.assertEqual(
+            d1,
+            {'K1': '10', 'K2': '10', 'K3': 'hello'}
+        )
 
 
 if __name__ == '__main__':

@@ -29,6 +29,9 @@ from dkit.data import aggregation as agg
 from dkit.parsers.parameter_parser import parameter_dict
 import argparse
 from dkit.etl.extensions.ext_sql_alchemy import SQLAlchemyTemplateSource
+from dkit.utilities.cmd_helper import build_kw_dict
+from dkit.utilities.jinja2 import render_strict, find_variables
+import json
 
 
 class GroupByAction(argparse.Action):
@@ -175,13 +178,31 @@ class RunModule(module.MultiCommandModule):
         """
         apply data sets specified to jinja2 template
         """
+        with open(self.args.template, "rt") as infile:
+            template = infile.read()
+
+        # print undeclared variables and exit
         if self.args.list_variables:
-            pass
+            var_map = {
+                k: '' for k in find_variables(template)
+            }
+            self.print(json.dumps(var_map, indent=2))
+            return
+
+        # read variables
+        if self.args.json:
+            data_dict = json.loads(self.args.json.read())
+        else:
+            data_dict = build_kw_dict(*self.args.data_dict)
 
         self.args.output.write(
-            self.services.render_template(
-                self.args.template,
-                self.args.data_dict
+            # self.services.render_template(
+            #     self.args.template,
+            #    data_dict
+            # )
+            render_strict(
+                template,
+                **data_dict
             )
         )
 
@@ -354,9 +375,14 @@ class RunModule(module.MultiCommandModule):
         )
         # options.add_option_model(parser_template)
         # options.add_options_extension(parser_template)
-        options.add_option_uri_dict(parser_template)
+        options.add_option_kw_data(parser_template)
         options.add_option_template(parser_template)
-        options.add_option_output_uri(parser_template)
+        parser_template.add_argument(
+            "--json", default=None,
+            type=argparse.FileType('r'),
+            help="read input variables from json file"
+        )
+        options.add_option_output(parser_template)
         parser_template.add_argument(
             "--list-variables", dest="list_variables", action="store_true",
             default=False,

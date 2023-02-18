@@ -24,6 +24,7 @@ Parsing utilities
 
 import re
 from ..exceptions import DKitParseException
+from shlex import shlex
 
 
 class AbstractScanner(object):
@@ -126,3 +127,23 @@ class deprecated_RegexMatch(object):
 
     def __call__(self, target):
         return self.scanner.search(target) is not None
+
+
+def parse_kv_pairs(text, item_sep=",", value_sep="=", literal=False):
+    """
+    Parse key-value pairs from a shell-like text.
+    https://stackoverflow.com/questions/38737250/extracting-key-value-pairs-from-string-with-quotes
+    """
+    # initialize a lexer, in POSIX mode (to properly handle escaping)
+    lexer = shlex(text, posix=True)
+    # set ',' as whitespace for the lexer
+    # (the lexer will use this character to separate words)
+    lexer.whitespace = item_sep
+    # include '=' as a word character
+    # (this is done so that the lexer returns a list of key-value pairs)
+    # (if your option key or value contains any unquoted special character,
+    # you will need to add it here)
+    lexer.wordchars += value_sep
+    # then we separate option keys and values to build the resulting dictionary
+    # (maxsplit is required to make sure that '=' in value will not be a problem)
+    return dict(word.split(value_sep, maxsplit=1) for word in lexer)
