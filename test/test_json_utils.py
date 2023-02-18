@@ -26,6 +26,7 @@ from dkit.data import json_utils as ju
 
 sys.path.insert(0, "..")  # noqa
 
+
 class TestBytesEncoder(unittest.TestCase):
 
     def setUp(self):
@@ -81,6 +82,19 @@ class TestJsonUtilsDateDictEncoder(TestJsonUtilsDateEncoder):
             ju.DateTimeDictCodec(),
             ju.DateDictCodec(),
         )
+
+
+class TestJsonSerializer(unittest.TestCase):
+
+    def test_not_instance(self):
+        """parameters must be instances"""
+        with self.assertRaises(TypeError):
+            # the codec must be initialized
+            ju.JsonSerializer(ju.DateCodec)
+
+    def test_make_encoder(self):
+        enc = ju.make_simple_encoder()
+        self.assertTrue(isinstance(enc, ju.JsonSerializer))
 
 
 if __name__ == '__main__':

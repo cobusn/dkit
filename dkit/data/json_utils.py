@@ -208,6 +208,8 @@ class JsonSerializer(object):
         self.__codecs = {}
         self.i = 0
         for codec in codecs:
+            if not isinstance(codec, CustomCodec):
+                raise TypeError("codec is not an instance of CustomCodec")
             self.add_codec(codec)
 
     def add_codec(self, codec):
@@ -259,3 +261,13 @@ class JsonSerializer(object):
         convenience function that calls json.loads
         """
         return self.encoder.loads(obj, object_hook=self.from_json, **kwargs)
+
+
+def make_simple_encoder() -> JsonSerializer:
+    """
+    create a simple fit for most purposes encoder
+    that will encode datetime to string
+    """
+    return JsonSerializer(
+        DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec()
+    )
