@@ -1,0 +1,1 @@
+variables.json: used for testing `dk run template --json variables.json`
