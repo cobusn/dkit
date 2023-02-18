@@ -175,6 +175,9 @@ class RunModule(module.MultiCommandModule):
         """
         apply data sets specified to jinja2 template
         """
+        if self.args.list_variables:
+            pass
+
         self.args.output.write(
             self.services.render_template(
                 self.args.template,
@@ -346,11 +349,18 @@ class RunModule(module.MultiCommandModule):
         options.add_option_logging(parser_report)
 
         # template
-        parser_template = self.sub_parser.add_parser("template", help=self.do_template.__doc__)
-        options.add_option_model(parser_template)
-        options.add_options_extension(parser_template)
+        parser_template = self.sub_parser.add_parser(
+            "template", help=self.do_template.__doc__
+        )
+        # options.add_option_model(parser_template)
+        # options.add_options_extension(parser_template)
         options.add_option_uri_dict(parser_template)
         options.add_option_template(parser_template)
         options.add_option_output_uri(parser_template)
+        parser_template.add_argument(
+            "--list-variables", dest="list_variables", action="store_true",
+            default=False,
+            help="show variables in template without rendering"
+        )
 
         super().parse_args()

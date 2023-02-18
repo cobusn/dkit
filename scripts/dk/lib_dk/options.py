@@ -229,10 +229,12 @@ def add_option_output_uri(parser):
                         default="jsonl:///stdio")
 
 
-# def add_option_output(parser):
-#     """output options"""
-#    parser.add_argument('-o', dest="output", type=argparse.FileType('r'),
-#                        help='output filename to stdout', default=sys.stdout)
+def add_option_output(parser):
+    """output options"""
+    parser.add_argument(
+        '-o', dest="output", type=argparse.FileType('r'),
+        help='output filename to stdout', default=sys.stdout
+    )
 
 def add_option_enter_password(parser):
     """force interactive password entry"""
@@ -386,9 +388,11 @@ def add_option_table_name(parser):
 
 
 def add_option_template(parser):
-    """template file reference"""
-    parser.add_argument("--template", dest="template", required=True,
-                        help=add_option_template.__doc__)
+    """template file name"""
+    parser.add_argument(
+        "--template", dest="template", required=True,
+        help=add_option_template.__doc__
+    )
 
 
 def add_option_transform_name(parser):
@@ -428,8 +432,10 @@ def add_option_query_name(parser):
 
 def add_option_uri_dict(parser):
     """input uri's as key value pair"""
-    parser.add_argument('--data', dest="data_dict", action=cmd_helper.StoreDict,
-                        metavar="KEY1=URI1,KEY2=URI2", help=add_option_uri_dict.__doc__)
+    parser.add_argument(
+        '--data', dest="data_dict", action="append",
+        metavar="KEY1=URI1,KEY2=URI2", help=add_option_uri_dict.__doc__
+    )
 
 
 def add_option_yes(parser):
