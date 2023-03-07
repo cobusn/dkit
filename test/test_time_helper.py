@@ -76,6 +76,21 @@ class TestTimeHelper(common.TestBase):
             date(2019, 12, 1)
         )
 
+    def test_date_range_hour(self):
+        """
+        daterange()
+        """
+        drange = list(time_helper.daterange(
+            datetime(2020, 1, 1),
+            datetime(2020, 1, 2),
+            relativedelta(hours=1)
+        ))
+        self.assertEqual(len(drange), 24)
+        self.assertEqual(
+            drange[-1],
+            datetime(2020, 1, 1, 23, 0)
+        )
+
     def test_last_day_of_month(self):
         tests = [
            (date(2022, 1, 4), date(2022, 1, 31)),
