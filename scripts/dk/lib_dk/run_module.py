@@ -184,7 +184,7 @@ class RunModule(module.MultiCommandModule):
         # print undeclared variables and exit
         if self.args.list_variables:
             var_map = {
-                k: '' for k in find_variables(template)
+                k: f'__{k}__' for k in find_variables(template)
             }
             self.print(json.dumps(var_map, indent=2))
             return

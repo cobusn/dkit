@@ -234,9 +234,10 @@ def add_option_output_uri(parser):
 def add_option_output(parser):
     """output options"""
     parser.add_argument(
-        '-o', dest="output", type=argparse.FileType('r'),
+        '-o', dest="output", type=argparse.FileType('wt'),
         help='output filename to stdout', default=sys.stdout
     )
+
 
 def add_option_enter_password(parser):
     """force interactive password entry"""

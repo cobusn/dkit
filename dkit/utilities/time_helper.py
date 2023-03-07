@@ -117,9 +117,10 @@ def daterange(begin: AnyDate, end: AnyDate,
         delta: (optional) a timedelta object; how much to step each iteration.
                 Default step is 1 day.
     """
-    while begin < end:
-        yield begin
-        begin += delta
+    _first = begin
+    while _first < end:
+        yield _first
+        _first += delta
 
 
 def daterange_pairs(begin, end, delta=timedelta(1)):
@@ -134,9 +135,10 @@ def daterange_pairs(begin, end, delta=timedelta(1)):
     Returns:
         tuple with start, end dates
     """
-    while begin < end:
-        yield (begin, begin + delta)
-        begin += delta
+    _first = begin
+    while _first < end:
+        yield (_first, _first + delta)
+        _first += delta
 
 
 def hms(secs):
