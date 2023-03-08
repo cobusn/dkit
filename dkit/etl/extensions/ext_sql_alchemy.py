@@ -228,6 +228,16 @@ class SQLAlchemyAccessor(object):
         the_table = self.sqlalchemy.Table(table_name, self.metadata, *model)
         self.metadata.create_all(self.engine, [the_table])
 
+    def execute(self, statement, multiple=True):
+        """excecute driver level sql e.g for DDL"""
+        with self.engine.connect() as conn:
+            result_set = conn.exec_driver_sql(statement)
+            try:
+                for row in result_set:
+                    yield dict(row._mapping.items())
+            except self.sqlalchemy.exc.ResourceClosedError:
+                logger.info("query did not return any rows")
+
     @property
     def inspect(self):
         """
@@ -528,8 +538,8 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
         self.stats.start()
         conn = self.accessor.engine.connect().\
             execution_options(stream_results=True)
-        result = conn.execute(selector)
         try:
+            result = conn.execute(selector)
             chunk = result.fetchmany(self.chunk_size)
             while len(chunk) > 0:
                 yield from (dict(row._mapping.items()) for row in chunk)
@@ -537,8 +547,9 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
                 chunk = result.fetchmany(self.chunk_size)
         except self.sqlalchemy.exc.ResourceClosedError:
             logger.info("query did not return any rows")
-        logger.info("closing sql connection")
-        conn.close()
+        finally:
+            logger.info("closing sql connection")
+            conn.close()
         self.stats.stop()
 
 
@@ -807,7 +818,7 @@ class SQLServices(model.ETLServices):
         accessor.close()
 
     def run_query(self, connection: model.Connection, query: str):
-        """execute query"""
+        """execute query and return results"""
         accessor = SQLAlchemyAccessor(as_sqla_url(connection.as_dict(True)))
         yield from SQLAlchemySelectSource(
             accessor,
