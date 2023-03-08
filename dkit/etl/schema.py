@@ -118,9 +118,23 @@ class EntityValidator(cerberus.Validator):
 
     def _validate_str_len(self, strlen, field, value):
         """
-         {'type': 'integer'}
+        {'type': 'integer'}
         """
         if not isinstance(strlen, int):
+            self._error(field, "Must be integer value")
+
+    def _validate_scale(self, scale, field, value):
+        """
+        {'type': 'integer'}
+        """
+        if not isinstance(scale, int):
+            self._error(field, "Must be integer value")
+
+    def _validate_precision(self, precision, field, value):
+        """
+        {'type': 'integer'}
+        """
+        if not isinstance(precision, int):
             self._error(field, "Must be integer value")
 
     def _validate_computed(self, computed, field, value):

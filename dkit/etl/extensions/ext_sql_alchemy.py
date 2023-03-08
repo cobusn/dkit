@@ -351,6 +351,11 @@ class SQLAlchemyReflector(object):
             if ref_col["type"] == "string":
                 if _type.length:
                     ref_col["str_len"] = _type.length
+            if ref_col["type"] == "decimal":
+                if _type.precision:
+                    ref_col["precision"] = _type.precision
+                if _type.scale:
+                    ref_col["scale"] = _type.scale
             if "primary_key" in ref_col:
                 if ref_col["primary_key"] == 1:
                     ref_col["primary_key"] = True
