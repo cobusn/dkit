@@ -49,6 +49,8 @@ class TypeParser(object):
 
     parameter_map = {
         "str_len": [r"\d+", int],
+        "precision": [r"\d+", int],
+        "scale": [r"\d+", int],
         "primary_key": [re_bool, to_boolean],
         "unique": [re_bool, to_boolean],
         "index": [re_bool, to_boolean],

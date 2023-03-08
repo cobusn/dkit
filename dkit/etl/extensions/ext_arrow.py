@@ -74,20 +74,20 @@ entity_map = {
 
 # convert cannonical to arrow
 ARROW_TYPEMAP = {
-    "float":   pa.float32(),
-    "double":  pa.float64(),
-    "integer": pa.int32(),
-    "int8":    pa.int16(),    # int8 not available
-    "int16":   pa.int16(),
-    "int32":   pa.int32(),
-    "int64":   pa.int64(),
-    "string":  pa.string(),
-    "boolean": pa.bool_(),
-    "binary":  pa.binary(),
+    "float": lambda t: pa.float32(),
+    "double": lambda t: pa.float64(),
+    "integer": lambda t: pa.int32(),
+    "int8": lambda t: pa.int16(),    # int8 not available
+    "int16": lambda t: pa.int16(),
+    "int32": lambda t: pa.int32(),
+    "int64": lambda t: pa.int64(),
+    "string": lambda t: pa.string(),
+    "boolean": lambda t: pa.bool_(),
+    "binary": lambda t: pa.binary(),
     # "datetime":  pa.time32("s"),
-    "datetime":  pa.timestamp("s"),
-    "date": pa.date32(),
-    "decimal": pa.decimal128(11, 3),   # this probably need optimisation
+    "datetime": lambda t: pa.timestamp("s"),
+    "date": lambda t: pa.date32(),
+    "decimal": lambda t: pa.decimal128(t["precision"], t["scale"]),
 }
 
 
@@ -99,7 +99,7 @@ def make_arrow_schema(cannonical_schema: Entity):
         fields.append(
             pa.field(
                 name,
-                ARROW_TYPEMAP[definition["type"]]
+                ARROW_TYPEMAP[definition["type"]](definition)
             )
         )
     return pa.schema(fields)
