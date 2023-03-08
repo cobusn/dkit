@@ -21,17 +21,18 @@
 """
 Execute ETL jobs
 """
+import argparse
+import json
+
 from . import module, options
 from dkit import exceptions
-from dkit.data import manipulate as mp, containers
+from dkit.data import manipulate as mp, containers, aggregation as agg
 from dkit.etl.extensions import ext_sql_alchemy
-from dkit.data import aggregation as agg
-from dkit.parsers.parameter_parser import parameter_dict
-import argparse
 from dkit.etl.extensions.ext_sql_alchemy import SQLAlchemyTemplateSource
+from dkit.parsers.parameter_parser import parameter_dict
 from dkit.utilities.cmd_helper import build_kw_dict
 from dkit.utilities.jinja2 import render_strict, find_variables
-import json
+from dkit.data.json_utils import make_simple_encoder
 
 
 class GroupByAction(argparse.Action):
@@ -113,6 +114,27 @@ class RunModule(module.MultiCommandModule):
             self.args.output,
             self.input_stream(self.args.input)
         )
+
+    def do_exec(self):
+        """execute driver level query"""
+        srv = self.load_services(ext_sql_alchemy.SQLServices)
+
+        # Get source connection
+        if self.args.connection is None:
+            raise exceptions.DKitApplicationException("Connection required")
+
+        # get SQL query
+        if self.args.query is not None:
+            str_query = srv.model.queries[self.args.query]()
+        elif self.args.query_file is not None:
+            with open(self.args.query_file, "r") as infile:
+                str_query = infile.read()
+        else:
+            str_query = self.args.query_string
+        accessor = srv.get_sql_accessor(self.args.connection)
+        json = make_simple_encoder()
+        for result in accessor.execute(str_query):
+            self.print(json.dumps(result))
 
     def do_query(self):
         """execute SQL query"""
@@ -334,6 +356,16 @@ class RunModule(module.MultiCommandModule):
                 action=PivotFunctionAction
             )
         options.add_option_tabulate(parser_pivot)
+
+        # execute
+        parser_execute = self.sub_parser.add_parser(
+            "exec", help=self.do_exec.__doc__
+        )
+        group_io = parser_execute.add_argument_group("connection")
+        options.add_option_connection_name_opt(parser_execute)
+        options.add_option_defaults(parser_execute)
+        group_query = parser_execute.add_argument_group("sql source")
+        options.add_query_group(group_query)
 
         # query
         parser_query = self.sub_parser.add_parser("query", help=self.do_query.__doc__)

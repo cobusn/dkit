@@ -276,6 +276,15 @@ class TestSQLAlchemyCRUD(TestSQLAlchemyBase):
             ["input"]
         )
 
+    def test_5_execute(self):
+        """test executing multiple queries"""
+        # select_stmt = "select * from {}".format(self.table_name)
+        select_stmt = "select * from input;"
+        print(select_stmt)
+        results = self.accessor.execute(select_stmt, multiple=True)
+        for result in results:
+            print(result)
+
 
 class TestSQLServices(unittest.TestCase):
 
