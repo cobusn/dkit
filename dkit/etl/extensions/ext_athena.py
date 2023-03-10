@@ -30,7 +30,7 @@ from jinja2 import Template
 from datetime import date
 from typing import List
 
-str_template = """
+_create_template = """
 --
 -- {{ table_name }}
 --
@@ -57,6 +57,9 @@ TBLPROPERTIES (
 {%- endif %}
 ;
 """
+
+
+_repair_partitions_tmplate = "MSCK REPAIR TABLE {{ table_name }}"
 
 
 class SchemaGenerator(object):
@@ -89,7 +92,7 @@ class SchemaGenerator(object):
         self.partition_by = partition_by if partition_by else []
         self.kind = kind
         self.location = location
-        self.properties = properties
+        self.properties = properties if properties else {}
 
     def data_fields(self):
         """schema for data fields
@@ -103,26 +106,31 @@ class SchemaGenerator(object):
         }
 
     def partition_fields(self):
+        """fields used for partitioning"""
         return {
             k: v
             for k, v in self.entity.as_entity_validator().schema.items()
             if k in self.partition_by
         }
 
-    def create_schema(self):
-        """
-        Create python code to define spark schema
-        """
-        template = Template(str_template)
+    def get_ddl(self):
+        """Generate DDL to create Athena table"""
+        template = Template(_create_template)
         return template.render(
             table_name=self.table_name,
             tm=self.typemap,
             c=self.data_fields(),
-            # c=self.entity.as_entity_validator(),
             partitions=self.partition_fields(),
             timestamp=str(date.today()),
             kind=self.kind,
             location=self.location,
-            properties=self.properties,
-            len=len,
+            # properties=self.properties,
+            len=len
+        )
+
+    def get_repair_table(self):
+        """SQL source to read all partitions"""
+        template = Template(_repair_partitions_tmplate)
+        return template.render(
+            table_name=self.table_name,
         )
