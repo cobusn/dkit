@@ -28,21 +28,23 @@ Routines to interface with AWS Athena:
 from ..model import Entity
 from jinja2 import Template
 from datetime import date
-from typing import List
+from typing import List, Dict
+from os.path import join
+from urllib.parse import quote
 
-str_template = """
+_create_template = """
 --
 -- {{ table_name }}
 --
 CREATE EXTERNAL TABLE IF NOT EXISTS `{{ table_name }}` (
 {%- for field, props in c.items() %}
-    `{{ field }}` {{ tm[props["type"]](props) }}{{ "," if not loop.last }}
+    `{{ field }}` {{ tmap[props["type"]](props) }}{{ "," if not loop.last }}
 {%- endfor %}
 )
 {%- if len(partitions) > 0 %}
 PARTITIONED BY (
 {%- for field, props in partitions.items() %}
-    `{{ field }}` {{ tm[props["type"]](props) }}{{ "," if not loop.last }}
+     `{{ field }}` {{ tmap[props["type"]](props) }}{{ "," if not loop.last }}
 {%- endfor %}
 )
 {%- endif %}
@@ -59,25 +61,29 @@ TBLPROPERTIES (
 """
 
 
+_repair_partitions_tmplate = "MSCK REPAIR TABLE {{ table_name }}"
+
+athena_typemap = {
+    "boolean": lambda t: "BOOLEAN",
+    "binary": lambda t: "BINARY",
+    "date": lambda t: "DATE",
+    "datetime": lambda t: "TIMESTAMP",
+    "decimal": lambda t: f"DECIMAL({t['precision']}, {t['scale']})",
+    "float": lambda t: "FLOAT",
+    "double": lambda t: "DOUBLE",
+    "integer": lambda t: "INT",
+    "int8": lambda t: "TINYINT",
+    "int16": lambda t: "SMALLINT",
+    "int32": lambda t: "INT",
+    "int64": lambda t: "BIGINT",
+    "string": lambda t: "STRING",
+}
+
+
 class SchemaGenerator(object):
     """
     {"parquet.compression": "SNAPPY"}
     """
-    typemap = {
-        "boolean": lambda t: "BOOLEAN",
-        "binary": lambda t: "BINARY",
-        "date": lambda t: "DATE",
-        "datetime": lambda t: "TIMESTAMP",
-        "decimal": lambda t: f"DECIMAL({t['precision']}, {t['scale']})",
-        "float": lambda t: "FLOAT",
-        "double": lambda t: "DOUBLE",
-        "integer": lambda t: "INT",
-        "int8": lambda t: "TINYINT",
-        "int16": lambda t: "SMALLINT",
-        "int32": lambda t: "INT",
-        "int64": lambda t: "BIGINT",
-        "string": lambda t: "STRING",
-    }
 
     def __init__(
         self, table_name: str, entity: Entity, partition_by: List[str] = None,
@@ -89,7 +95,7 @@ class SchemaGenerator(object):
         self.partition_by = partition_by if partition_by else []
         self.kind = kind
         self.location = location
-        self.properties = properties
+        self.properties = properties if properties else {}
 
     def data_fields(self):
         """schema for data fields
@@ -103,26 +109,47 @@ class SchemaGenerator(object):
         }
 
     def partition_fields(self):
+        """fields used for partitioning"""
         return {
             k: v
             for k, v in self.entity.as_entity_validator().schema.items()
             if k in self.partition_by
         }
 
-    def create_schema(self):
-        """
-        Create python code to define spark schema
-        """
-        template = Template(str_template)
+    def get_create_sql(self):
+        """Generate DDL to create Athena table"""
+        template = Template(_create_template)
         return template.render(
             table_name=self.table_name,
-            tm=self.typemap,
+            tmap=athena_typemap,
             c=self.data_fields(),
-            # c=self.entity.as_entity_validator(),
             partitions=self.partition_fields(),
             timestamp=str(date.today()),
             kind=self.kind,
             location=self.location,
             properties=self.properties,
-            len=len,
+            len=len
         )
+
+    def get_repair_table_sql(self):
+        """SQL source to read all partitions"""
+        template = Template(_repair_partitions_tmplate)
+        return template.render(
+            table_name=self.table_name,
+        )
+
+    def get_partition_path(self, record: Dict) -> str:
+        """calculate path with partition for record provided
+
+        The function will extract the defined partition fields
+        from the Dict.  Strings will be URL Quoted
+        """
+        part_fields = {
+            k: record[k]
+            for k in self.partition_by
+        }
+        paths = "/".join(
+            f"{k}={quote(str(v))}"
+            for k, v in part_fields.items()
+        )
+        return join(self.location, paths)

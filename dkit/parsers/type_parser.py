@@ -20,11 +20,13 @@
 
 import datetime
 import decimal
-from dkit.parsers import helpers
-from dkit.data.helpers import to_boolean
+import re
 from functools import partial
 
-import re
+from . import helpers
+from ..data.helpers import to_boolean
+from ..exceptions import DKitParseException
+
 
 re_bool = r"True|False"
 type_map = {
@@ -81,6 +83,8 @@ class TypeParser(object):
             params = g[1].strip()
             if len(params) > 0:
                 self.parser.scan(g[1])
+        else:
+            raise DKitParseException(f"type: '{the_text}' cannot be parsed")
         return self.data
 
     def parse_value_pair(self, result, converter=str):
