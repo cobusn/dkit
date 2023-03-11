@@ -36,9 +36,12 @@ from ...data.iteration import chunker
 from ..model import Entity
 from itertools import islice, chain
 from jinja2 import Template
+import logging
+
 
 # import pyarrow as pa
 pa = LazyLoad("pyarrow")
+logger = logging.getLogger("ext_arrow")
 
 # import pyarrow.parquet as pq
 pq = LazyLoad("pyarrow.parquet")
@@ -291,3 +294,35 @@ class ParquetSink(sink.AbstractSink):
                 self.__write_all(out_stream, the_iterator)
         self.stats.stop()
         return self
+
+
+def write_parquet(table, path, partition_cols, fs=None, compression="snappy",
+                  existing_data_behaviour="overwrite_or_ignore"):
+    """write pyarrow table to parquet
+
+    convenience function to write a table to parquet with
+    sensible default options for ETL work.
+
+    args:
+
+        - table: arrow Table instance
+        - path: filesystem path
+        - fs: Filesystem instance (e.g. Arrow S3FileSystem)
+        - compression: e.g. snappy
+        - existing_data_behaviour can be one of:
+            - overwrite_or_ignore
+            - error
+            - delete_matching
+    """
+    logger.info(f"writing table of size {len(table)} to parquet")
+    logger.debug(f"writing to path {path}")
+    pq.write_to_dataset(
+        table,
+        root_path=path,
+        partition_cols=partition_cols,
+        existing_data_behavior="overwrite_or_ignore",
+        filesystem=fs,
+        compression=compression
+        # basename_template="chunk.{i}.snappy.parquet"
+    )
+    logger.debug("write completed")
