@@ -32,9 +32,10 @@ FILE_DIALECTS = [
     'pkl', 'mpak', 'pke', 'avro', 'parquet'
 ]
 SHARED_MEMORY_DIALECTS = ["shm"]
-FILE_DB_DIALECTS = ["hdf5", "sqlite"]
+FILE_DB_DIALECTS = ["hdf5", "sqlite", "duckdb"]
 NETWORK_DIALECTS = [
-    "awsathena", "sybase", "mysql", "oracle", "mssql", "postgres", "impala"
+    "awsathena", "sybase", "mysql", "oracle", "mssql",
+    "postgres", "impala",
 ]
 SQL_DRIVERS = {
     "sybase": "sqlalchemy_sqlany",
@@ -47,6 +48,7 @@ SQL_DRIVERS = {
     "postgresql": "postgresql",
     "sqlite": "sqlite",
     "awsathena": "awsathena+rest",
+    "duckdb": "duckdb",
 }
 
 

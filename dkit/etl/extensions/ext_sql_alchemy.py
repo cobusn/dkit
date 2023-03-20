@@ -352,7 +352,12 @@ class SQLAlchemyReflector(object):
         self.logger.info(f"Reflecting table '{entity_name}'")
         columns = self.accessor.inspect.get_columns(entity_name)
         pk = self.accessor.inspect.get_pk_constraint(entity_name)
-        indexes = self.accessor.inspect.get_indexes(entity_name)
+        try:
+            indexes = self.accessor.inspect.get_indexes(entity_name)
+        except AttributeError:
+            # catch error with SQLAlchemy / postgresql
+            logger.error(f"Error extracting indexes for {entity_name}")
+            indexes = []
         retval = {}
         for ref_col in columns:
             _type = ref_col["type"]
