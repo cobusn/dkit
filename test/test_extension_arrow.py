@@ -46,7 +46,7 @@ class TestPyArrowSchemaExport(unittest.TestCase):
 
 class TestPyArrowExtension(unittest.TestCase):
 
-    def __test_create_table_noschema(self):
+    def test_create_table_noschema(self):
         """create table from data"""
         table = build_table(persons(10_001), micro_batch_size=1000)
         self.assertEqual(
@@ -54,7 +54,7 @@ class TestPyArrowExtension(unittest.TestCase):
             10_001
         )
 
-    def __test_create_table_types(self):
+    def test_create_table_types(self):
         """create table from data"""
         arrow_schema = make_arrow_schema(Entity(CANNONICAL_ROW_SCHEMA))
         table = build_table(

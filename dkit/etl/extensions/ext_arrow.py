@@ -272,12 +272,17 @@ class ParquetSink(sink.AbstractSink):
         """ build pyarrow table """
         # the same code as the standalone build_table function
         # but add code for incrementing counters
+        _data = data
+        if schema is None:
+            _schema, _data = infer_arrow_schema(data, 10_000)
+        else:
+            _schema = schema
 
         def iter_batch():
-            for chunk in chunker(data, size=micro_batch_size):
+            for chunk in chunker(_data, size=micro_batch_size):
                 yield pa.RecordBatch.from_pylist(
                     list(chunk),
-                    schema=schema
+                    schema=_schema
                 )
                 self.stats.increment(micro_batch_size)
 
@@ -285,7 +290,8 @@ class ParquetSink(sink.AbstractSink):
             iter_batch()
         )
 
-    def process(self, the_iterator):
+
+def process(self, the_iterator):
         self.stats.start()
         if self.writer.is_open:
             self.__write_all(self.writer, the_iterator)
