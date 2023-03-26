@@ -274,7 +274,8 @@ class ParquetSink(sink.AbstractSink):
         # but add code for incrementing counters
         _data = data
         if schema is None:
-            _schema, _data = infer_arrow_schema(data, 10_000)
+            logger.info("No schema provided, generating arrow schema from data")
+            _schema, _data = infer_arrow_schema(data, 1_000)
         else:
             _schema = schema
 
@@ -290,16 +291,15 @@ class ParquetSink(sink.AbstractSink):
             iter_batch()
         )
 
-
-def process(self, the_iterator):
-        self.stats.start()
-        if self.writer.is_open:
-            self.__write_all(self.writer, the_iterator)
-        else:
-            with self.writer.open() as out_stream:
-                self.__write_all(out_stream, the_iterator)
-        self.stats.stop()
-        return self
+    def process(self, the_iterator):
+            self.stats.start()
+            if self.writer.is_open:
+                self.__write_all(self.writer, the_iterator)
+            else:
+                with self.writer.open() as out_stream:
+                    self.__write_all(out_stream, the_iterator)
+            self.stats.stop()
+            return self
 
 
 def write_parquet(table, path, partition_cols, fs=None, compression="snappy",
