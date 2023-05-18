@@ -5,6 +5,11 @@ import json
 import decimal
 import importlib
 import base64
+from ..utilities.time_helper import local_tz_offset
+
+
+# needed for Pandas timezone
+offset = local_tz_offset()
 
 
 class CustomCodec(object):
@@ -93,6 +98,44 @@ class DateTimeCodec(CustomCodec):
         decode datetime from dictionary format
         """
         return datetime.fromtimestamp(obj['timestamp'])
+
+
+class PandasTimestampCodec(CustomCodec):
+
+    def __init__(self):
+        self.pd = importlib.import_module("pandas")
+        super().__init__(self.pd.Timestamp)
+
+    def encode(self, obj):
+        """
+        encode datetime object to dictionary
+        """
+        return {
+            '__type__': self.name,
+            'timestamp': obj.timestamp()
+        }
+
+    def decode(self, obj):
+        """
+        decode datetime from dictionary format
+        """
+        return datetime.fromtimestamp(obj['timestamp'])
+
+
+class PandasNATCodec(CustomCodec):
+
+    def __init__(self):
+        self._name = "NaTType"
+
+    @property
+    def name(self):
+        return self._name
+
+    def encode(self, obj):
+        """
+        encode datetime object to dictionary
+        """
+        return None
 
 
 class Decimal2FloatCodec(CustomCodec):
@@ -226,7 +269,7 @@ class JsonSerializer(object):
             class_name = obj.__class__.__name__
             return self.__codecs[class_name].encode(obj)
         except Exception:
-            self.encoder.JSONEncoder.default(self, obj)
+            return self.encoder.JSONEncoder.default(self, obj)
 
     def from_json(self, obj):
         """
@@ -242,13 +285,13 @@ class JsonSerializer(object):
         """
         convenience function that call json.dump
         """
-        return self.encoder.dump(obj, fp, allow_nan=False, default=self.to_json, **kwargs)
+        return self.encoder.dump(obj, fp, allow_nan=True, default=self.to_json, **kwargs)
 
     def dumps(self, obj, **kwargs):
         """
         convenience function that call json.dumps
         """
-        return self.encoder.dumps(obj, allow_nan=False, default=self.to_json, **kwargs)
+        return self.encoder.dumps(obj, allow_nan=True, default=self.to_json, **kwargs)
 
     def load(self, fp, **kwargs):
         """
@@ -270,4 +313,13 @@ def make_simple_encoder() -> JsonSerializer:
     """
     return JsonSerializer(
         DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec()
+    )
+
+
+def make_encoder() -> JsonSerializer:
+    """
+    create json encoder that encode dates to int
+    """
+    return JsonSerializer(
+        DateTimeCodec(), DateCodec(), Decimal2FloatCodec()
     )

@@ -127,7 +127,7 @@ class Histogram(object):
             right = bins_[i+1][0]
             bin_list.append(Bin(left, right, count))
         last = bins_[-1]
-        bin_list.append(Bin(last[0], last[1], stats.max))
+        bin_list.append(Bin(last[0], stats.max, last[1]))
         return cls(bin_list)
 
     @classmethod

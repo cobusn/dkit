@@ -27,8 +27,16 @@ Mistune Renderer that will render JSON document from markdown
 """
 
 import mistune
-import json
+from dkit.data import json_utils as ju
 from . import document
+
+
+json = ju.JsonSerializer(
+    ju.DateTimeCodec(),
+    ju.DateCodec(),
+    ju.Decimal2FloatCodec(),
+    ju.PandasTimestampCodec(),
+)
 
 
 class JSONRenderer(mistune.Renderer):

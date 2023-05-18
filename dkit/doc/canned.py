@@ -533,8 +533,8 @@ class BostonMatrix(object):
             reverse=True
         )
         g = Figure(data, filename=filename) \
-            + Figure.GeomBar("Revenue", x_data=None, y_data="last_value") \
-            + Figure.GeomCumulative("Cumulative Revenue", "last_value") \
+            + Figure.GeomBar(self.field_value, x_data=None, y_data="last_value") \
+            + Figure.GeomCumulative(f"Cumulative {self.field_value}", "last_value") \
             + Figure.Title(title) \
             + Figure.XAxis(f"{self.entity_name}", defeat=True) \
             + Figure.YAxis(self.y_title, float_format=self.plot_value_format)
