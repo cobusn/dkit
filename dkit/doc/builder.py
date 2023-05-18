@@ -53,6 +53,15 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+encoder = ju.JsonSerializer(
+    ju.DateTimeCodec(),
+    ju.DateCodec(),
+    ju.Decimal2FloatCodec(),
+    ju.PandasTimestampCodec(),
+    ju.PandasNATCodec()
+)
+
+
 def is_in_notebook():
     """
     return True if code is run in a Jupyter notebook
@@ -93,11 +102,6 @@ def jsonise(fn) -> str:
     Returns:
         - string
     """
-    encoder = ju.JsonSerializer(
-        ju.DateTimeCodec(),
-        ju.DateCodec(),
-        ju.Decimal2FloatCodec()
-    )
     j = encoder.dumps(fn.as_dict())
     return f"```jsoninclude\n{j}\n```\n"
 

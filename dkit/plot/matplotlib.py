@@ -164,7 +164,11 @@ class MPLBackend(Backend):
             """return correctly formatted for position"""
             i = int(tick_val)
             if 0 <= i < len(x_labels):
-                return x_labels[i]
+                if "time_format" in axes and axes["time_format"]:
+                    label = x_labels[i].strftime(axes["time_format"])
+                else:
+                    label = x_labels[i]
+                return label
             else:
                 return ""
 
@@ -339,16 +343,19 @@ class MPLBackend(Backend):
 
         # Determine orientation
         if "horizontal" in serie and serie["horizontal"]:
-            fn_bar = ax.barh
+            ax.barh(
+                x_pos,
+                y_vals,
+                alpha=serie["alpha"]
+            )
         else:
-            fn_bar = ax.bar
+            ax.bar(
+                x_pos,
+                y_vals,
+                width=0.98,
+                alpha=serie["alpha"]
+            )
 
-        fn_bar(
-            x_pos,
-            y_vals,
-            width=1,
-            alpha=serie["alpha"]
-        )
         ax.tick_params(axis="x", which="both", length=0)
         self.set_x_ticks(ax, hist)
         self.set_labels(ax)

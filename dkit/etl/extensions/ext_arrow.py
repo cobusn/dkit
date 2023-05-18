@@ -277,7 +277,7 @@ class ParquetSink(sink.AbstractSink):
             logger.info("No schema provided, generating arrow schema from data")
             _schema, _data = infer_arrow_schema(data, 1_000)
         else:
-            _schema = schema
+            _schema = make_arrow_schema(schema)
 
         def iter_batch():
             for chunk in chunker(_data, size=micro_batch_size):
@@ -292,17 +292,42 @@ class ParquetSink(sink.AbstractSink):
         )
 
     def process(self, the_iterator):
-            self.stats.start()
-            if self.writer.is_open:
-                self.__write_all(self.writer, the_iterator)
-            else:
-                with self.writer.open() as out_stream:
-                    self.__write_all(out_stream, the_iterator)
-            self.stats.stop()
-            return self
+        self.stats.start()
+        if self.writer.is_open:
+            self.__write_all(self.writer, the_iterator)
+        else:
+            with self.writer.open() as out_stream:
+                self.__write_all(out_stream, the_iterator)
+        self.stats.stop()
+        return self
 
 
-def write_parquet(table, path, partition_cols, fs=None, compression="snappy",
+def write_parquet_file(table, path, fs=None, compression="snappy"):
+    """write pyarrow table to parquet file
+
+    convenience function to write a table to parquet with
+    sensible default options for ETL work.
+
+    args:
+
+        - table: arrow Table instance
+        - path: filesystem path
+        - fs: Filesystem instance (e.g. Arrow S3FileSystem)
+        - compression: e.g. snappy
+
+    """
+    logger.info(f"writing table of size {len(table)} to parquet")
+    logger.debug(f"writing to path {path}")
+    pq.write_table(
+        table,
+        path,
+        filesystem=fs,
+        compression=compression
+    )
+    logger.debug("write completed")
+
+
+def write_parquet_dataset(table, path, partition_cols, fs=None, compression="snappy",
                   existing_data_behaviour="overwrite_or_ignore"):
     """write pyarrow table to parquet
 

@@ -180,3 +180,11 @@ class XLSXSource(source.AbstractSource):
     def close(self):
         """not applicable"""
         pass
+
+
+def read_xlsx(file_name, work_sheet=None, skip_lines=0, stop_fn=None):
+    """
+    Convenience function to read tables from a worksheet
+    """
+    yield from XLSXSource([file_name], work_sheet, skip_lines=skip_lines,
+                          stop_fn=stop_fn)
