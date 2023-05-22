@@ -29,6 +29,17 @@ from ..exceptions import DKitParseException
 
 
 re_bool = r"True|False"
+
+#
+# NB: Edit dkit/etl/schema.py as well when changing the
+# below entries. In addition:
+#
+# - ext_arrow
+# - ext_sql_alchemy
+# - ext_athena
+# - ext_avro
+# - ext_spark
+#
 type_map = {
     "Binary": bytes,
     "Boolean": bool,
@@ -41,6 +52,10 @@ type_map = {
     "Int32": int,
     "Int64": int,
     "Int8": int,
+    "UInt16": int,
+    "UInt32": int,
+    "UInt64": int,
+    "UInt8": int,
     "Integer": int,
     "String": str,
     "Time": datetime.time,

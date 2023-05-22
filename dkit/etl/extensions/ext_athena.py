@@ -63,6 +63,10 @@ TBLPROPERTIES (
 
 _repair_partitions_tmplate = "MSCK REPAIR TABLE {{ table_name }}"
 
+#
+# Note: Athena does not have unsigned int types, so unsigned
+# is casted up to a bigger type to avoid overflow...
+#
 athena_typemap = {
     "boolean": lambda t: "BOOLEAN",
     "binary": lambda t: "BINARY",
@@ -76,6 +80,10 @@ athena_typemap = {
     "int16": lambda t: "SMALLINT",
     "int32": lambda t: "INT",
     "int64": lambda t: "BIGINT",
+    "uint8": lambda t: "SMALLINT",     # Athena does not have unsigned
+    "uint16": lambda t: "INT",         # See note above
+    "uint32": lambda t: "BIGINT",
+    "uint64": lambda t: "BIGINT",
     "string": lambda t: "STRING",
 }
 

@@ -27,6 +27,7 @@ July 2019   Cobus Nel       Initial version
 Sept 2022   Cobus Nel       Added:
                             - schema create tools
                             - Parquet source and sinks
+May 2023    Cobus Nel       Added Unsigned int types
 =========== =============== =================================================
 """
 from ... import CHUNK_SIZE
@@ -39,14 +40,38 @@ from jinja2 import Template
 import logging
 
 
-# import pyarrow as pa
-pa = LazyLoad("pyarrow")
-logger = logging.getLogger("ext_arrow")
-
+# pa = LazyLoad("pyarrow")
+import pyarrow as pa
 # import pyarrow.parquet as pq
 pq = LazyLoad("pyarrow.parquet")
 
+logger = logging.getLogger("ext_arrow")
+
+
 __all__ = []
+
+# convert cannonical to arrow
+ARROW_TYPEMAP = {
+    "float": lambda t: pa.float32(),
+    "double": lambda t: pa.float64(),
+    "integer": lambda t: pa.int32(),
+    "int8": lambda t: pa.int16(),    # int8 not available
+    "int16": lambda t: pa.int16(),
+    "int32": lambda t: pa.int32(),
+    "int64": lambda t: pa.int64(),
+    "uint8": lambda t: pa.uint16(),  # int8 not available
+    "uint16": lambda t: pa.uint16(),
+    "uint32": lambda t: pa.uint32(),
+    "uint64": lambda t: pa.uint64(),
+    "string": lambda t: pa.string(),
+    "boolean": lambda t: pa.bool_(),
+    "binary": lambda t: pa.binary(),
+    # "datetime":  pa.time32("s"),
+    "datetime": lambda t: pa.timestamp("s"),
+    "date": lambda t: pa.date32(),
+    "decimal": lambda t: pa.decimal128(t["precision"], t["scale"]),
+}
+
 
 str_template = """
 import pyarrow as pa
@@ -74,24 +99,6 @@ entity_map = {
 {%- endfor %}
 }
 """
-
-# convert cannonical to arrow
-ARROW_TYPEMAP = {
-    "float": lambda t: pa.float32(),
-    "double": lambda t: pa.float64(),
-    "integer": lambda t: pa.int32(),
-    "int8": lambda t: pa.int16(),    # int8 not available
-    "int16": lambda t: pa.int16(),
-    "int32": lambda t: pa.int32(),
-    "int64": lambda t: pa.int64(),
-    "string": lambda t: pa.string(),
-    "boolean": lambda t: pa.bool_(),
-    "binary": lambda t: pa.binary(),
-    # "datetime":  pa.time32("s"),
-    "datetime": lambda t: pa.timestamp("s"),
-    "date": lambda t: pa.date32(),
-    "decimal": lambda t: pa.decimal128(t["precision"], t["scale"]),
-}
 
 
 def make_arrow_schema(cannonical_schema: Entity):
@@ -327,8 +334,10 @@ def write_parquet_file(table, path, fs=None, compression="snappy"):
     logger.debug("write completed")
 
 
-def write_parquet_dataset(table, path, partition_cols, fs=None, compression="snappy",
-                  existing_data_behaviour="overwrite_or_ignore"):
+def write_parquet_dataset(
+    table, path, partition_cols, fs=None,
+    compression="snappy", existing_data_behaviour="overwrite_or_ignore"
+):
     """write pyarrow table to parquet
 
     convenience function to write a table to parquet with
