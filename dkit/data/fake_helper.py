@@ -131,7 +131,7 @@ CANNONICAL_ROW_SCHEMA = {
     "binary": "Binary()",
     "datetime": "DateTime()",
     "date": "Date()",
-    "decimal": "Decimal()",
+    "decimal": "Decimal(precision=10, scale=2)",
 }
 
 
