@@ -106,6 +106,10 @@ class EntityValidator(cerberus.Validator):
         "int16": "16 bit integer",
         "int32": "32 bit integer",
         "int64": "64 bit integer",
+        "uint8": "8 bit integer",
+        "uint16": "16 bit integer",
+        "uint32": "32 bit integer",
+        "uint64": "64 bit integer",
         "integer": "32 bit integer",
         "boolean": "boolean",
         "decimal": "Decimal",
@@ -164,6 +168,22 @@ class EntityValidator(cerberus.Validator):
             self._error(field, "Is not an integer instance")
 
     def _validate_type_int64(self, field, value):
+        if not isinstance(value, int):
+            self._error(field, "Is not an integer instance")
+
+    def _validate_type_uint8(self, field, value):
+        if not isinstance(value, int):
+            self._error(field, "Is not an integer instance")
+
+    def _validate_type_uint16(self, field, value):
+        if not isinstance(value, int):
+            self._error(field, "Is not an integer instance")
+
+    def _validate_type_uint32(self, field, value):
+        if not isinstance(value, int):
+            self._error(field, "Is not an integer instance")
+
+    def _validate_type_uint64(self, field, value):
         if not isinstance(value, int):
             self._error(field, "Is not an integer instance")
 

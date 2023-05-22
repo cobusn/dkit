@@ -27,6 +27,29 @@ Routines to interface with spark:
 from jinja2 import Template
 
 
+TYPEMAP = {
+    "boolean": "BooleanType",
+    "binary": "BinaryType",
+    "date": "DateType",
+    "datetime": "TimestampType",
+    "decimal": "DecimalType",
+    "float": "FloatType",
+    "double": "Doubleype",
+    "integer": "IntegerType",
+    "int8": "ByteType",
+    "int16": "ShortType",
+    "int32": "IntegerType",
+    "int64": "LongType",
+    # Note Unsigned is not supported in Spark.
+    # NB: unsigned types is casted up..
+    "uint8": "ShortType",
+    "uint16": "IntegerType",
+    "uint32": "LongType",
+    "uint64": "LongType",
+    "string": "StringType",
+}
+
+
 str_template = """from pyspark.sql import types
 from pyspark.sql.types import (
     StructType,
@@ -58,21 +81,7 @@ entity_map = {
 
 class SchemaGenerator(object):
 
-    typemap = {
-        "boolean": "BooleanType",
-        "binary": "BinaryType",
-        "date": "DateType",
-        "datetime": "TimestampType",
-        "decimal": "DecimalType",
-        "float": "FloatType",
-        "double": "Doubleype",
-        "integer": "IntegerType",
-        "int8": "ByteType",
-        "int16": "ShortType",
-        "int32": "IntegerType",
-        "int64": "LongType",
-        "string": "StringType",
-    }
+    typemap = TYPEMAP
 
     def __init__(self, **entities):
         self.__entities = entities

@@ -50,6 +50,11 @@ float           types.Float32
 """
 
 # convert cannonical to avro
+# Note that the AVRO specification do not provide
+# unigned integer types.  Integer is used instead
+# NB: to avoid overflow, unsigned is casted up where
+# possible
+
 AVRO_TYPEMAP = {
     "float":   "float",   # 32 bit
     "double":  "double",  # 64 bit
@@ -58,6 +63,10 @@ AVRO_TYPEMAP = {
     "int16":   "int",
     "int32":   "int",
     "int64":   "long",
+    "uint8":    "int",    # refer to note above
+    "uint16":   "int",
+    "uint32":   "long",
+    "uint64":   "long",
     "string":  "string",
     "boolean": "boolean",
     "binary":  "bytes",

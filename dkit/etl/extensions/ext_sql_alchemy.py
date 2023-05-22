@@ -39,6 +39,7 @@ from ...parsers.uri_parser import SQL_DRIVERS
 
 jinja2 = LazyLoad("jinja2")
 ora = LazyLoad("cx_Oracle")
+sqlalchemy = LazyLoad("sqlalchemy")
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,28 @@ def _rfc_1738_quote(text):
 VALID_DIALECTS = [
     k for k in sorted(SQL_DRIVERS.keys())
 ]
+
+
+SCHEMA_MAP = {
+    "float": sqlalchemy.Float,
+    "integer": sqlalchemy.Integer,
+    "int8": sqlalchemy.SmallInteger,
+    "int16": sqlalchemy.SmallInteger,
+    "int32": sqlalchemy.Integer,
+    "int64": sqlalchemy.BigInteger,
+    "decimal": sqlalchemy.Numeric,
+    # TinyInt only exist in specific implementations, e.g. mysql
+    # NB: Unsigned is casted UP to avoid overflow..
+    "uint8": sqlalchemy.SmallInteger,
+    "uint16": sqlalchemy.Integer,
+    "uint32": sqlalchemy.BigInteger,
+    "uint64": sqlalchemy.BigInteger,
+    "string":   sqlalchemy.String,
+    "boolean":  sqlalchemy.Boolean,
+    "date":     sqlalchemy.Date,
+    "datetime": sqlalchemy.DateTime,
+    "binary": sqlalchemy.LargeBinary,
+}
 
 # map between SQL types and closest Canonnical type
 TYPE_MAP = {
@@ -416,20 +439,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
     def __init__(self, default_str_len=255):
         super().__init__(default_str_len)
         self.sqlalchemy = importlib.import_module("sqlalchemy")
-        self.schema_map = {
-                "float": self.sqlalchemy.Float,
-                "integer": self.sqlalchemy.Integer,
-                "int8": self.sqlalchemy.SmallInteger,
-                "int16": self.sqlalchemy.SmallInteger,
-                "int32": self.sqlalchemy.Integer,
-                "int64": self.sqlalchemy.BigInteger,
-                "decimal": self.sqlalchemy.Numeric,
-                "string":   self.sqlalchemy.String,
-                "boolean":  self.sqlalchemy.Boolean,
-                "date":     self.sqlalchemy.Date,
-                "datetime": self.sqlalchemy.DateTime,
-                "binary": self.sqlalchemy.LargeBinary,
-        }
+        self.schema_map = SCHEMA_MAP
 
     def __get_dialect(self, dialect):
         if dialect not in VALID_DIALECTS:
