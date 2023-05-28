@@ -145,9 +145,7 @@ class Entity(containers.DictionaryEmulator):
         """
         retval = {}
         for k, v in the_dict.items():
-            the_type = v["type"].capitalize()
-            if the_type == "Datetime":
-                the_type = "DateTime"
+            the_type = type_parser.CAPITALIZE_MAP[v["type"]]
             retval[k] = "{}({})".format(
                 the_type,
                 cls.__encode_field(v)

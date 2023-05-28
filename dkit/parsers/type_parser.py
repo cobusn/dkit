@@ -61,6 +61,28 @@ type_map = {
     "Time": datetime.time,
 }
 
+# used by dkit.etl.model
+CAPITALIZE_MAP = {
+    "binary": "Binary",
+    "boolean": "Boolean",
+    "date": "Date",
+    "datetime": "DateTime",
+    "decimal": "Decimal",
+    "double": "Double",
+    "float": "Float",
+    "int16": "Int16",
+    "int32":  "Int32",
+    "int64": "Int64",
+    "int8": "Int8",
+    "uint16": "UInt16",
+    "uint32": "UInt32",
+    "uint64": "UInt64",
+    "uint8": "UInt8",
+    "integer": "Integer",
+    "string": "String",
+    "time": "Time",
+}
+
 
 class TypeParser(object):
 
