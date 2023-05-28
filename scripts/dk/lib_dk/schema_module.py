@@ -207,12 +207,10 @@ class SchemaModule(module.CRUDModule):
         from dkit.etl.extensions.ext_arrow import ARROW_TYPEMAP as arrow
         from dkit.etl.extensions.ext_avro import AVRO_TYPEMAP
         from dkit.etl.extensions.ext_spark import SchemaGenerator
-        from dkit.etl.extensions.ext_sql_alchemy import SQLAlchemyModelFactory
         from dkit.etl.schema import EntityValidator
         spark = SchemaGenerator.typemap
         avro = dict(AVRO_TYPEMAP)
         tmap = EntityValidator.type_description
-        sql = SQLAlchemyModelFactory.gt
         for k in avro:
             if isinstance(avro[k], dict):
                 avro[k] = "Logical Type"
@@ -221,7 +219,7 @@ class SchemaModule(module.CRUDModule):
         t_map = [
             {
                 "Name": k,
-                "Arrow": arrow.get(k, "N/A"),
+                "Arrow": arrow.get(k, lambda t: "N/A")(None),
                 "Avro": avro.get(k, "N/A"),
                 "Spark": spark.get(k, "N/A"),
                 "Description": v,

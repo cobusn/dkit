@@ -51,6 +51,18 @@ logger = logging.getLogger("ext_arrow")
 __all__ = []
 
 # convert cannonical to arrow
+
+
+def make_decimal(t=None):
+    """create decimal value"""
+    if not t:
+        t = {
+            "precision": 10,
+            "scale": 2,
+        }
+    return pa.decimal128(t["precision"], t["scale"])
+
+
 ARROW_TYPEMAP = {
     "float": lambda t: pa.float32(),
     "double": lambda t: pa.float64(),
@@ -69,7 +81,7 @@ ARROW_TYPEMAP = {
     # "datetime":  pa.time32("s"),
     "datetime": lambda t: pa.timestamp("s"),
     "date": lambda t: pa.date32(),
-    "decimal": lambda t: pa.decimal128(t["precision"], t["scale"]),
+    "decimal": make_decimal,
 }
 
 

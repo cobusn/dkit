@@ -190,6 +190,8 @@ class ClearCmd(ProxyCmd):
     """
     clear screen
     """
+    cmd = "clear"
+
     def run(self, args):
         clear()
 
