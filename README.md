@@ -12,7 +12,7 @@ processing library in Python:
 * Data Exploration
 * Data manipulation
 * Report generation using Latex and Reportlab
-* extensive test coverage (>70%)
+* Extensive test coverage (>70%)
 
 # Data formats
 Include extensions that facilitate reading data, 
