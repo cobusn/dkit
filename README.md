@@ -29,7 +29,7 @@ following formats:
 * Excel
 * Apache Avro
 
-# Schema generated
+# Schema Generation 
 Support schema generation for the following:
 
 * Apache Arrow
