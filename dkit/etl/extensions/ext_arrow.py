@@ -336,7 +336,7 @@ def write_parquet_file(table, path, fs=None, compression="snappy"):
 
     """
     logger.info(f"writing table of size {len(table)} to parquet")
-    logger.debug(f"writing to path {path}")
+    logger.info(f"writing parquet to path {path}")
     pq.write_table(
         table,
         path,
