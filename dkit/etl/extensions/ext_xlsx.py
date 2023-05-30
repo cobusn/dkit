@@ -29,6 +29,34 @@ pyxl = LazyLoad("openpyxl")
 logger = logging.getLogger(__name__)
 
 
+def _float_hour_to_time(fh):
+    """
+    exclusively for use by from_excel_datetime()
+    """
+    hours, hourSeconds = divmod(fh, 1)
+    minutes, seconds = divmod(hourSeconds * 60, 1)
+    return (
+        int(hours),
+        int(minutes),
+        int(seconds * 60),
+    )
+
+
+def from_excel_datetime(excel_date):
+    """convert excel datetime number to python datetime
+
+    https://stackoverflow.com/questions/31359150/convert-date-from-excel-in-number-format-to-date-format-python
+    """
+
+    dt = datetime.fromordinal(
+        datetime(1900, 1, 1).toordinal() + int(excel_date) - 2
+    )
+
+    hour, minute, second = _float_hour_to_time(excel_date % 1)
+    dt = dt.replace(hour=hour, minute=minute, second=second)
+    return dt
+
+
 class XlsxSink(sink.AbstractSink):
     """
     Serialize Dictionary Line to Excel using openpyxl.
@@ -186,5 +214,6 @@ def read_xlsx(file_name, work_sheet=None, skip_lines=0, stop_fn=None):
     """
     Convenience function to read tables from a worksheet
     """
-    yield from XLSXSource([file_name], work_sheet, skip_lines=skip_lines,
-                          stop_fn=stop_fn)
+    yield from XLSXSource(
+        [file_name], work_sheet, skip_lines=skip_lines, stop_fn=stop_fn
+    )

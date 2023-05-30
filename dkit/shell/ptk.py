@@ -22,7 +22,7 @@ import shlex
 import textwrap
 from abc import ABCMeta, abstractmethod
 
-from prompt_toolkit import PromptSession
+from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
@@ -48,6 +48,13 @@ class ProxyCmd(metaclass=ABCMeta):
 
     def get_help(self):
         return self.__doc__
+
+    def echo(self, *values):
+        """print to console
+
+        print using prompt toolkit print_formatted_text
+        """
+        print_formatted_text(*values)
 
 
 class CmdCompleter(Completer):
@@ -177,7 +184,7 @@ class CmdApplication(object):
                     print(E)
                 except argparse.ArgumentError as E:
                     print(E)
-                except ValueError as E:
+                except (ValueError, AssertionError) as E:
                     print(E)
 
     def add_commands(self, commands):
