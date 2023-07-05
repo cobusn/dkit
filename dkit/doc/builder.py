@@ -85,6 +85,10 @@ class ReportContent(ABC):
     def variables(self):
         return self.parent.variables
 
+    @property
+    def style_sheet(self):
+        return self.parent.style_sheet
+
     def configure(self):
         """
         Hook to perform initialisation without having to boilerplate the
@@ -155,6 +159,7 @@ class BuilderProxy(object):
         self.definition = definition
         self.configuration = {}
         self.data = {}
+        self.style_sheet = {}
         self.variables = {}
         logger.info("Validating report definition")
         # validate defition
@@ -162,6 +167,7 @@ class BuilderProxy(object):
         validator(self.definition)
         self.load_variables()
         self.load_data()
+        self.load_stylesheets()
 
     @property
     def plot_folder(self):
@@ -179,6 +185,15 @@ class BuilderProxy(object):
             logger.info(f"loading data file: {filename}")
             with source.load(filename) as iter_in:
                 self.data[k] = list(iter_in)
+
+    def load_stylesheets(self):
+        """
+        load stylesheets
+        """
+        for sheet in self.definition["styles"]:
+            logger.info(f"loading stylesheet: {sheet}")
+            with open(sheet, "rt") as infile:
+                self.style_sheet.update(yaml.load(infile, Loader=Loader))
 
     def load_variables(self):
         """
@@ -201,6 +216,34 @@ class BuilderProxy(object):
             return LatexReportBuilder(definition)
 
 
+def _include_image(source,  title=None, width=None, height=None, align="center"):
+    """
+    include images
+    """
+    return jsonise(
+        Image(
+            source,
+            title,
+            align,
+            width,
+            height
+        )
+    )
+
+
+def _include_file(filename):
+    """passed to jinja2
+
+    implements the {{ include(filename) }} function
+    """
+    rv = ["```\n"]
+    with open(filename, "rt") as infile:
+        for line in infile:
+            rv.append(f"{line}")
+    rv += ["```\n"]
+    return "".join(rv)
+
+
 class ReportBuilder(BuilderProxy):
     """
     Build report from configuration
@@ -216,13 +259,14 @@ class ReportBuilder(BuilderProxy):
             "data": self.data,
             "inflect": inflect.engine(),
             "lorem": Lorem(),
+            "include": _include_file,
+            "image": _include_image,
         }
         self.documents = {}
         self.presentations = {}
-        self.style_sheet = {}
         self.environment = None  # Jinja2 environment
         self.load_code()
-        self.load_stylesheets()
+        # self.load_stylesheets()   --> moved to ProxyBuilder
         self.load_documents()
         self.load_presentations()
 
@@ -245,15 +289,6 @@ class ReportBuilder(BuilderProxy):
             module_ = import_module(module_name)
             class_ = getattr(module_, class_name)
             self.code[k] = class_(self)
-
-    def load_stylesheets(self):
-        """
-        load stylesheets
-        """
-        for sheet in self.definition["styles"]:
-            logger.info(f"loading stylesheet: {sheet}")
-            with open(sheet, "rt") as infile:
-                self.style_sheet.update(yaml.load(infile, Loader=Loader))
 
     def load_documents(self):
         """
@@ -401,35 +436,9 @@ class SimpleDocRenderer(object):
         self.contact = contact
         self.renderer = renderer
         self.functions = {
-            "include": self._include_file,
-            "image": self._include_image,
+            "include": _include_file,
+            "image": _include_image,
         }
-
-    def _include_image(self, source,  title=None, width=None, height=None, align="center"):
-        """
-        include images
-        """
-        return jsonise(
-            Image(
-                source,
-                title,
-                align,
-                width,
-                height
-            )
-        )
-
-    def _include_file(self, filename):
-        """passed to jinja2
-
-        implements the {{ include(filename) }} function
-        """
-        rv = ["```\n"]
-        with open(filename, "rt") as infile:
-            for line in infile:
-                rv.append(f"{line}")
-        rv += ["```\n"]
-        return "".join(rv)
 
     def load_doc_template(self, filename):
         """load template and return rendered objects"""

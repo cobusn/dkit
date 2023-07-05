@@ -390,3 +390,10 @@ def short_month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:
     return short_month_day_id(
         from_unixtime(timestamp, time_zone)
     )
+
+
+def week_number(the_date: datetime) -> int:
+    """
+    return week number in format YYYYWW
+    """
+    return int(the_date.strftime("%Y%W"))

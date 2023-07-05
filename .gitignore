@@ -130,3 +130,4 @@ scripts/dk/dkit
 scripts/dk/testdata/ini.cfg
 scripts/dk/scratch/*
 *.pdf
+scratch/*
