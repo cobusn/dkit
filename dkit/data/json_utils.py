@@ -321,5 +321,5 @@ def make_encoder() -> JsonSerializer:
     create json encoder that encode dates to int
     """
     return JsonSerializer(
-        DateTimeCodec(), DateCodec(), Decimal2FloatCodec()
+        DateTimeCodec(), DateCodec(), Decimal2FloatCodec(), BytesCodec()
     )

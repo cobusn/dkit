@@ -10,7 +10,10 @@ PYTHON=python
 all: sdist bdist
 
 test:
-	cd test && pytest --cov=dkit
+	cd test && \
+		pytest --cov=dkit &&\
+		coverage html &&\
+		coverage report
 
 doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
 	cd doc/images && make -j 8

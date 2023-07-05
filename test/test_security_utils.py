@@ -21,7 +21,8 @@ Created on 19 January 2016
 '''
 import unittest
 import sys; sys.path.insert(0, "..") # noqa
-from dkit.utilities.security import Vigenere, Pie, Fernet
+from dkit.utilities.security import Vigenere, Pie, Fernet, EncryptedStore
+from dkit.data.containers import JSONShelve
 
 
 class TestVigenere(unittest.TestCase):
@@ -86,6 +87,43 @@ class TestPie(unittest.TestCase):
         o = Pie()
         e = o.encrypt(text)
         self.assertEqual(text, o.decrypt(e))
+
+
+class TestEncStore(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        db = JSONShelve.open("output/test_enc_store.json")
+        cls.store = EncryptedStore(backend=db)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.store:
+            del cls.store
+
+    def do_test(self, key, value):
+        self.store[key] = value
+        self.assertEqual(self.store[key], value)
+
+    def test_set_int(self):
+        self.do_test("int", 1)
+
+    def test_set_float(self):
+        self.do_test("float", 1.0)
+
+    def test_set_str(self):
+        self.do_test("str", "string")
+
+    def test_del(self):
+        self.store["key"] = 1
+        del self.store["key"]
+        self.assertEqual(
+            "key" in self.store,
+            False
+        )
+
+    def test_iter_keys(self):
+        pass
 
 
 if __name__ == '__main__':

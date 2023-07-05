@@ -18,17 +18,26 @@
 """
 Provide simple obfuscation
 """
-import math
 import base64
-from abc import ABC, abstractmethod
 import importlib
+import math
+import pickle
+import shelve
+from abc import ABC, abstractmethod
+from collections.abc import MutableMapping
+
 
 ALPHA = 'abcdefghijklmnopqrstuvwxyz'
 
 
+def make_token():
+    """Make general purpose token"""
+    return base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode())
+
+
 class AbstractEncryptor(ABC):
 
-    valid_types = [str]
+    valid_types = [str, bytes]
 
     def __init__(self, the_key):
         self.__key = None
@@ -74,7 +83,7 @@ class AbstractEncryptor(ABC):
         pass
 
 
-class Fernet(AbstractEncryptor):
+class FernetBytes(AbstractEncryptor):
     """
     Helper class wrapping Fernet encryption
 
@@ -82,9 +91,36 @@ class Fernet(AbstractEncryptor):
         - https://cryptography.io/en/latest/fernet/
         - https://asecuritysite.com/encryption/fernet
     """
+    valid_types = [bytes]
+
     def __init__(self, the_key: str):
         super().__init__(the_key)
         self._fernet = importlib.import_module("cryptography.fernet")
+
+    def encrypt(self, msg: str) -> str:
+        self._validate(msg, self.valid_types)
+        return self._fernet.Fernet(self.key).encrypt(msg)
+
+    def decrypt(self, msg):
+        """use stored key to encrypt a string"""
+        self._validate(msg, self.valid_types)
+        return self._fernet.Fernet(self.key).decrypt(msg)
+
+    @staticmethod
+    def generate_key():
+        _fernet = importlib.import_module("cryptography.fernet")
+        return _fernet.Fernet.generate_key().decode("utf-8")
+
+
+class Fernet(FernetBytes):
+    """
+    Helper class wrapping Fernet encryption
+
+    See:
+        - https://cryptography.io/en/latest/fernet/
+        - https://asecuritysite.com/encryption/fernet
+    """
+    valid_types = [str]
 
     def encrypt(self, msg: str) -> str:
         self._validate(msg, self.valid_types)
@@ -94,11 +130,6 @@ class Fernet(AbstractEncryptor):
         """use stored key to encrypt a string"""
         self._validate(msg, self.valid_types)
         return self._fernet.Fernet(self.key).decrypt(msg.encode()).decode()
-
-    @staticmethod
-    def generate_key():
-        _fernet = importlib.import_module("cryptography.fernet")
-        return _fernet.Fernet.generate_key().decode("utf-8")
 
 
 class Vigenere(AbstractEncryptor):
@@ -167,3 +198,78 @@ class Pie(Vigenere):
 
     def __init__(self):
         super().__init__(str(math.pi))
+
+
+class EncryptedStore(MutableMapping):
+    """
+    Encrypted Store
+
+    Arguments:
+        - backend: backend instance
+        - encryptor: encryptor instance
+    """
+    def __init__(self, backend=None, encryptor=None):
+        self.be: shelve = backend
+        self.enc: AbstractEncryptor = self.__make_encryptor(encryptor)
+
+    def __del__(self):
+        if self.be and hasattr(self.be, "close"):
+            self.be.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def __make_encryptor(self, encryptor):
+        if encryptor:
+            if isinstance(encryptor, AbstractEncryptor):
+                return encryptor
+            else:
+                raise TypeError("Invalid Encryptor instance")
+        else:
+            return FernetBytes(make_token())
+
+    def __getitem__(self, key):
+        ser = self.enc.decrypt(self.be[key])
+        return pickle.loads(ser)
+
+    def __setitem__(self, key, value):
+        ser = pickle.dumps(value)
+        self.be[key] = self.enc.encrypt(ser)
+
+    def __delitem__(self, key):
+        del self.be[key]
+
+    def __iter__(self):
+        for k in self.be.keys():
+            _k = self.__realize_key(k)
+            yield _k
+
+    def __len__(self):
+        return len(self.be)
+
+    def close(self):
+        self.be.close()
+
+    @classmethod
+    def from_secret(cls, secret: str, backend):
+        """
+        instantiate a new instance
+
+        Arguments:
+            - secret: secret used to instantiate
+            - backend: backend instance (e.g. shelve)
+
+        Example:
+
+            from dkit.data.containers import JSONShelve
+
+            with JSONShelve.open("test.db") as be:
+                with EncryptedStore.from_secret("secret", be) as db:
+                    db["key"] = "my secret"
+
+        """
+        fernet = FernetBytes(secret)
+        return cls(encryptor=fernet, backend=backend)

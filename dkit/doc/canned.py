@@ -355,7 +355,10 @@ class BostonMatrix(object):
     def col_sparkline_ma(self, title="Moving Average", width=2):
         """Create a sparkline of values"""
         return Table.SparkLine(
-            [i for i in self.window() if i[self.field_value] != 0.0],
+            [
+                i for i in self.window()
+                if i[self.alias_ma] != 0
+            ],
             self.id_field,
             self.id_field,
             self.alias_ma,

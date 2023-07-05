@@ -18,7 +18,7 @@ def build_doc():
 
     d += document.Heading("Heading 2", 2)
     d += lorem.paragraph()
-    d += lorem.unordered_list()
+    # d += lorem.unordered_list()
     d += lorem.paragraph()
     d += document.MD(
         """

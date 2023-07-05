@@ -1,12 +1,17 @@
-import collections
+import atexit
 import bisect
+import collections.abc
+import os
 import pickle
 import shelve
 from _pickle import Pickler, Unpickler, dumps, loads
 from io import BytesIO
+from tempfile import NamedTemporaryFile
 
-import collections.abc
 import collections_extended as ce
+
+from .json_utils import make_encoder
+
 
 """
 Container data structures
@@ -19,6 +24,7 @@ __all__ = [
     "FastFlexShelve",
     "FlexBSDDBShelve",
     "FlexShelve",
+    "JSONShelve",
     "ListEmulator",
     "OrderedSet",
     "RangeCounter",
@@ -611,6 +617,107 @@ class FastFlexShelve(collections.abc.MutableMapping):
 
     def close(self):
         self.udict.close()
+
+
+class JSONShelve(collections.abc.MutableMapping):
+    """
+    File based dictionary backed by json or a
+    json like schema
+
+    Useful for configuration items etc.
+
+    Arguments:
+        - path: file path
+        - serde: serialize / deserialize instance (e.g. json or yaml)
+
+    """
+
+    def __init__(self, path, serde=None):
+        self.path = path
+        self.serde = serde if serde else make_encoder()
+        self._data = {}
+        # this also used as a marker in __del__
+
+        self._dirty = False
+        if not os.path.exists(path):
+            self.sync(force=True)  # write empty dict to disk
+            return
+
+        # load the whole store
+        with open(path, "r") as file_in:
+            self.update(self.serde.load(file_in))
+
+        atexit.register(self.close)
+
+        # marker for successful init
+        self.__init_success = True
+
+    def __del__(self):
+        if not hasattr(self, "__init_success"):
+            # __init__ did not complete, dont bother
+            return
+        else:
+            self.sync()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+        self._dirty = True
+
+    def __delitem__(self, key):
+        del self._data[key]
+        self._dirty = True
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def _make_tempfile(self):
+        prefix = os.path.basename(self.path) + "."
+        dirname = os.path.dirname(self.path)
+        return NamedTemporaryFile(
+            mode="wt",
+            prefix=prefix,
+            dir=dirname,
+            delete=False
+        )
+
+    @classmethod
+    def open(cls, filename) -> "JSONShelve":
+        return cls(filename)
+
+    def close(self):
+        """sync and close"""
+        if not self._data:
+            return
+        try:
+            self.sync()
+        finally:
+            pass
+
+    def sync(self, force=False):
+        """
+        Write to disk
+        """
+        if not (self._dirty or force):
+            return False
+
+        with self._make_tempfile() as fp:
+            self.serde.dump(self._data, fp)
+        os.rename(fp.name, self.path)
+
+        self._dirty = False
+        return True
 
 
 class OrderedSet(collections.abc.MutableSet):

@@ -20,9 +20,11 @@
 
 import unittest
 import sys
+import os
 sys.path.insert(0, "..")  # noqa
 from dkit.data.containers import (
     FlexShelve,
+    JSONShelve,
     OrderedSet,
     RangeCounter,
     ReusableStack,
@@ -31,6 +33,58 @@ from dkit.data.containers import (
 )
 from random import shuffle
 from pathlib import Path
+
+
+class TestJsonShelve(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.filename = "output/jsonshelve_test_db.json"
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.filename):
+            os.remove(cls.filename)
+        print("lastly..")
+
+    def test_a_write(self):
+        with JSONShelve.open(self.filename) as db:
+            db["int"] = 1
+            db["float"] = 1.0
+            db["str"] = "str"
+
+    def test_b_read(self):
+        with JSONShelve.open(self.filename) as db:
+            self.assertEqual(db["int"], 1)
+            self.assertEqual(db["float"], 1.0)
+            self.assertEqual(db["str"], "str")
+
+    def test_c_len(self):
+        with JSONShelve.open(self.filename) as db:
+            self.assertEqual(len(db), 3)
+
+    def test_d_del_item(self):
+        with JSONShelve.open(self.filename) as db:
+            db["delme"] = True
+            del db["delme"]
+            self.assertTrue("delme" not in db)
+
+    def test_e_iter(self):
+        with JSONShelve.open(self.filename) as db:
+            keys = list(db.keys())
+            self.assertEqual(
+                keys,
+                ["int", "float", "str"]
+            )
+
+    def test_f_del(self):
+        """test that sync occur when an object is deleted"""
+        db = JSONShelve.open(self.filename)
+        db["exit"] = True
+        del db
+        with JSONShelve.open(self.filename) as db1:
+            self.assertEqual(db1["exit"], True)
+            db1.close()
 
 
 class TestSizedMap(unittest.TestCase):

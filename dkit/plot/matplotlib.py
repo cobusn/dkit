@@ -60,7 +60,7 @@ class MPLBackend(Backend):
         self.red_color = "#da291c"
         self.green_color = "#006747"
         if self.style_sheet:
-            self._apply_style()
+            self._apply_style(plt)
         self.draw_title = True
 
     def initialise(self):
@@ -72,7 +72,7 @@ class MPLBackend(Backend):
         fig, axes = plt.subplots()
         return (fig, axes)
 
-    def _apply_style(self):
+    def _apply_style(self, plt):
         """Apply settings specified in stylesheet"""
         style = self.style_sheet["matplotlib"]
         if "theme" in style:
