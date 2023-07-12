@@ -100,8 +100,8 @@ class AbstractEncryptor(ABC):
         pass
 
     @staticmethod
-    def generate_key(null=False):
-        if null:
+    def generate_key(provided):
+        if provided is None:
             return base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode()).decode()
         else:
             _fernet = importlib.import_module("cryptography.fernet")
@@ -144,7 +144,7 @@ class AbstractEncryptor(ABC):
             c.read(set(config_files))
             _key = c.get("DEFAULT", "key")
 
-        return _key
+        return cls(_key)
 
 
 class FernetBytes(AbstractEncryptor):
