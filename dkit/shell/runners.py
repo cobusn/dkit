@@ -56,6 +56,7 @@ class DispatcherRunner:
         self.arg = arg
 
     def debug_enabled(self):
+        """return true if DK_DEBUG is defined or --debug arg provided"""
         if bool(os.environ.get("DK_DEBUG", False)):
             return True
         elif hasattr(self.args, "debug") and self.args.debug is True:

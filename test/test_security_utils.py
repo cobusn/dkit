@@ -79,6 +79,12 @@ class TestFernet(TestVigenere):
         cls.C = Fernet
         cls.key = Fernet.generate_key()
 
+    def test_null(self):
+        self.assertEqual(
+            Fernet.generate_key(True),
+            'My4xNDE1OTI2NTM1ODk3OTMzLjE0MTU5MjY1MzU4OTc='
+        )
+
 
 class TestPie(unittest.TestCase):
 
@@ -90,6 +96,7 @@ class TestPie(unittest.TestCase):
 
 
 class TestEncStore(unittest.TestCase):
+    """encrypted store"""
 
     @classmethod
     def setUpClass(cls):
