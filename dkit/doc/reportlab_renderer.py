@@ -372,14 +372,16 @@ class RLStyler(object):
         canvas.setFont('Times-Bold', 16)
 
         # image
-        with open_binary("dkit.resources", "background.pdf") as infile:
+        # with open_binary("dkit.resources", "background.pdf") as infile:
+        with open_binary("dkit.resources", "ddfrontpage.pdf") as infile:
             pdf = PdfImage(infile, self.page_width, self.page_height)
             pdf.drawOn(canvas, 0, 0)
 
         title_x = self.page_width/15
         title_y = 2.2 * self.page_height / 3
         canvas.setFont(self.title_font_name, 22)
-        canvas.setFillColor(colors.white)
+        # canvas.setFillColor(colors.white)
+        canvas.setFillColor(colors.darkgray)
         canvas.drawString(title_x, title_y, self.doc.title)
         canvas.setFont(self.title_font_name, 16)
         canvas.drawString(title_x, title_y - 22, self.doc.sub_title)

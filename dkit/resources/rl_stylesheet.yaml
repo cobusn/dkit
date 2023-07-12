@@ -12,19 +12,22 @@ reportlab:
   # Reportlab specific customisations
   styles:
     Heading1:
-      textColor: "#05386E"
+      #textColor: "#05386E"
+      textColor: "#5A5A5A"
       fontName: SourceSansPro-Bold
       fontSize: large
       spaceAfter: 5
       leading: 10
     Heading2:
-      textColor: "#05386E"
+      # textColor: "#05386E"
+      textColor: "#5A5A5A"
       fontName: SourceSansPro-Bold
       fontSize: normalsize
       spaceAfter: 5
       leading: 10
     Heading3:
-      textColor: "#05386E"
+      #textColor: "#05386E"
+      textColor: "#5A5A5A"
       fontName: SourceSansPro
       fontSize: normalsize 
       spaceAfter: 5 
@@ -33,13 +36,15 @@ reportlab:
       fontName: SourceSansPro
       fontSize: normalsize 
       #  textColor: "#378245"
-      textColor: "#05386E"
+      # textColor: "#05386E"
+      textColor: "#5A5A5A"
       alignment: 4                    # TA_JUSTIFY
     BodyText:
       fontSize: normalsize 
       spaceAfter: 10
       alignment: 4                    # TA_JUSTIFY
-      textColor: "#05386E"
+        # textColor: "#05386E"
+      textColor: "#5A5A5A"
     Verbatim: 
       fontName: Courier 
       firstLineIndent: 20
@@ -53,12 +58,14 @@ reportlab:
       fontName: Times-Roman 
       leading: 10
     UnorderedList:
-      textColor: "#05386E"
+      # textColor: "#05386E"
+      textColor: "#5A5A5A"
       spaceAfter: 4
       fontName: SourceSansPro
       fontSize: normalsize 
     OrderedList:
-      textColor: "#05386E"
+      # textColor: "#05386E"
+      textColor: "#5A5A5A"
       spaceAfter: 4
       fontName: SourceSansPro
       fontSize: normalsize 
@@ -72,9 +79,11 @@ page:
   title_date_format: "{:%d %B %Y}"
 table:
   heading_color: "#FFFFFF"
-  heading_background: "#05386E"
+    # heading_background: "#05386E"
+  heading_background: "#5A5A5A"
   fontSize: footnotesize
-  font_color: "#05386E" 
+    # font_color: "#05386E" 
+  font_color: "#5A5A5A"
   font: SourceSansPro
 matplotlib:
   theme: seaborn-bright

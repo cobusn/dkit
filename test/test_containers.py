@@ -45,7 +45,6 @@ class TestJsonShelve(unittest.TestCase):
     def tearDownClass(cls):
         if os.path.exists(cls.filename):
             os.remove(cls.filename)
-        print("lastly..")
 
     def test_a_write(self):
         with JSONShelve.open(self.filename) as db:
@@ -79,9 +78,8 @@ class TestJsonShelve(unittest.TestCase):
 
     def test_f_del(self):
         """test that sync occur when an object is deleted"""
-        db = JSONShelve.open(self.filename)
-        db["exit"] = True
-        del db
+        with JSONShelve.open(self.filename) as db:
+            db["exit"] = True
         with JSONShelve.open(self.filename) as db1:
             self.assertEqual(db1["exit"], True)
             db1.close()

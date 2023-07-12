@@ -52,15 +52,12 @@ from .. import exceptions, messages
 from ..data import map_db, containers
 from ..parsers import type_parser, uri_parser
 from ..utilities import template_helper, security
-
+from .. import GLOBAL_CONFIG_FILE, DEFAULT_MODEL_FILE, LOCAL_CONFIG_FILE
 
 CONFIG_SECTION = "DEFAULT"
 DOC_SECTION = "DOC"
-DEFAULT_MODEL_FILE = "model.yml"
-GLOBAL_CONFIG_FILE = "~/.dk.ini"
-LOCAL_CONFIG_FILE = "dk.ini"
 
-T = TypeVar('T', bound='A')
+T = TypeVar('T', bound='ETLServices')
 
 
 class Entity(containers.DictionaryEmulator):
@@ -69,6 +66,7 @@ class Entity(containers.DictionaryEmulator):
     """
     @property
     def sorted_dict(self):
+
         pk = [
             k for k, v in self.as_entity_validator().schema.items()
             if "primary_key" in v and v["primary_key"] is True

@@ -50,7 +50,8 @@ setup(
                 "dkit/resources/SourceSansPro-Bold.ttf",
                 "dkit/resources/SourceSansPro-BoldItalic.ttf",
                 "dkit/resources/lorem.txt",
-                "dkit/resources/background.pdf",
+                # "dkit/resources/background.pdf",
+                "dkit/resources/ddfrontpage.pdf",
                 "dkit/resources/cars.csv",
                 "dkit/resources/rl_stylesheet.yaml",
             ]

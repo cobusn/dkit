@@ -18,21 +18,33 @@
 """
 Provide simple obfuscation
 """
+from __future__ import annotations
 import base64
 import importlib
 import math
 import pickle
 import shelve
+import configparser
+import os
+from typing import Type, TypeVar
 from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
+from ..data.containers import JSONShelve
+from .. import GLOBAL_CONFIG_FILE, LOCAL_CONFIG_FILE
+from pathlib import Path
+# ALPHA = 'abcdefghijklmnopqrstuvwxyz'
 
 
-ALPHA = 'abcdefghijklmnopqrstuvwxyz'
+__all__ = [
+    "Fernet",
+    "FernetBytes",
+    "EncryptedStore",
+    "Vigenere",
+    "Pie"
+]
 
 
-def make_token():
-    """Make general purpose token"""
-    return base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode())
+AE = TypeVar("AE", bound="AbstractEncryptor")
 
 
 class AbstractEncryptor(ABC):
@@ -40,10 +52,13 @@ class AbstractEncryptor(ABC):
     valid_types = [str, bytes]
 
     def __init__(self, the_key):
-        self.__key = None
+        self.__key = None   # for property, value is set below
         self.str_valid_types = ", ".join([str(i) for i in self.valid_types])
         self.keylen = 0  # set by property
-        self.key = the_key
+        if the_key is None:
+            self.key = self.generate_key(the_key)
+        else:
+            self.key = the_key
 
     def __get_key(self):
         """
@@ -69,8 +84,10 @@ class AbstractEncryptor(ABC):
         Validate that obj is an instance of at least one of the types in valid_types
         """
         if not any([isinstance(obj, i) for i in valid_types]):
-            raise TypeError("[msg] should be an instance of one of the following: %s"
-                            % self.str_valid_types)
+            raise TypeError(
+                "[msg] should be an instance of one of the following: %s"
+                % self.str_valid_types
+            )
 
     key = property(__get_key, __set_key)
 
@@ -82,6 +99,53 @@ class AbstractEncryptor(ABC):
     def decrypt(self, msg: str) -> str:
         pass
 
+    @staticmethod
+    def generate_key(null=False):
+        if null:
+            return base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode()).decode()
+        else:
+            _fernet = importlib.import_module("cryptography.fernet")
+            return _fernet.Fernet.generate_key().decode("utf-8")
+
+    @classmethod
+    def from_config(
+        cls: Type[AE], config_file=None, key=None, null=False
+    ) -> AE:
+        """
+        instantiate an instance from configuration provided
+
+        arguments:
+            - config_file: instantiate from configuration file
+            - secret: instantiate from secret provided
+            - null: null configuration
+        """
+        config_files = []
+        global_path = os.path.expanduser(GLOBAL_CONFIG_FILE)
+        default_local_path = os.path.expanduser(LOCAL_CONFIG_FILE)
+
+        if os.path.exists(global_path):
+            config_files.append(global_path)
+
+        if isinstance(config_file, (str, Path)):
+            # filename specified
+            config_files.append(config_file)
+        elif os.path.exists(default_local_path):
+            # Nothing specified, attempt to load defaults
+            config_files.append(LOCAL_CONFIG_FILE)
+
+        if null:
+            _key = None
+        elif key is not None:
+            _key = key
+        else:
+            if len(config_files) == 0:
+                raise Exception("No valid configuration files found")
+            c = configparser.ConfigParser()
+            c.read(set(config_files))
+            _key = c.get("DEFAULT", "key")
+
+        return _key
+
 
 class FernetBytes(AbstractEncryptor):
     """
@@ -91,7 +155,7 @@ class FernetBytes(AbstractEncryptor):
         - https://cryptography.io/en/latest/fernet/
         - https://asecuritysite.com/encryption/fernet
     """
-    valid_types = [bytes]
+    valid_types = [bytes, str]
 
     def __init__(self, the_key: str):
         super().__init__(the_key)
@@ -105,11 +169,6 @@ class FernetBytes(AbstractEncryptor):
         """use stored key to encrypt a string"""
         self._validate(msg, self.valid_types)
         return self._fernet.Fernet(self.key).decrypt(msg)
-
-    @staticmethod
-    def generate_key():
-        _fernet = importlib.import_module("cryptography.fernet")
-        return _fernet.Fernet.generate_key().decode("utf-8")
 
 
 class Fernet(FernetBytes):
@@ -200,6 +259,9 @@ class Pie(Vigenere):
         super().__init__(str(math.pi))
 
 
+ES = TypeVar("ES", bound="EncryptedStore")
+
+
 class EncryptedStore(MutableMapping):
     """
     Encrypted Store
@@ -213,8 +275,7 @@ class EncryptedStore(MutableMapping):
         self.enc: AbstractEncryptor = self.__make_encryptor(encryptor)
 
     def __del__(self):
-        if self.be and hasattr(self.be, "close"):
-            self.be.close()
+        self.close()
 
     def __enter__(self):
         return self
@@ -229,7 +290,7 @@ class EncryptedStore(MutableMapping):
             else:
                 raise TypeError("Invalid Encryptor instance")
         else:
-            return FernetBytes(make_token())
+            return FernetBytes(Fernet.generate_key(null=True))
 
     def __getitem__(self, key):
         ser = self.enc.decrypt(self.be[key])
@@ -243,18 +304,17 @@ class EncryptedStore(MutableMapping):
         del self.be[key]
 
     def __iter__(self):
-        for k in self.be.keys():
-            _k = self.__realize_key(k)
-            yield _k
+        yield from self.be.keys()
 
     def __len__(self):
         return len(self.be)
 
     def close(self):
-        self.be.close()
+        if self.be and hasattr(self.be, "close"):
+            self.be.close()
 
     @classmethod
-    def from_secret(cls, secret: str, backend):
+    def from_key(cls: Type[ES], key: str, backend) -> ES:
         """
         instantiate a new instance
 
@@ -267,9 +327,22 @@ class EncryptedStore(MutableMapping):
             from dkit.data.containers import JSONShelve
 
             with JSONShelve.open("test.db") as be:
-                with EncryptedStore.from_secret("secret", be) as db:
+                with EncryptedStore.from_key("secret", be) as db:
                     db["key"] = "my secret"
 
         """
-        fernet = FernetBytes(secret)
+        fernet = FernetBytes(key)
         return cls(encryptor=fernet, backend=backend)
+
+    @classmethod
+    def from_json_file(cls: Type[ES], key: str, file_name: str) -> ES:
+        """
+        convenience function to open a json based
+        store
+
+        Arguments:
+            secret: secret key
+            file_name: filename of json file
+        """
+        with JSONShelve(file_name) as json_backend:
+            return cls.from_key(key, json_backend)
