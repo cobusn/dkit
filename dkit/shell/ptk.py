@@ -115,13 +115,15 @@ class CmdApplication(object):
     args:
         lst_commands: list of commmands
         debug: True to defeat error handling
+        on_exit: callback for exit (e.g. cleanup, saving)
 
     """
-    def __init__(self, commands=None, debug=False):
+    def __init__(self, commands=None, debug=False, on_exit=None):
         self.debug = debug
         self.completer = CmdCompleter([])
         self.quit = False
         self.commands = commands
+        self.on_exit = on_exit
         if self.commands is not None:
             self.add_commands(self.commands)
 
@@ -150,6 +152,8 @@ class CmdApplication(object):
 
             # exit
             if command.lower() == 'exit':
+                if self.on_exit:
+                    self.on_exit()
                 print("Good bye..")
                 self.quit = True
                 return
@@ -239,5 +243,3 @@ class HelpCmd(ProxyCmd):
                 echo(help_text)
             else:
                 echo("No help available")
-
-
