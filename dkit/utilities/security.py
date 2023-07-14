@@ -56,7 +56,7 @@ class AbstractEncryptor(ABC):
         self.str_valid_types = ", ".join([str(i) for i in self.valid_types])
         self.keylen = 0  # set by property
         if the_key is None:
-            self.key = self.generate_key(the_key)
+            self.key = base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode()).decode()
         else:
             self.key = the_key
 
@@ -100,12 +100,9 @@ class AbstractEncryptor(ABC):
         pass
 
     @staticmethod
-    def generate_key(provided):
-        if provided is None:
-            return base64.urlsafe_b64encode((2 * str(math.pi))[:32].encode()).decode()
-        else:
-            _fernet = importlib.import_module("cryptography.fernet")
-            return _fernet.Fernet.generate_key().decode("utf-8")
+    def generate_key():
+        _fernet = importlib.import_module("cryptography.fernet")
+        return _fernet.Fernet.generate_key().decode("utf-8")
 
     @classmethod
     def from_config(
@@ -272,7 +269,7 @@ class EncryptedStore(MutableMapping):
     """
     def __init__(self, backend=None, encryptor=None):
         self.be: shelve = backend
-        self.enc: AbstractEncryptor = self.__make_encryptor(encryptor)
+        self.enc: AbstractEncryptor = self.__validate_encryptor(encryptor)
 
     def __del__(self):
         self.close()
@@ -283,14 +280,11 @@ class EncryptedStore(MutableMapping):
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def __make_encryptor(self, encryptor):
-        if encryptor:
-            if isinstance(encryptor, AbstractEncryptor):
-                return encryptor
-            else:
-                raise TypeError("Invalid Encryptor instance")
+    def __validate_encryptor(self, encryptor):
+        if isinstance(encryptor, AbstractEncryptor):
+            return encryptor
         else:
-            return FernetBytes(Fernet.generate_key(null=True))
+            raise TypeError("Invalid Encryptor instance")
 
     def __getitem__(self, key):
         ser = self.enc.decrypt(self.be[key])

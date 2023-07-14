@@ -26,7 +26,9 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
-from ..exceptions import DKitApplicationException, DKitArgumentException, DKitShellException
+from ..exceptions import (
+    DKitApplicationException, DKitArgumentException, DKitShellException
+)
 from .console import echo, columnize
 
 
@@ -144,12 +146,6 @@ class CmdApplication(object):
         if len(line) > 0:
             command = line[0]
 
-            # run registered command
-            if command in self.completer.cmd_map:
-                # print(command)
-                runner = self.completer.cmd_map[command]
-                runner.run(line)
-
             # exit
             if command.lower() == 'exit':
                 if self.on_exit:
@@ -157,6 +153,14 @@ class CmdApplication(object):
                 print("Good bye..")
                 self.quit = True
                 return
+
+            # run registered command
+            if command in self.completer.cmd_map:
+                # print(command)
+                runner = self.completer.cmd_map[command]
+                runner.run(line)
+            else:
+                raise DKitShellException(f"Invalid command: {command}")
 
     def run(self):
         """
