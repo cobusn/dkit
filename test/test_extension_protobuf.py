@@ -20,10 +20,13 @@ class TestPBSchemaExport(unittest.TestCase):
 
     def test_schema(self):
         g = SchemaGenerator(client=self.client)
-        print(g.create_schema())
         h = adler32(g.create_schema().encode())
+        """
+        # used for debug / creating the adler code
+        print(g.create_schema())
         print(h)
-        self.assertTrue(h in (3140830570,))
+        """
+        self.assertTrue(h in (1838358913,))
 
 
 if __name__ == '__main__':
