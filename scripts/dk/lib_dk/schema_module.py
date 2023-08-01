@@ -266,9 +266,10 @@ class SchemaModule(module.CRUDModule):
         options.add_option_defaults(parser_export)
         parser_export.add_argument(
             "-t", "--type", choices=[
-                'pyarrow',
                 'dot',
                 'model',
+                'pb',
+                'pyarrow',
                 'spark',
                 'sql.create',
                 'sql.select',
