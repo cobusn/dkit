@@ -823,6 +823,12 @@ class ETLServices(object):
             exporter = importlib.import_module("dkit.etl.extensions.ext_graphviz")
             exported = exporter.create_erd(entities, relations)
 
+        elif kind == "pb":
+            # protobuf
+            exporter = importlib.import_module("dkit.etl.extensions.ext_protobuf")
+            arrow_entities = {k: v.as_entity_validator() for k, v in entities.items()}
+            exported = exporter.SchemaGenerator(**arrow_entities).create_schema()
+
         elif kind == "spark":
             # pyspark
             exporter = importlib.import_module("dkit.etl.extensions.ext_spark")

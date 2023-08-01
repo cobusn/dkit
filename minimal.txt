@@ -1,0 +1,11 @@
+cryptography
+inflect
+jinja2
+mistune==0.8.4
+pyparsing
+python-dateutil
+pyyaml
+requests
+sqlalchemy>=1.4.46,<2.0
+tabulate
+tqdm
