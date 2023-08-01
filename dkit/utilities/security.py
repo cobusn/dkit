@@ -140,7 +140,6 @@ class AbstractEncryptor(ABC):
             c = configparser.ConfigParser()
             c.read(set(config_files))
             _key = c.get("DEFAULT", "key")
-
         return cls(_key)
 
 
