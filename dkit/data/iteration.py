@@ -37,11 +37,13 @@ import uuid
 from collections import deque
 from itertools import chain, islice, tee
 from typing import Iterable
-
-from collections_extended import RangeMap
+from ..utilities.cmd_helper import LazyLoad
 from tabulate import tabulate
 
 from .stats import quantile_bins
+
+
+RangeMap = LazyLoad("collections_extended.RangeMap")
 
 __all__ = [
     "add_key",

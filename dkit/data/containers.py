@@ -7,10 +7,11 @@ import shelve
 from _pickle import Pickler, Unpickler, dumps, loads
 from io import BytesIO
 from tempfile import NamedTemporaryFile
-
-import collections_extended as ce
-
+from ..utilities.cmd_helper import LazyLoad
 from .json_utils import make_encoder
+
+
+ce = LazyLoad("collections_extended")
 
 
 """
