@@ -28,7 +28,7 @@ Aug 2023    Cobus Nel       Initial version
 # from ...utilities.cmd_helper import LazyLoad
 from jinja2 import Template
 import logging
-# pb = LazyLoad("pyarrow.parquet")
+from typing import Dict
 logger = logging.getLogger("ext_protobuf")
 
 
@@ -59,11 +59,11 @@ PB_TYPEMAP = {
 
 
 str_template = """
-syntax = "{{ protocol }}"
+syntax = "{{ protocol }}";
 
 {%- for entity, typemap in entities.items() %}
 
-# {{ entity }}
+// {{ entity }}
 message {{ entity }} {
   {% for field, props in typemap.schema.items() -%}
   {{ props["type"] }} {{ field }} = {{ loop.index }};
@@ -95,3 +95,29 @@ class SchemaGenerator(object):
             tm=self.type_map,
             str=str
         )
+
+
+def message_to_dict(message) -> Dict:
+    """Convert protobuf message instance to dict
+
+    args:
+        -  message: protobuf message instance
+
+    returns:
+        - parameters and their values
+
+    raises:
+        :class:`.TypeError` if ``message`` is not a proto message
+    """
+    data = {}
+
+    for desc, field in message.ListFields():
+        if desc.type == desc.TYPE_MESSAGE:
+            if desc.label == desc.LABEL_REPEATED:
+                data[desc.name] = list(map(message_to_dict, field))
+            else:
+                data[desc.name] = message_to_dict(field)
+        else:
+            data[desc.name] = list(field) if desc.label == desc.LABEL_REPEATED else field
+
+    return data
