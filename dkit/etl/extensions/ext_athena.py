@@ -31,7 +31,7 @@ from datetime import date
 from typing import List, Dict
 from os.path import join
 from urllib.parse import quote
-
+from ...exceptions import DKitValidationException
 _create_template = """
 --
 -- {{ table_name }}
@@ -118,11 +118,14 @@ class SchemaGenerator(object):
 
     def partition_fields(self):
         """fields used for partitioning"""
-        return {
+        pf = {
             k: v
             for k, v in self.entity.as_entity_validator().schema.items()
             if k in self.partition_by
         }
+        if len(pf) != len(self.partition_by):
+            raise DKitValidationException("Partition Fields not in schema")
+        return pf
 
     def get_create_sql(self):
         """Generate DDL to create Athena table"""
