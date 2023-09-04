@@ -191,7 +191,7 @@ def _sink_factory(uri_struct, key=None):
         "mysql": make_sqla_sink,
         "mysql+mysqldb": make_sqla_sink,
         "mysql+mysqlconnector": make_sqla_sink,
-        "postgres": make_sqla_sink,
+        "postgresql": make_sqla_sink,
     }
 
     # Main logic
