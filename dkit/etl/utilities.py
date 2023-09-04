@@ -285,7 +285,7 @@ class _SourceIterFactory(object):
             "mysql+mysqlconnector": self.__make_sqla_source,
             "mysql": self.__make_sqla_source,
             "mysql+mysqldb": self.__make_sqla_source,
-            "postgres": self.__make_sqla_source,
+            "postgresql": self.__make_sqla_source,
         }
         return dispatcher[uri_struct["driver"]](uri_struct)
 
