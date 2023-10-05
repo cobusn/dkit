@@ -116,19 +116,18 @@ class AbstractEncryptor(ABC):
             - secret: instantiate from secret provided
             - null: null configuration
         """
-        config_files = []
         global_path = os.path.expanduser(GLOBAL_CONFIG_FILE)
         default_local_path = os.path.expanduser(LOCAL_CONFIG_FILE)
 
-        if os.path.exists(global_path):
-            config_files.append(global_path)
-
         if isinstance(config_file, (str, Path)):
             # filename specified
-            config_files.append(config_file)
-        elif os.path.exists(default_local_path):
-            # Nothing specified, attempt to load defaults
-            config_files.append(LOCAL_CONFIG_FILE)
+            config_files = [config_file]
+        else:
+            if os.path.exists(default_local_path):
+                # Nothing specified, attempt to load defaults
+                config_files = [default_local_path]
+            elif os.path.exists(global_path):
+                config_files = [global_path]
 
         if null:
             _key = None

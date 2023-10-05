@@ -372,9 +372,19 @@ def write_parquet_dataset(
         table,
         root_path=path,
         partition_cols=partition_cols,
-        existing_data_behavior="overwrite_or_ignore",
+        existing_data_behavior=existing_data_behaviour,
         filesystem=fs,
         compression=compression
         # basename_template="chunk.{i}.snappy.parquet"
     )
     logger.debug("write completed")
+
+
+def make_partition_path(partition_map):
+    subdir = '/'.join(
+        [
+            '{colname}={value}'.format(colname=name, value=val)
+            for name, val in partition_map.values()
+        ]
+    )
+    print(subdir)
