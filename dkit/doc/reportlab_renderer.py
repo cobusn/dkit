@@ -29,6 +29,19 @@ from .. import messages
 
 # from ..utilities.file_helper import temp_filename
 
+HEADING_COUNTER = 0
+
+
+class Heading(Paragraph):
+
+    def draw(self):
+        global HEADING_COUNTER
+        key = f"ch{HEADING_COUNTER}"
+        self.canv.bookmarkPage(key)
+        self.canv.addOutlineEntry(self.getPlainText(), key, 0, None)
+        HEADING_COUNTER += 1
+        super().draw()
+
 
 class PdfImage(Flowable):
     """
@@ -438,7 +451,7 @@ class ReportlabDocRenderer(AbstractRenderer):
     def make_heading(self, element):
         """format heading"""
         level = element["level"]
-        heading = Paragraph(
+        heading = Heading(
             self._make(element["data"]),
             self.styler[f"Heading{level}"]
         )
