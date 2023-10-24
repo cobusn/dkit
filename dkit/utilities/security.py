@@ -118,6 +118,7 @@ class AbstractEncryptor(ABC):
         """
         global_path = os.path.expanduser(GLOBAL_CONFIG_FILE)
         default_local_path = os.path.expanduser(LOCAL_CONFIG_FILE)
+        config_files = []
 
         if isinstance(config_file, (str, Path)):
             # filename specified
