@@ -16,7 +16,7 @@ test:
 		coverage report
 
 doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
-	cd doc/images && make -j 8
+	cd doc/images && make 
 	cd examples && make cleanfiles
 	cd examples && make
 	cd doc && make html \

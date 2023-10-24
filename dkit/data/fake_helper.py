@@ -4,10 +4,11 @@ canned fake data for testing purpose
 import random
 
 from faker import Factory
-
+from random import choice
 from faker.providers import BaseProvider
 from . import helpers
 from .. import DEFAULT_LOCALE
+from ..etl.model import Entity
 import logging
 import numpy as np
 import decimal
@@ -135,6 +136,38 @@ CANNONICAL_ROW_SCHEMA = {
 }
 
 
+partition_data_schema = Entity.from_encoded_dict(
+    {
+        "month_id": "Integer()",
+        "day_id": "Integer()",
+        "float": "Float()",
+        "double": "Double()",
+        "integer": "Integer()",
+        "string": "String()",
+    }
+)
+
+
+def generate_partition_rows(n=1000):
+    """
+    generate data suitable for partitioning
+
+    partion fields=["month_id", "day_id"]
+    """
+    fake = Factory.create(locale=DEFAULT_LOCALE)
+    part_fields = [20230101, 20230202, 202301]
+    for i in range(n):
+        c = choice(part_fields)
+        yield {
+            "month_id": c,
+            "day_id": c,
+            "float": random.random() * 1000,
+            "double": random.random() * 100000,
+            "integer": random.randint(-10000, 10000),
+            "string": fake.sentence(),
+        }
+
+
 def generate_data_rows(n=1000):
     """
     generate rows for datatypes supported by
@@ -157,7 +190,7 @@ def generate_data_rows(n=1000):
             "binary": b"abcdefh1243",
             "datetime": fake.date_time_between(),
             "date": fake.date_between(),
-            "decimal": decimal.Decimal(random.randrange(10000))/100
+            "decimal": decimal.Decimal(random.randrange(10000)) / 100
         }
 
 

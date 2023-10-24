@@ -1,25 +1,24 @@
 import sys; sys.path.insert(0, "..")  # noqa
 import unittest
 from zlib import adler32
-
+import os
 import pyarrow as pa
 
 from dkit.data.fake_helper import (
-    persons, generate_data_rows, CANNONICAL_ROW_SCHEMA
+    persons, generate_data_rows, CANNONICAL_ROW_SCHEMA,
+    generate_partition_rows, partition_data_schema
 )
 from dkit.etl import source
 from dkit.etl.extensions.ext_arrow import (
-    build_table,
-    infer_arrow_schema,
-    make_arrow_schema,
-    ArrowSchemaGenerator,
-    ParquetSink,
-    ParquetSource
+    ArrowSchemaGenerator, ParquetSink, ParquetSource, build_table,
+    infer_arrow_schema, make_arrow_schema, make_partition_path,
+    write_chunked_datasets, clear_partition_data
 )
 from dkit.etl.model import Entity
+from dkit.etl.reader import FileReader
 from dkit.etl.schema import EntityValidator
 from dkit.etl.writer import FileWriter
-from dkit.etl.reader import FileReader
+
 
 PARQUET_FILE = "output/mtcars.parquet"
 with source.load("data/mtcars.jsonl") as infile:
@@ -142,6 +141,90 @@ class B_TestParquetSource(unittest.TestCase):
             for row in MTCARS
         ]
         self.assertEqual(data, rows)
+
+
+class TestDataSets(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.path = "data/month_id=20230101/day_id=20230101/"
+        if os.path.exists(cls.path):
+            for file in os.listdir(cls.path):
+                file_path = os.path.join(cls.path, file)
+                os.remove(file_path)
+
+    def setUp(self):
+        self.td = {
+            "month_id": 20231101,
+            "day_id": 20231104,
+        }
+        self.partitions = list(self.td.keys())
+
+    def test_make_partition_path(self):
+        self.assertEqual(
+            make_partition_path(self.partitions, self.td),
+            "month_id=20231101/day_id=20231104"
+        )
+        self.assertEqual(
+            make_partition_path(self.partitions, self.td, "s3://bucket"),
+            "s3://bucket/month_id=20231101/day_id=20231104"
+        )
+        self.assertEqual(
+            make_partition_path(self.partitions, self.td, "s3://bucket/"),
+            "s3://bucket/month_id=20231101/day_id=20231104"
+        )
+
+    def test_make_partition_path_err(self):
+        td = {
+            "month_id": 20231101,
+        }
+        with self.assertRaises(KeyError) as _:
+            make_partition_path(self.partitions, td)
+
+    def test_make_partition_path_null(self):
+        td = {}
+        with self.assertRaises(ValueError) as _:
+            make_partition_path([], td)
+
+    def test_a_make_partitioned_dataset(self):
+        schema = make_arrow_schema(partition_data_schema)
+        write_chunked_datasets(
+            generate_partition_rows(1000),
+            "data",
+            schema,
+            ["month_id", "day_id"],
+            None,
+            100,
+            existing_data_behaviour="overwrite_or_ignore"
+        )
+        self.assertTrue(
+            len(os.listdir(self.path)) > 0
+        )
+
+    def test_b_clean_partitioned_folder(self):
+        clear_partition_data(
+            None,
+            ["month_id", "day_id"],
+            {"month_id": 20230101, "day_id": 20230101},
+            "data"
+        )
+        self.assertEqual(
+            len(os.listdir(self.path)),
+            0
+        )
+
+    def test_c_clean_partitioned_folder(self):
+        """the below test for a partition that does not exist
+
+        should complete without error as FileNotFound error is
+        caught and ignored in this use case.
+        """
+        clear_partition_data(
+            None,
+            ["month_id", "day_id"],
+            {"month_id": 20230101, "day_id": 20230109},
+            "data"
+        )
 
 
 if __name__ == '__main__':

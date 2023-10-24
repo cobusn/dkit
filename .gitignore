@@ -131,3 +131,4 @@ scripts/dk/testdata/ini.cfg
 scripts/dk/scratch/*
 *.pdf
 scratch/*
+examples/arrow_data/*

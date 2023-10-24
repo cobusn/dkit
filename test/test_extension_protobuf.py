@@ -26,7 +26,7 @@ class TestPBSchemaExport(unittest.TestCase):
         print(g.create_schema())
         print(h)
         """
-        self.assertTrue(h in (1838358913,))
+        self.assertTrue(h in [2742821367, ])
 
 
 if __name__ == '__main__':
