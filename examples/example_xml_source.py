@@ -22,5 +22,7 @@ src = ext_xml.XmlSource(
     fields_dict=schema
 )
 
+"""
 for row in src:
     print(row)
+"""

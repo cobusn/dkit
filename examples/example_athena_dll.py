@@ -25,4 +25,4 @@ if __name__ == "__main__":
         location="s3://bucket/location",
         properties={"parquet.compression": "SNAPPY"},
     )
-    print(g.create_schema())
+    print(g.get_create_sql())

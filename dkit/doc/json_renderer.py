@@ -115,7 +115,7 @@ class JSONRenderer(mistune.Renderer):
         return rv
 
     def inline_html(self, html):
-        raise NotImplementedError
+        raise NotImplementedError(html)
 
     def escape(text):
         raise NotImplementedError

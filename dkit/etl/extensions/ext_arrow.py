@@ -28,9 +28,11 @@ Sept 2022   Cobus Nel       Added:
                             - schema create tools
                             - Parquet source and sinks
 May 2023    Cobus Nel       Added Unsigned int types
+Oct 2023    Cobus Nel       clear_partitions
+                            write_dataset
 =========== =============== =================================================
 """
-from ... import CHUNK_SIZE
+from ... import CHUNK_SIZE, messages
 from ...utilities.cmd_helper import LazyLoad
 from .. import source, sink
 from ...data.iteration import chunker
@@ -38,10 +40,11 @@ from ..model import Entity
 from itertools import islice, chain
 from jinja2 import Template
 import logging
-
-
+from typing import Dict, List
+from os import path
 # pa = LazyLoad("pyarrow")
 import pyarrow as pa
+from pyarrow.fs import FileSystem, LocalFileSystem
 # import pyarrow.parquet as pq
 pq = LazyLoad("pyarrow.parquet")
 
@@ -380,11 +383,102 @@ def write_parquet_dataset(
     logger.debug("write completed")
 
 
-def make_partition_path(partition_map):
+def make_partition_path(partition_cols: List[str], partition_map: Dict,
+                        base_path: str = None) -> str:
+    """
+    calculate partition path based on keys and values
+
+    Arguments:
+        * partition_cols: list of columns used for partitioning. e.g
+    """
+    for k in partition_cols:
+        if k not in partition_map:
+            raise KeyError(messages.MSH_0028.format(k))
     subdir = '/'.join(
         [
             '{colname}={value}'.format(colname=name, value=val)
-            for name, val in partition_map.values()
+            for name, val in partition_map.items()
         ]
     )
-    print(subdir)
+    if base_path is not None:
+        retval = path.join(base_path, subdir)
+    else:
+        retval = subdir
+    if "=" not in retval:
+        raise ValueError(messages.MSH_0029)
+    return retval
+
+
+def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
+                         partition_map: Dict, base_path: str = None):
+    """
+    Clear data for partition specified
+
+    Parameters
+    ----------
+    f_system: filesystem instance
+        FileSystem instance.  Must be a pyarrow.fs type
+        if None will use LocalFilesystem
+    partition_cols: List
+        list of partition columns e.b. ["month_id", "day_id"].  Required
+        to make sure that all partitions is specified
+    partition_map: Dict
+        dict containing keys an values
+    base_path: str
+        filesystem base path. e.g. 's3://bucket/folder'
+
+
+    Called as::
+
+        from pyarrow.fs import LocalFileSystem
+
+        fs = LocalFileSystem()
+        pc = ["month_id", "day_id"]
+        dm = {"month_id": 20231001, "day_id": 20231002}
+        bp = "data/sales"
+        clear_partition(fs, pc, dm, bp)
+
+    """
+    fs = f_system if f_system else LocalFileSystem()
+    p_path = make_partition_path(partition_cols, partition_map, base_path)
+    logger.info(f"deleting files from {p_path}")
+    try:
+        fs.delete_dir_contents(p_path)
+    except FileNotFoundError:
+        logger.info(f"path {p_path} not found, ignoring clear operation")
+
+
+def write_chunked_datasets(
+    data, path, schema, partition_cols, fs=None,
+    chunk_size=1_000_000, compression="snappy",
+    existing_data_behaviour="overwrite_or_ignore"
+):
+    """
+    Write chunks to parquet dataset
+
+    Parameters:
+    table: pyarrow Table instance
+    path: str
+        filesystem path
+    fs: pyarrow.fs.FileSystem
+        Filesystem instance (e.g. Arrow S3FileSystem)
+    compression: str
+        e.g. snappy
+    existing_data_behaviour: str
+        can be one of:
+            - overwrite_or_ignore
+            - error
+            - delete_matching
+    """
+    for chunk in chunker(data, chunk_size):
+        table = build_table(chunk, schema=schema)
+        if len(table) > 0:
+            # dont write an empty table
+            write_parquet_dataset(
+                table=table,
+                path=path,
+                partition_cols=partition_cols,
+                fs=fs,
+                compression=compression,
+                existing_data_behaviour=existing_data_behaviour
+            )
