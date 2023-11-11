@@ -152,8 +152,8 @@ class DateStrCodec(CustomCodec):
     def __init__(self):
         super().__init__(date)
 
-    def encode(self, obj):
-        return str(obj)
+    def encode(self, obj: date):
+        return str(obj.strftime("%Y-%m-%d"))
 
 
 class DateTimeStrCodec(CustomCodec):
@@ -161,8 +161,8 @@ class DateTimeStrCodec(CustomCodec):
     def __init__(self):
         super().__init__(datetime)
 
-    def encode(self, obj):
-        return str(obj)
+    def encode(self, obj: datetime):
+        return obj.isoformat()
 
 
 class DateCodec(CustomCodec):
