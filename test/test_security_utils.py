@@ -19,9 +19,13 @@
 '''
 Created on 19 January 2016
 '''
-import unittest
 import sys; sys.path.insert(0, "..") # noqa
-from dkit.utilities.security import Vigenere, Pie, Fernet, EncryptedStore
+from dkit.doc.lorem import Lorem
+import unittest
+from dkit.utilities.security import (
+    FernetBytes, Vigenere, Pie, Fernet, EncryptedStore, EncryptedIO,
+    gen_password
+)
 
 
 class TestVigenere(unittest.TestCase):
@@ -78,6 +82,13 @@ class TestFernet(TestVigenere):
         cls.C = Fernet
         cls.key = Fernet.generate_key()
 
+    def test_from_password(self):
+        a = Fernet.from_password("password")
+        b = Fernet.from_password("password")
+        enc = a.encrypt("text")
+        dec = b.decrypt(enc)
+        self.assertEqual("text", dec)
+
 
 class TestPie(unittest.TestCase):
 
@@ -127,6 +138,37 @@ class TestEncStore(unittest.TestCase):
         self.assertEqual(
             len(list(self.store.keys())),
             3
+        )
+
+
+class TestEncryptedIO(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        lorem = Lorem()
+        cls.fernet = FernetBytes(None)
+        cls.data = lorem.txt_paragraph(max=10)
+        cls.fname = "output/encrypted_data.txt"
+
+    def test_0_write(self):
+        e = EncryptedIO(self.fernet)
+        e.write(self.fname, self.data.encode())
+
+    def test_1_read(self):
+        e = EncryptedIO(self.fernet)
+        text = e.read(self.fname)
+        self.assertEqual(
+            text.decode(),
+            self.data
+        )
+
+
+class TestFunctions(unittest.TestCase):
+
+    def test_gen_password_len(self):
+        pwd = gen_password(20)
+        self.assertEqual(
+            len(pwd), 20
         )
 
 
