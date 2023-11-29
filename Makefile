@@ -2,10 +2,10 @@
 # Makefile for dkit project 
 #
 
-PYTHON=python
+PYTHON=python3
 # export SPHINXBUILD=/cygdrive/c/Anaconda/envs/py36/Scripts/sphinx-build
 
-.PHONY: test
+.PHONY: test clean
 
 all: sdist bdist
 
@@ -28,13 +28,13 @@ sdist:
 	$(PYTHON) setup.py sdist
 
 install:
-	$(PYTHON) setup.py install
+	$(PYTHON) setup.py install --user
 
 bdist:
 	$(PYTHON) setup.py bdist_wininst
 
 clean:
-	python setup.py clean --all
+	python3 setup.py clean --all
 	cd doc && make clean
 	cd doc/images && make clean
 	cd examples && make clean

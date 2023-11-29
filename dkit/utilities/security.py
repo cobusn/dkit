@@ -32,6 +32,9 @@ from collections.abc import MutableMapping
 from ..data.containers import JSONShelve
 from .. import GLOBAL_CONFIG_FILE, LOCAL_CONFIG_FILE
 from pathlib import Path
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from random import Random
 # ALPHA = 'abcdefghijklmnopqrstuvwxyz'
 
 
@@ -39,9 +42,23 @@ __all__ = [
     "Fernet",
     "FernetBytes",
     "EncryptedStore",
+    "EncryptedIO",
     "Vigenere",
     "Pie"
 ]
+
+
+def gen_password(length=10):
+    '''
+    Generate random passwords
+    '''
+    rng = Random()
+    allchars = (
+        '23456qwertasdfgzxcvbQWERTASDFGZXCVB'
+        '789yuiophjknmYUIPHJKLNM'
+        '!@#$%^&*'
+    )
+    return ''.join([rng.choice(allchars) for num in range(length)])
 
 
 AE = TypeVar("AE", bound="AbstractEncryptor")
@@ -103,6 +120,18 @@ class AbstractEncryptor(ABC):
     def generate_key():
         _fernet = importlib.import_module("cryptography.fernet")
         return _fernet.Fernet.generate_key().decode("utf-8")
+
+    @classmethod
+    def from_password(cls, password: str):
+        salt = str(math.pi).encode()
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=4800,
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return cls(key.decode())
 
     @classmethod
     def from_config(
@@ -260,7 +289,7 @@ ES = TypeVar("ES", bound="EncryptedStore")
 
 class EncryptedStore(MutableMapping):
     """
-    Encrypted Store
+    Encrypted Shelve type Store
 
     Arguments:
         - backend: backend instance
@@ -339,3 +368,22 @@ class EncryptedStore(MutableMapping):
         """
         with JSONShelve(file_name) as json_backend:
             return cls.from_key(key, json_backend)
+
+
+class EncryptedIO:
+    """helper to read and write encrypted data"""
+
+    def __init__(self, fernet: FernetBytes):
+        self._fernet = fernet
+
+    def read(self, file_name) -> bytes:
+        with open(file_name, "rb") as infile:
+            return self._fernet.decrypt(
+                infile.read()
+            )
+
+    def write(self, file_name, data: bytes):
+        with open(file_name, "wb") as outfile:
+            outfile.write(
+                self._fernet.encrypt(data)
+            )
