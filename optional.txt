@@ -1,9 +1,12 @@
 awswrangler
 boltons
 collections-extended
+confluent_kafka
 coverage
 cx_Oracle
 cython
+duckdb
+duckdb_engine
 faker
 fastavro
 impyla
@@ -27,3 +30,4 @@ sphinx
 sphinxcontrib-napoleon
 sqlalchemy-pyodbc-mssql
 tables
+zmq

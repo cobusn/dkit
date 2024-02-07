@@ -26,6 +26,7 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
+from prompt_toolkit.history import FileHistory
 from ..exceptions import (
     DKitApplicationException, DKitArgumentException, DKitShellException
 )
@@ -110,6 +111,15 @@ class CmdCompleter(Completer):
         yield from (Completion(i, start_position=-pos) for i in completions)
 
 
+class SetCmd(ProxyCmd):
+
+    def __init__(self, model, initial=None):
+        self.model = model
+
+    def run(self, args):
+        pass
+
+
 class CmdApplication(object):
     """
     Abstract Base Class for Async Command Applications
@@ -117,15 +127,16 @@ class CmdApplication(object):
     args:
         lst_commands: list of commmands
         debug: True to defeat error handling
-        on_exit: callback for exit (e.g. cleanup, saving)
-
+        history_file: filename for history (ignored if None)
     """
-    def __init__(self, commands=None, debug=False, on_exit=None):
+    def __init__(self, commands=None, debug=False, history_file: str = None,
+                 settings=None):
         self.debug = debug
         self.completer = CmdCompleter([])
         self.quit = False
+        self.history_file = history_file
         self.commands = commands
-        self.on_exit = on_exit
+        self.settings = settings
         if self.commands is not None:
             self.add_commands(self.commands)
 
@@ -148,8 +159,6 @@ class CmdApplication(object):
 
             # exit
             if command.lower() == 'exit':
-                if self.on_exit:
-                    self.on_exit()
                 print("Good bye..")
                 self.quit = True
                 return
@@ -162,11 +171,11 @@ class CmdApplication(object):
             else:
                 raise DKitShellException(f"Invalid command: {command}")
 
-    def run(self):
+    async def run(self):
         """
         Run application
         """
-        self.session = PromptSession()
+        self.session = self._make_session()
         # history = InMemoryHistory()
         if self.debug:
             while not self.quit:
@@ -176,24 +185,28 @@ class CmdApplication(object):
                 try:
                     with patch_stdout():
                         self._process_line()
-                except DKitApplicationException as E:
-                    print(E)
-                except DKitShellException as E:
-                    print(E)
-                except IndexError as E:
-                    print(E)
+                except (
+                    AssertionError,
+                    FileNotFoundError,
+                    IndexError,
+                    ValueError,
+                    argparse.ArgumentError,
+                    DKitApplicationException,
+                    DKitArgumentException,
+                    DKitShellException,
+                ) as E:
+                    print(str(E))
                 except KeyError as E:
                     print("Invalid Key: {}".format(E))
-                except FileNotFoundError as E:
-                    print(E)
-                except(EOFError, KeyboardInterrupt):
+                except (EOFError, KeyboardInterrupt):
                     return
-                except(DKitArgumentException) as E:
-                    print(E)
-                except argparse.ArgumentError as E:
-                    print(E)
-                except (ValueError, AssertionError) as E:
-                    print(E)
+
+    def _make_session(self):
+        if self.history_file:
+            history = FileHistory(self.history_file)
+        else:
+            history = None
+        return PromptSession(history=history)
 
     def add_commands(self, commands):
         self.completer.cmd_map.update(
@@ -236,14 +249,14 @@ class HelpCmd(ProxyCmd):
 
     def run(self, args):
         if len(args) == 1:
-            # for command in self.map_commands.keys():
-            #   echo(command)
             commands = list(self.map_commands.keys())
             echo(columnize(commands))
         else:
-            help_text = self.map_commands[args[-1]].get_help()
+            cmd = args[-1]
+            help_text = self.map_commands[cmd].get_help()
             if help_text is not None:
                 help_text = textwrap.dedent(help_text).strip()
                 echo(help_text)
+                echo()
             else:
                 echo("No help available")
