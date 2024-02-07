@@ -1,4 +1,6 @@
-awswrangler
+pandas
+ipython
+flask
 boltons
 collections-extended
 confluent_kafka
