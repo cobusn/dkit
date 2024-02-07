@@ -42,6 +42,7 @@ class TestBxr(unittest.TestCase):
     def setUpClass(cls):
         cls.records = []
         for i in fh.persons(10):
+            i["birthday"] = i["birthday"].replace(microsecond=0)
             i["int"] = random.randint(-999999, 9999999)
             i["neg_int"] = -100
             i["float"] = -11.00001
