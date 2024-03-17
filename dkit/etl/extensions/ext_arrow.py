@@ -60,10 +60,15 @@ def make_decimal(t=None):
     """create decimal value"""
     if not t:
         t = {
-            "precision": 10,
+            "precision": 12,
             "scale": 2,
         }
-    return pa.decimal128(t["precision"], t["scale"])
+    precision = t.get("precision", 12)
+    scale = t.get("scale", 2)
+    if precision < 38:
+        return pa.decimal128(precision, scale)
+    else:
+        return pa.decimal256(precision, scale)
 
 
 ARROW_TYPEMAP = {

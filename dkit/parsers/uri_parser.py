@@ -35,7 +35,7 @@ SHARED_MEMORY_DIALECTS = ["shm"]
 FILE_DB_DIALECTS = ["hdf5", "sqlite", "duckdb"]
 NETWORK_DIALECTS = [
     "awsathena", "sybase", "mysql", "oracle", "mssql",
-    "postgres", "impala",
+    "postgresql", "impala",
 ]
 SQL_DRIVERS = {
     "sybase": "sqlalchemy_sqlany",

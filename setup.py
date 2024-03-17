@@ -37,7 +37,7 @@ setup(
         "dkit.etl.extensions",
         "dkit.parsers",
         "dkit.plot",
-        "dkit.resources",
+        # "dkit.resources",
         "dkit.shell",
         "dkit.utilities",
     ],
