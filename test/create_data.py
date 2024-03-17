@@ -117,6 +117,8 @@ def write_pkl(the_data, the_schema):
 
 def write_hdf5(the_data, the_schema):
     print("writing hdf5")
+    if os.path.exists("input_files/sample.h5"):
+        os.unlink("input_files/sample.h5")
     accessor = ext_tables.PyTablesAccessor("input_files/sample.h5")
     accessor.create_table("/data", the_schema)
     snk = ext_tables.PyTablesSink(accessor, "/data")
@@ -125,6 +127,8 @@ def write_hdf5(the_data, the_schema):
 
 def write_sqlite(the_data, the_schema):
     print("Writing sqlite3 database")
+    if os.path.exists("input_files/sample.db"):
+        os.unlink("input_files/sample.db")
     accessor = ext_sql_alchemy.SQLAlchemyAccessor("sqlite:///input_files/sample.db")
     accessor.create_table("data", the_schema)
     print(the_schema)

@@ -66,14 +66,14 @@ class PdfImage(Flowable):
             self.imageWidth = self._w
         if not self.imageHeight:
             self.imageHeight = self._h
-        self.__ratio = float(self.imageWidth)/self.imageHeight
+        self.__ratio = float(self.imageWidth) / self.imageHeight
         if kind in ['direct', 'absolute'] or (width is None) or (height is None):
             self.drawWidth = width or self.imageWidth
             self.drawHeight = height or self.imageHeight
         elif kind in ['bound', 'proportional']:
-            factor = min(float(width)/self._w, float(height)/self._h)
-            self.drawWidth = self._w*factor
-            self.drawHeight = self._h*factor
+            factor = min(float(width) / self._w, float(height) / self._h)
+            self.drawWidth = self._w * factor
+            self.drawHeight = self._h * factor
 
     def wrap(self, aW, aH):
         return self.drawWidth, self.drawHeight
@@ -82,7 +82,7 @@ class PdfImage(Flowable):
         if _sW > 0 and hasattr(self, 'hAlign'):
             a = self.hAlign
             if a in ('CENTER', 'CENTRE', TA_CENTER):
-                x += 0.5*_sW
+                x += 0.5 * _sW
             elif a in ('RIGHT', TA_RIGHT):
                 x += _sW
             elif a not in ('LEFT', TA_LEFT):
@@ -91,8 +91,8 @@ class PdfImage(Flowable):
         xobj = self.xobj
         xobj_name = makerl(canv._doc, xobj)
 
-        xscale = self.drawWidth/self._w
-        yscale = self.drawHeight/self._h
+        xscale = self.drawWidth / self._w
+        yscale = self.drawHeight / self._h
 
         x -= xobj.BBox[0] * xscale
         y -= xobj.BBox[1] * yscale
@@ -385,12 +385,12 @@ class RLStyler(object):
         canvas.setFont('Times-Bold', 16)
 
         # image
-        # with open_binary("dkit.resources", "background.pdf") as infile:
-        with open_binary("dkit.resources", "ddfrontpage.pdf") as infile:
+        # with open_binary("dkit.resources", "ddfrontpage.pdf") as infile:
+        with open_binary("dkit.resources", "background.pdf") as infile:
             pdf = PdfImage(infile, self.page_width, self.page_height)
             pdf.drawOn(canvas, 0, 0)
 
-        title_x = self.page_width/15
+        title_x = self.page_width / 15
         title_y = 2.2 * self.page_height / 3
         canvas.setFont(self.title_font_name, 22)
         # canvas.setFillColor(colors.white)
@@ -455,7 +455,7 @@ class ReportlabDocRenderer(AbstractRenderer):
             self._make(element["data"]),
             self.styler[f"Heading{level}"]
         )
-        heading.keepWithNext = True
+        # heading.keepWithNext = True
         return heading
 
     def _is_pdf(self, name):

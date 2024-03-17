@@ -89,6 +89,7 @@ TYPE_MAP = {
     "DATETIME2": "datetime",
     "DECIMAL": "decimal",
     "DOUBLE": "float",
+    "DOUBLE_PRECISION": "float",
     "Date": "date",
     "DateTime": "datetime",
     "ENUM": "string",                   # MYSQL ENUM
@@ -98,6 +99,8 @@ TYPE_MAP = {
     "INT": "integer",
     "INTEGER": "integer",
     "Integer": "integer",
+    "JSON": "string",
+    "JSONB": "string",
     "LONGBLOB": "binary",
     "LONGTEXT": "string",
     "LargeBinary": "binary",
@@ -387,7 +390,7 @@ class SQLAlchemyReflector(object):
             _name = ref_col["name"]
             ref_col["type"] = self.c_map[_type.__class__.__name__]
             if ref_col["type"] == "string":
-                if _type.length:
+                if hasattr(_type, "length") and _type.length:
                     ref_col["str_len"] = _type.length
             if ref_col["type"] == "decimal":
                 if _type.precision:
@@ -444,7 +447,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
     def __get_dialect(self, dialect):
         if dialect not in VALID_DIALECTS:
             raise DKitETLException(
-               messages.MSG_0020.format(dialect)
+                messages.MSG_0020.format(dialect)
             )
         dialects = importlib.import_module("sqlalchemy.dialects")
         return dialects.registry.load(dialect)

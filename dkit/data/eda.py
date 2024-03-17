@@ -66,8 +66,14 @@ class StructureMap(ABC):
     def __init__(self, width: int, data: Iterable[Dict[str, Any]]):
         self.width = len
         self._data = data
-        max_ = max(self.non_null)
-        min_ = min(self.non_null)
+        try:
+            max_ = max(self.non_null)
+        except ValueError:
+            max_ = 0
+        try:
+            min_ = min(self.non_null)
+        except ValueError:
+            min_ = 0
         self._normalizer = Normalizer(max_, min_)
         uniq = self.unique
         cats = uniq if uniq < 256 else 256

@@ -1,4 +1,4 @@
-import unittest
+ latex-cjk-commonimport unittest
 import sys
 sys.path.insert(0, "..")  # noqa
 from dkit.doc.builder import SimpleDocRenderer
