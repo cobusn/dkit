@@ -64,7 +64,7 @@ WRITER_MAP = {
     "gz": writer.GzipWriter,
     "xz": writer.LzmaWriter,
     "lz4": writer.Lz4Writer,
-    }
+}
 
 
 COMPRESS_LIB = {
@@ -85,7 +85,7 @@ class Dumper(object):
     def load(self):
         if os.path.exists(self.filename):
             with open(self.filename, "rb") as infile:
-                return(self.pickler.load(infile))
+                return self.pickler.load(infile)
         else:
             return None
 
@@ -188,10 +188,7 @@ def _sink_factory(uri_struct, key=None):
         "file": make_file_sink,
         "hdf5": make_hdf5_sink,
         "sqlite": make_sqla_sink,
-        "mysql": make_sqla_sink,
-        "mysql+mysqldb": make_sqla_sink,
-        "mysql+mysqlconnector": make_sqla_sink,
-        "postgresql": make_sqla_sink,
+        "sql": make_sqla_sink,
     }
 
     # Main logic
@@ -281,11 +278,7 @@ class _SourceIterFactory(object):
             "shm": self.__make_shm_source,
             "file": self.__make_file_source,
             "hdf5": self.__make_hdf5_source,
-            "sqlite": self.__make_sqla_source,
-            "mysql+mysqlconnector": self.__make_sqla_source,
-            "mysql": self.__make_sqla_source,
-            "mysql+mysqldb": self.__make_sqla_source,
-            "postgresql": self.__make_sqla_source,
+            "sql": self.__make_sqla_source,
         }
         return dispatcher[uri_struct["driver"]](uri_struct)
 
@@ -310,7 +303,6 @@ class _SourceIterFactory(object):
         return ext_sql_alchemy.SQLAlchemyTableSource(
             accessor,
             uri_struct["entity"],
-            # where_clause=self.where_clause if self.where_clause else uri_struct["filter"],
             field_names=self.field_names,
         )
 

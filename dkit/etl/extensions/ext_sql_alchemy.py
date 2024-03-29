@@ -35,7 +35,7 @@ from ...exceptions import DKitETLException
 from ...utilities.cmd_helper import LazyLoad
 from ...utilities import identifier
 from ...data.containers import DictionaryEmulator
-from ...parsers.uri_parser import SQL_DRIVERS
+from ...parsers.uri_parser import NETWORK_DIALECTS, parse
 
 jinja2 = LazyLoad("jinja2")
 ora = LazyLoad("cx_Oracle")
@@ -48,9 +48,7 @@ def _rfc_1738_quote(text):
     return re.sub(r"[:@/]", lambda m: "%%%X" % ord(m.group(0)), text)
 
 
-VALID_DIALECTS = [
-    k for k in sorted(SQL_DRIVERS.keys())
-]
+VALID_DIALECTS = NETWORK_DIALECTS
 
 
 SCHEMA_MAP = {
@@ -134,8 +132,9 @@ TYPE_MAP = {
 class URL(object):
 
     """create SQlAlchemy URL from parameters"""
-    def __init__(self, driver, username=None, password=None, host=None, port=None,
+    def __init__(self, dialect, driver=None, username=None, password=None, host=None, port=None,
                  database=None, parameters=None, **kwargs):
+        self.dialect = dialect
         self.drivername = driver
         self.username = username
         self.password = password
@@ -189,7 +188,7 @@ class URL(object):
             return ""
 
     def __str__(self):
-        return f"{self.drivername}://{self._user}{self._uri}{self._options}"
+        return f"{self.dialect}://{self._user}{self._uri}{self._options}"
 
 
 def as_sqla_url(uri_map: Dict[str, str]):
@@ -216,13 +215,49 @@ class SQLAlchemyAccessor(object):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
         self.url = url
         logger.debug("connecting to database")
-        self.engine = self.sqlalchemy.create_engine(
-            url,
-            echo=echo,
-            # poolclass=self.sqlalchemy.pool.NullPool
-        )
+        self.engine = self.make_engine(url, echo)
         self.metadata = self.sqlalchemy.MetaData(bind=self.engine)
         self.__inspect = None
+
+    def make_engine(self, url: str, echo: bool):
+
+        if url.startswith("mssql+pyodbc"):
+            # dealing with an azure mfa auth
+            from sqlalchemy import event
+            from azure import identity
+            import struct
+
+            st = parse(url)
+            del st["username"]
+            del st["password"]
+            conns = as_sqla_url(st)
+            breakpoint()
+            engine = self.sqlalchemy.create_engine(
+                url,
+                echo=echo,
+            )
+
+            SQL_COPT_SS_ACCESS_TOKEN = 1256
+            TOKEN_URL = "https://database.windows.net/"
+
+            @event.listens_for(self.engine, "do_connect")
+            def provide_token(dialect, conn_rec, cargs, cparams):
+                # remove the "Trusted_Connection" parameter that SQLAlchemy adds
+                cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
+                azure_credentials = identity.DefaultAzureCredential()
+
+                # create token credential
+                raw_token = azure_credentials.get_token(TOKEN_URL).token.encode("utf-16-le")
+                token_struct = struct.pack(f"<I{len(raw_token)}s", len(raw_token), raw_token)
+
+                # apply it to keyword arguments
+                cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
+
+        engine = self.sqlalchemy.create_engine(
+            url,
+            echo=echo,
+        )
+        return engine
 
     def __del__(self):
         self.close()
@@ -449,8 +484,12 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
             raise DKitETLException(
                 messages.MSG_0020.format(dialect)
             )
+        if "+" in dialect:
+            d = dialect.split("+")[0]
+        else:
+            d = dialect
         dialects = importlib.import_module("sqlalchemy.dialects")
-        return dialects.registry.load(dialect)
+        return dialects.registry.load(d)
 
     def create_sql_select(self, dialect: str,
                           **entities: Dict[str, model.Entity]) -> str:

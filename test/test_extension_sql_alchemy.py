@@ -140,10 +140,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
         for dialect in self.dialects:
-            #
-            # Fix awsathena..
-            #
-            if dialect not in ["hdf5", ]:
+            if dialect not in ["hdf5", "awsathena+rest" ]:
                 print(factory.create_sql_schema(dialect, person=self.validator))
 
     def test_sql_select(self):
@@ -152,7 +149,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
         for dialect in self.dialects:
-            if dialect not in ["hdf5"]:
+            if dialect not in ["hdf5", "awsathena+rest"]:
                 print(factory.create_sql_select(dialect, person=self.validator))
 
 

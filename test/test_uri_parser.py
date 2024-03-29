@@ -27,7 +27,7 @@ from dkit.parsers import uri_parser
 from dkit.exceptions import DKitParseException
 
 
-class TestEndpointFactory(unittest.TestCase):
+class TestURIParser(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -78,11 +78,10 @@ class TestEndpointFactory(unittest.TestCase):
     def test_sqlite_dialect(self):
         """file based sqlite dialect"""
         data = self.blank.copy()
-        data["driver"] = "sqlite"
+        data["driver"] = "sql"
         data["dialect"] = "sqlite"
         data["database"] = "input_files/sample.db"
-        data["entity"] = "sales"
-        s = parse("sqlite:///input_files/sample.db#sales")
+        s = parse("sqlite:///input_files/sample.db")
         self.assertEqual(data, s)
 
     def test_stdout_data(self):
@@ -141,62 +140,43 @@ class TestEndpointFactory(unittest.TestCase):
 
     def test_t(self):
         uri = (
-            "mysql://user:now#zzy@sample-db.co.za:99/database"
+            "mysql+mysqldb://user:no&zzy@sample-db.co.za:99/database"
             "?sales=10"
             "&name=piet"
         )
         parse(uri)
 
-    def test_network_db_endpoint_function(self):
+    def test_network_db_endpoint(self):
         """sql based dialect"""
         tests = [
             [
-                "mysql://user:now#zzy@sample-db.co.za:99/database",
+                "mysql+mysqldb://user:now&zzy@sample-db.co.za:99/database",
                 {
                     'username': 'user',
-                    'password': 'now#zzy',
+                    'password': 'now&zzy',
                     'host': 'sample-db.co.za',
                     'port': '99',
                     'database': 'database',
-                    'dialect': "mysql",
-                    'driver': "mysql+mysqldb",
-                    'compression': None,
-                    'parameters': None,
-                    'entity': None,
-                }
-            ],
-            [
-                "sybase://user:now#zzy@sample-db.co.za:99/database",
-                {
-                    'username': 'user',
-                    'password': 'now#zzy',
-                    'host': 'sample-db.co.za',
-                    'port': '99',
-                    'database': 'database',
-                    'dialect': "sybase",
-                    'driver': "sqlalchemy_sqlany",
-                    'compression': None,
-                    'parameters': None,
-                    'entity': None,
+                    'dialect': "mysql+mysqldb",
+                    'driver': "sql",
+                    'parameters': {}
                 }
             ],
             [
                 (
-                    "awsathena://access_key:secret_key@athena."
+                    "awsathena+rest://access_key:secret_key@athena."
                     "af-south-1.amazonaws.com:443/db"
                     "?s3_staging_dir=s3://test/results"
                 ),
                 {
-                    'dialect': "awsathena",
+                    'dialect': "awsathena+rest",
                     'username': 'access_key',
                     'password': 'secret_key',
                     'host': 'athena.af-south-1.amazonaws.com',
                     'port': '443',
                     'database': 'db',
-                    'driver': "awsathena+rest",
-                    'compression': None,
+                    'driver': "sql",
                     'parameters': {'s3_staging_dir': 's3://test/results'},
-                    'entity': None,
                 }
             ],
         ]

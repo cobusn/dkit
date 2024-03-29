@@ -36,7 +36,7 @@ def add_sqlite_connection(c: ModelManager):
 def add_encrypted_connection(c):
     c.add_connection(
         "mysql",
-        "mysql://user:pass@localhost:3306/test",
+        "mysql+mysqldb://user:pass@localhost:3306/test",
         "password"
     )
     return c
