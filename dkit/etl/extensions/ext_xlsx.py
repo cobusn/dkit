@@ -67,9 +67,12 @@ class XlsxSink(sink.AbstractSink):
         super().__init__()
         self.file_name = file_name
         self.field_names = field_names
+        self.illegal = pyxl.cell.cell.ILLEGAL_CHARACTERS_RE
 
     def __convert(self, value):
         if isinstance(value, (str, int, float, datetime, date, Decimal)):
+            if isinstance(value, str):
+                return self.illegal.sub(r'', value)
             return value
         else:
             return str(value)

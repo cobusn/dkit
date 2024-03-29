@@ -203,8 +203,8 @@ class Entity(containers.DictionaryEmulator):
 @dataclass
 class Connection(map_db.Object):
     dialect: str
-    driver: str
     database: str
+    driver: str = None
     username: str = None
     password: str = None
     host: str = None

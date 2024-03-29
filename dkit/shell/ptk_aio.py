@@ -25,7 +25,8 @@ Refer to examples/example_ptk_aio.py
 """
 
 from . import ptk
-from .ptk import ProxyCmd, echo  # NoQA
+from .ptk import ProxyCmd #noqa
+from prompt_toolkit import print_formatted_text as echo
 from prompt_toolkit.patch_stdout import patch_stdout
 from ..exceptions import (
     DKitApplicationException, DKitArgumentException, DKitShellException
@@ -74,13 +75,12 @@ class ACmdApplication(ptk.CmdApplication):
 
             # exit
             if command.lower() == 'exit':
-                print("Good bye..")
+                echo("Good bye..")
                 self.quit = True
                 return
 
             # run registered command
             if command in self.completer.cmd_map:
-                # print(command)
                 runner = self.completer.cmd_map[command]
                 await runner.run(line)
             else:
@@ -109,8 +109,8 @@ class ACmdApplication(ptk.CmdApplication):
                     DKitArgumentException,
                     DKitShellException,
                 ) as E:
-                    print(str(E))
+                    echo(str(E))
                 except KeyError as E:
-                    print("Invalid Key: {}".format(E))
+                    echo("Invalid Key: {}".format(E))
                 except (EOFError, KeyboardInterrupt):
                     return

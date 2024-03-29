@@ -22,7 +22,8 @@ import shlex
 import textwrap
 from abc import ABCMeta, abstractmethod
 
-from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit import PromptSession
+from prompt_toolkit import print_formatted_text as echo
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
@@ -30,7 +31,7 @@ from prompt_toolkit.history import FileHistory
 from ..exceptions import (
     DKitApplicationException, DKitArgumentException, DKitShellException
 )
-from .console import echo, columnize
+from .console import to_columns
 
 
 """
@@ -57,7 +58,7 @@ class ProxyCmd(metaclass=ABCMeta):
 
         print using prompt toolkit print_formatted_text
         """
-        print_formatted_text(*values)
+        echo(*values)
 
 
 class CmdCompleter(Completer):
@@ -86,7 +87,6 @@ class CmdCompleter(Completer):
                 tokens = shlex.split(line)
                 if line.endswith(" "):
                     tokens.append("")
-                # print(tokens)
             except ValueError:
                 return
 
@@ -159,13 +159,12 @@ class CmdApplication(object):
 
             # exit
             if command.lower() == 'exit':
-                print("Good bye..")
+                echo("Good bye..")
                 self.quit = True
                 return
 
             # run registered command
             if command in self.completer.cmd_map:
-                # print(command)
                 runner = self.completer.cmd_map[command]
                 runner.run(line)
             else:
@@ -195,9 +194,9 @@ class CmdApplication(object):
                     DKitArgumentException,
                     DKitShellException,
                 ) as E:
-                    print(str(E))
+                    echo(str(E))
                 except KeyError as E:
-                    print("Invalid Key: {}".format(E))
+                    echo("Invalid Key: {}".format(E))
                 except (EOFError, KeyboardInterrupt):
                     return
 
@@ -250,13 +249,13 @@ class HelpCmd(ProxyCmd):
     def run(self, args):
         if len(args) == 1:
             commands = list(self.map_commands.keys())
-            echo(columnize(commands))
+            self.echo(to_columns(commands))
         else:
             cmd = args[-1]
             help_text = self.map_commands[cmd].get_help()
             if help_text is not None:
                 help_text = textwrap.dedent(help_text).strip()
-                echo(help_text)
-                echo()
+                self.echo(help_text)
+                self.echo()
             else:
-                echo("No help available")
+                self.echo("No help available")

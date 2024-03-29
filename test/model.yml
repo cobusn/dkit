@@ -4,7 +4,7 @@ connections:
   northwind:
     database: data/Northwind_small.sqlite
     dialect: sqlite
-    driver: sqlite
+    driver: sql
 endpoints: {}
 entities:
   mtcars:
