@@ -172,9 +172,8 @@ def _sink_factory(uri_struct, key=None):
 
     def make_sqla_sink(uri_struct):
         table_name = uri_struct["entity"]
-        uri = ext_sql_alchemy.as_sqla_url(uri_struct)
         accessor = ext_sql_alchemy.SQLAlchemyAccessor(
-            uri,
+            uri_struct,
             echo=False
         )
         cleanup.append(accessor)
@@ -297,8 +296,7 @@ class _SourceIterFactory(object):
 
     def __make_sqla_source(self, uri_struct):
         """instantiate sqlite source"""
-        uri = ext_sql_alchemy.as_sqla_url(uri_struct)
-        accessor = ext_sql_alchemy.SQLAlchemyAccessor(uri, echo=False)
+        accessor = ext_sql_alchemy.SQLAlchemyAccessor(uri_struct, echo=False)
         self.cleanup.append(accessor)
         return ext_sql_alchemy.SQLAlchemyTableSource(
             accessor,

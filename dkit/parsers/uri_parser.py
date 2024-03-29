@@ -19,11 +19,13 @@
 # SOFTWARE.
 
 import re
+from urllib.parse import urlparse, parse_qs
 
 from .. import messages
 from ..exceptions import DKitParseException
 
-COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4']  # , "snappy"]
+
+COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4']
 ENCRYPTION_FORMATS = ['aes']
 RE_COMRESSION_FORMATS = "|".join(COMPRESSION_FORMATS)
 RE_ENCRYPTION_FORMATS = "|".join(ENCRYPTION_FORMATS)
@@ -127,7 +129,7 @@ def parse(uri):
         )
 
 
-def _parse_file_driver(uri):
+def _parse_file_driver(uri: str):
     """parse file with specified driver"""
     rx = r"({}):\/\/\/(.+)$".format("|".join(
         FILE_DIALECTS + FILE_DB_DIALECTS + SHARED_MEMORY_DIALECTS
@@ -174,7 +176,7 @@ def _parse_file_db_endpoint(host_string):
     """parse host details including port etc."""
     # user:password@hostname:port/database::entity[filter]
     rx = (
-        r"(?P<database>[a-zA-Z0-9_./]+)"                 # file
+        r"(?P<database>[a-zA-Z0-9_./:]+)"                 # file
         r"(?:\#(?P<entity>[a-zA-Z0-9/_-]+))?"             # entity
         # r"(?:#\[(?P<filter>.+)\])?)?"                  # filter
         r"$"                                             # end of rx
@@ -224,10 +226,8 @@ def _parse_network_db(host_string):
         database=None
         parameters=None
     """
-    from urllib.parse import urlparse, parse_qs
     result = urlparse(host_string)
     params = parse_qs(result.query)
-
 
     if result.scheme not in NETWORK_DIALECTS:
         raise DKitParseException(

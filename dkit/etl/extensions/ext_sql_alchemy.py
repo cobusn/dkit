@@ -35,7 +35,7 @@ from ...exceptions import DKitETLException
 from ...utilities.cmd_helper import LazyLoad
 from ...utilities import identifier
 from ...data.containers import DictionaryEmulator
-from ...parsers.uri_parser import NETWORK_DIALECTS, parse
+from ...parsers.uri_parser import NETWORK_DIALECTS
 
 jinja2 = LazyLoad("jinja2")
 ora = LazyLoad("cx_Oracle")
@@ -160,7 +160,7 @@ class URL(object):
     @property
     def _uri(self):
         rv = ""
-        if "oracle" in self.drivername:
+        if "oracle" in self.dialect:
             # create Oracle DSN
             return ora.makedsn(
                 self.host,
@@ -211,36 +211,35 @@ class SQLAlchemyAccessor(object):
                 http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
         echo:   Echo SQL statements (Default is False)
     """
-    def __init__(self, url: str, echo: bool = False, ):
+    def __init__(self, conn: Dict, echo: bool = False, ):
         self.sqlalchemy = importlib.import_module("sqlalchemy")
-        self.url = url
+        self.conn = conn
         logger.debug("connecting to database")
-        self.engine = self.make_engine(url, echo)
+        self.engine = self.make_engine(conn, echo)
         self.metadata = self.sqlalchemy.MetaData(bind=self.engine)
         self.__inspect = None
 
-    def make_engine(self, url: str, echo: bool):
+    def make_engine(self, conn: Dict, echo: bool):
 
-        if url.startswith("mssql+pyodbc"):
-            # dealing with an azure mfa auth
+        if conn["dialect"] == "mssql+pyodbc" and conn["username"] is None:
+            # Assume Azure Connection
             from sqlalchemy import event
             from azure import identity
             import struct
 
-            st = parse(url)
+            st = dict(conn)    # make a copy so that original is not modified
             del st["username"]
             del st["password"]
-            conns = as_sqla_url(st)
-            breakpoint()
+            conn_str = as_sqla_url(st)
             engine = self.sqlalchemy.create_engine(
-                url,
+                conn_str,
                 echo=echo,
             )
 
             SQL_COPT_SS_ACCESS_TOKEN = 1256
             TOKEN_URL = "https://database.windows.net/"
 
-            @event.listens_for(self.engine, "do_connect")
+            @event.listens_for(engine, "do_connect")
             def provide_token(dialect, conn_rec, cargs, cparams):
                 # remove the "Trusted_Connection" parameter that SQLAlchemy adds
                 cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
@@ -253,8 +252,10 @@ class SQLAlchemyAccessor(object):
                 # apply it to keyword arguments
                 cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
 
+            return engine
+
         engine = self.sqlalchemy.create_engine(
-            url,
+            as_sqla_url(conn),
             echo=echo,
         )
         return engine
@@ -326,7 +327,7 @@ class SQLAlchemyAccessor(object):
         instantiate from model.connection instance
         """
         return cls(
-            as_sqla_url(connection_instance.as_dict()),
+            as_sqla_url(connection_instance.as_dict(True)),
             echo=echo
         )
 
@@ -783,12 +784,12 @@ class SQLServices(model.ETLServices):
         i_endpoint = self.model.endpoints[endpoint_name]
         i_entity = self.model.entities[i_endpoint.entity]
 
-        i_url = as_sqla_url(
-            self.model.get_connection(i_endpoint.connection).as_dict(include_none=True)
+        conn = self.model.get_connection(i_endpoint.connection).as_dict(
+            include_none=True
         )
 
         # create the table
-        accessor = SQLAlchemyAccessor(i_url, echo=True)
+        accessor = SQLAlchemyAccessor(conn, echo=True)
         accessor.create_table(
             i_endpoint.table_name,
             i_entity.as_entity_validator()
@@ -808,7 +809,7 @@ class SQLServices(model.ETLServices):
         if conn_name not in self.__accessor:
             conn_map = self.model.get_connection(conn_name)
             self.__accessor[conn_name] = SQLAlchemyAccessor(
-                as_sqla_url(conn_map.as_dict())
+                conn_map.as_dict(include_none=True)
             )
         return self.__accessor[conn_name]
 
@@ -866,7 +867,7 @@ class SQLServices(model.ETLServices):
 
     def run_template_query(self, connection: model.Connection, template, variables):
         """execute template query"""
-        accessor = SQLAlchemyAccessor(as_sqla_url(connection.as_dict(True)))
+        accessor = SQLAlchemyAccessor(connection.as_dict(True))
         yield from SQLAlchemyTemplateSource(
             accessor,
             template,
@@ -876,7 +877,7 @@ class SQLServices(model.ETLServices):
 
     def run_query(self, connection: model.Connection, query: str):
         """execute query and return results"""
-        accessor = SQLAlchemyAccessor(as_sqla_url(connection.as_dict(True)))
+        accessor = SQLAlchemyAccessor(connection.as_dict(True))
         yield from SQLAlchemySelectSource(
             accessor,
             query,
