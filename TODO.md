@@ -1,7 +1,11 @@
+# Busy
+* upgrade to mistune 2
+* improve test coverage
+
 # Next
+* Upgrade to sqlalchemy 2
 * validations on parsing Decimal(precision=X, scale=Y), will currently parse
   without defaults or errors;
-* upgrade to mistune 2
 * AWS S3 integration (s3fs..)
 * support for autolink in Reportlab Renderer
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))

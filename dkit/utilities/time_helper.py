@@ -107,27 +107,29 @@ class TimeSequence(object):
             d = d + incr
 
 
-def daterange(begin: AnyDate, end: AnyDate,
+def daterange(start: AnyDate, end: AnyDate,
               delta: timedelta = timedelta(1)) -> Iterable[AnyDate]:
     """generator that iterate over a set of dates
 
     Arguments:
-        begin: a date (or datetime) object; the beginning of the range.
+        start: a date (or datetime) object; the beginning of the range.
         end: a date (or datetime) object; the end of the range.
         delta: (optional) a timedelta object; how much to step each iteration.
                 Default step is 1 day.
     """
-    _first = begin
+    if end < start:
+        raise ValueError("end date must be after start date")
+    _first = start
     while _first < end:
         yield _first
         _first += delta
 
 
-def daterange_pairs(begin, end, delta=timedelta(1)):
+def daterange_pairs(start, end, delta=timedelta(1)):
     """generator that iterate over a set of dates
 
     Arguments:
-        begin: a date (or datetime) object; the beginning of the range.
+        start: a date (or datetime) object; the beginning of the range.
         end: a date (or datetime) object; the end of the range.
         delta: (optional) a timedelta object; how much to step each iteration.
                 Default step is 1 day.
@@ -135,7 +137,9 @@ def daterange_pairs(begin, end, delta=timedelta(1)):
     Returns:
         tuple with start, end dates
     """
-    _first = begin
+    if end < start:
+        raise ValueError("end date must be after start date")
+    _first = start
     while _first < end:
         yield (_first, _first + delta)
         _first += delta
