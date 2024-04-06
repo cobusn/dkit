@@ -50,6 +50,7 @@ from pathlib import Path
 from . import schema, source, transform
 from .. import exceptions, messages
 from ..data import map_db, containers
+from ..data.json_utils import make_encoder
 from ..parsers import type_parser, uri_parser
 from ..utilities import template_helper, security
 from .. import GLOBAL_CONFIG_FILE, DEFAULT_MODEL_FILE, LOCAL_CONFIG_FILE
@@ -223,7 +224,7 @@ class Connection(map_db.Object):
                 "name": n,
                 "dialect": uri.dialect,
                 "database": uri.database
-             }
+            }
             for (n, uri)
             in container.items()
         ]
@@ -264,7 +265,7 @@ class Endpoint(map_db.Object):
                 "connection": e.connection,
                 "table_name": e.table_name,
                 "entity": e.entity,
-             }
+            }
             for (n, e)
             in container.items()
         ]
@@ -305,6 +306,20 @@ class Transform(containers.DictionaryEmulator):
         """
         t = transform.FormulaTransform(self)
         yield from t(the_iterable)
+
+
+@dataclass
+class Secret:
+    """store generic authentication"""
+    key: str
+    secret: str = None
+    parameters: Dict[str, str] = None
+
+    def as_dict(self):
+        return asdict(self)
+
+    def on_set(self, container):
+        pass
 
 
 @dataclass
@@ -439,7 +454,7 @@ class ModelManager(map_db.FileObjectMapDB):
         super().__init__(
             schema={
                 "__meta__": {
-                    "version": "0.2"
+                    "version": "0.3"
                 },
                 "connections": Connection,
                 "endpoints": Endpoint,
@@ -447,7 +462,8 @@ class ModelManager(map_db.FileObjectMapDB):
                 "entities": Entity,
                 "transforms": Transform,
                 "relations": Relation,
-                },
+                "secrets": Secret,
+            },
             codec=codec
         )
 
@@ -475,6 +491,33 @@ class ModelManager(map_db.FileObjectMapDB):
     def encryption_key(self):
         """encryption key in config"""
         return self.config.get("DEFAULT", "key")
+
+    def add_secret(self, name: str, key: str, secret: str,
+                   parameters: Dict = None):
+        json = make_encoder()
+        if name in self.secrets:
+            raise exceptions.DKitApplicationException(
+                "secret '{}' exists already".format(name)
+            )
+        else:
+            cryptor = security.Fernet(self.encryption_key)
+            secret_instance = Secret(
+                key=cryptor.encrypt(key),
+                secret=cryptor.encrypt(secret),
+                parameters=cryptor.encrypt(json.dumps(parameters))
+            )
+            self.secrets[name] = secret_instance
+
+    def get_secret(self, name: str):
+        """get and decrypt a secret"""
+        json = make_encoder()
+        cryptor = security.Fernet(self.encryption_key)
+        es: Secret = self.secrets[name]
+        return Secret(
+            key=cryptor.decrypt(es.key),
+            secret=cryptor.decrypt(es.secret),
+            parameters=json.loads(cryptor.decrypt(es.parameters))
+        )
 
     def add_connection(self, conn_name, uri, password=None):
         """save connection with encrypted password"""

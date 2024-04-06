@@ -124,7 +124,10 @@ class ObjectMapDB(object):
         """
         self.meta = the_dict.get("__meta__", {})
         for item, collectn in self.__objects.items():
-            collectn.from_dict(the_dict[item])
+            try:
+                collectn.from_dict(the_dict[item])
+            except KeyError:
+                pass
         return self
 
     def __init_schema(self):

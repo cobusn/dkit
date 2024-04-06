@@ -23,9 +23,6 @@ setup(
     install_requires=[
         "boltons",
         "cffi>=1.4.0",
-        "mistune",
-#        "numpy",
-#        "scipy",
     ],
     cffi_modules=["build_tdigest.py:tdigest_ffi"],
     packages=[
