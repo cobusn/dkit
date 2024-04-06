@@ -61,7 +61,7 @@ class DataKit(object):
     """
 
     modules = sorted(["admin", "build", "connections", "diff", "endpoints", "run", "queries",
-                      "mapping", "schemas", "transforms", "xplore", "XML"])
+                      "mapping", "schemas", "transforms", "vault", "xplore", "XML"])
 
     def __init__(self, arguments):
         self.arguments = arguments
@@ -100,6 +100,10 @@ class DataKit(object):
     def do_mapping(self):
         from lib_dk import relations_module
         relations_module.RelationsModule(self.arguments[2:]).run()
+
+    def do_vault(self):
+        from lib_dk import store_module
+        store_module.VaultModule(self.arguments[2:]).run()
 
     def do_schemas(self):
         from lib_dk import schema_module

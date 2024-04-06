@@ -23,3 +23,4 @@ entities:
 queries: {}
 relations: {}
 transforms: {}
+secrets: {}

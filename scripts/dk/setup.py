@@ -17,10 +17,9 @@ setup(
     zip_safe=False,
     py_modules=['dk', ],
     install_requires=[
-      '# -*- Extra requirements: -*-'
+        "pyperclip",
     ],
     entry_points={
-      'console_scripts':
-      ['dk=dk:main'],
+        'console_scripts': ['dk=dk:main'],
     },
 )

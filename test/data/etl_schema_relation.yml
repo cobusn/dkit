@@ -29,4 +29,5 @@ relations:
     referred_columns:
     - _id
     referred_entity: right
+secrets: {}
 transforms: {}

@@ -29,4 +29,13 @@ entities:
     year: Integer()
 queries: {}
 relations: {}
+secrets:
+  s1:
+    key: gAAAAABmEElLosDakXRXHifrdIDXyh_5jvc5Rd37jF5VsVtoaruiVw5o3s7dRshmli76eAV72LjJiuFIfVixmAt0i0ri3mgp2A==
+    parameters: gAAAAABmEElLqEBv8JdPP0YG0g7re16Ciyy0tG2BdebGMCV0C5-t8dNNUKNq0gyEOMUSbeIMxseHamjSo7SdW8fmNr6b9XHUhg==
+    secret: gAAAAABmEElLyh71a0IsmFVtnOwc8hb9gSoSHb9VOzkN-dATpNAVqpWvtjnvGGIUA3hopkMuezLibsGLaahrKHZZNSerh0_NaA==
+  s2:
+    key: gAAAAABmEFEnJSDeIgoHJbStlYKMCGUUDykeIM5ihEYvUo1rZOaV4PMF4HxRyPTmiIsgpMPjwJFHw6pL3LG6lwcpFPAvEIgGVg==
+    parameters: gAAAAABmEFEnE0mYXi5y1Ebqz9G_Nqt0nApCKU2mEhlBIHPQobLB1njr5VoSaJmI_fBrgGaEYNakLsCGhE694TP3adzwsFo8ZcNncPA1p75E7HU75ew1VSj879o8RbEnEzikUmw9Oo_q
+    secret: gAAAAABmEFEnm7Ps5X8enDu8JMqF4ym25y6uojBK8QuLTdyKytUb_HTbFYKbmMVKIww0EngKv-B277nOQXNyqg_ggT_Wyls5Sg==
 transforms: {}

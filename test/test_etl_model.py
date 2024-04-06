@@ -3,11 +3,11 @@ import unittest
 import warnings
 from configparser import ConfigParser
 sys.path.insert(0, "..") # noqa
-from dkit.etl.model import Entity, Relation, ModelManager, Connection, Query
+from dkit.etl.model import Entity, Relation, ModelManager, Connection, \
+    Query, Secret
 from dkit.etl import source
 from create_data import NROWS
 import jinja2
-
 
 schema_1 = {
     "_id": "Integer(primary_key=True)",
@@ -67,11 +67,32 @@ def add_sqlite_endpoint(c: ModelManager):
     return c
 
 
+class TestSecret(TestMapBase):
+
+    def setUp(self):
+        self.m = ModelManager.from_file("data/secret.yml")
+        self.t = Secret("key", "value", {"prop": 10})
+
+    def add_secret(self):
+        self.m.add_secret("se1", self.t.key, self.t.secret, self.t.parameters)
+
+    def test_read(self):
+        self.add_secret()
+        s2 = self.m.get_secret("se1")
+        self.assertEqual(s2, self.t)
+
+    def test_a_load(self):
+        self.add_secret()
+        m = ModelManager.from_file("data/test_save.yml")
+        self .assertEqual(
+            self.m.get_secret("se1"), m.get_secret("se1")
+        )
+
+
 class TestEntity(TestMapBase):
 
     def test_coerce(self):
-        m = ModelManager(None)
-        m.load("data/mtcars.yml")
+        m = ModelManager.from_file("data/mtcars.yml")
         e = m.entities["mtcars"]
         with source.load("data/mtcars.csv") as in_src:
             transformed = list(e(in_src))

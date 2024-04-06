@@ -91,6 +91,11 @@ def add_option_connection_name(parser):
     parser.add_argument("-c", "--connection", required=True, help=__doc__)
 
 
+def add_option_secret_name(parser):
+    """secret name"""
+    parser.add_argument("-s", "--secret", required=True, help=__doc__)
+
+
 def add_option_connection_name_opt(parser):
     """connection name"""
     parser.add_argument(

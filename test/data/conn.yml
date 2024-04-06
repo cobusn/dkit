@@ -1,5 +1,5 @@
 __meta__:
-  version: '0.2'
+  version: '0.3'
 connections:
   test:
     database: test.db
@@ -9,4 +9,5 @@ endpoints: {}
 entities: {}
 queries: {}
 relations: {}
+secrets: {}
 transforms: {}
