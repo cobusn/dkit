@@ -3,6 +3,7 @@
 * improve test coverage
 
 # Next
+* Handle Dicts and List data types 
 * Upgrade to sqlalchemy 2
 * validations on parsing Decimal(precision=X, scale=Y), will currently parse
   without defaults or errors;

@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from Cython.Build import cythonize
 import dkit
 
@@ -19,7 +19,9 @@ setup(
     ),
     author='Cobus Nel',
     author_email='cobus at nel.org.za',
-    setup_requires=["cffi>=1.4.0"],
+    setup_requires=[
+        "cffi>=1.4.0"
+    ],
     install_requires=[
         "boltons",
         "cffi>=1.4.0",
@@ -34,23 +36,9 @@ setup(
         "dkit.etl.extensions",
         "dkit.parsers",
         "dkit.plot",
-        # "dkit.resources",
+        "dkit.resources",
         "dkit.shell",
         "dkit.utilities",
     ],
     include_package_data=True,
-    package_data={
-        'dkit/resources': [
-            "dkit/resources/SourceSansPro-Bold.ttf",
-            "dkit/resources/SourceSansPro-Regular.ttf",
-            "dkit/resources/SourceSansPro-Italic.ttf",
-            "dkit/resources/SourceSansPro-Bold.ttf",
-            "dkit/resources/SourceSansPro-BoldItalic.ttf",
-            "dkit/resources/lorem.txt",
-            # "dkit/resources/background.pdf",
-            "dkit/resources/ddfrontpage.pdf",
-            "dkit/resources/cars.csv",
-            "dkit/resources/rl_stylesheet.yaml",
-        ],
-    },
 )
