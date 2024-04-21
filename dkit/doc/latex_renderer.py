@@ -87,7 +87,9 @@ class LatexDocRenderer(AbstractRenderer):
     def make_image(self, element):
         return tex.Image(
             element["data"],
-            self.to_tex_list(element["data"])
+            self.to_tex_list(element["data"]),
+            width=element.get("width", None),
+            height=element.get("height", None),
         )
 
     def make_latex(self, element):
