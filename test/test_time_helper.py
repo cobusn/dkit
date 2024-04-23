@@ -22,7 +22,7 @@ import common
 from datetime import date, timedelta, datetime, timezone
 from dateutil.relativedelta import relativedelta
 sys.path.insert(0, "..") # noqa
-from dkit.utilities import time_helper
+from dkit.utilities import time_helper, intervals
 
 
 class TestTimeHelper(common.TestBase):
@@ -36,11 +36,11 @@ class TestTimeHelper(common.TestBase):
         minutes = 4
         seconds = 44
         milliseconds = 0.44
-        val = (hours*60*60) + (minutes*60) + seconds + milliseconds
+        val = (hours * 60 * 60) + (minutes * 60) + seconds + milliseconds
         h, m, s, ms = time_helper.hms(val)
         self.assertEqual(h, hours)
         self.assertEqual(minutes, m)
-        self.assertEqual(milliseconds, ms/1000.0)
+        self.assertEqual(milliseconds, ms / 1000.0)
         self.assertEqual(seconds, s)
 
     def test_from_unixtime(self):
@@ -93,9 +93,9 @@ class TestTimeHelper(common.TestBase):
 
     def test_last_day_of_month(self):
         tests = [
-           (date(2022, 1, 4), date(2022, 1, 31)),
-           (datetime(2022, 1, 4), date(2022, 1, 31)),
-           (datetime(2024, 2, 1), date(2024, 2, 29)),
+            (date(2022, 1, 4), date(2022, 1, 31)),
+            (datetime(2022, 1, 4), date(2022, 1, 31)),
+            (datetime(2024, 2, 1), date(2024, 2, 29)),
         ]
         for test in tests:
             self.assertEqual(
@@ -168,6 +168,27 @@ class TestTimeHelper(common.TestBase):
         m1, d1 = time_helper.short_month_day_id_2(ts, tz)
         self.assertEqual(m1, m_id)
         self.assertEqual(d1, d_id)
+
+    def test_parse_keyword(self):
+        yesterday = datetime.combine(
+            intervals.yesterday()[0],
+            datetime.min.time()
+        )
+
+        self.assertEqual(
+            time_helper.parse_date("yesterday"),
+            yesterday
+        )
+        self.assertIsInstance(
+            time_helper.parse_date("yesterday"),
+            datetime
+        )
+
+    def test_parse_string(self):
+        self.assertEqual(
+            time_helper.parse_date("20241212"),
+            datetime(2024, 12, 12)
+        )
 
 
 if __name__ == '__main__':

@@ -22,7 +22,8 @@ from typing import Iterable, Iterator, Tuple
 
 from dateutil.relativedelta import relativedelta
 
-from ..typing import AnyDate
+from ..typing_helper import AnyDate
+from .intervals import DATE_MAP
 
 
 class TimeSequence(object):
@@ -401,3 +402,35 @@ def week_number(the_date: datetime) -> int:
     return week number in format YYYYWW
     """
     return int(the_date.strftime("%Y%W"))
+
+
+def parse_date(date_string, format_: str = "%Y%m%d") -> datetime:
+    """parse a string to determine a date.
+
+    will first look for alpha tokens and then parse format
+
+    - monday
+    - tuesday
+    - wednesday
+    - thursday
+    - friday
+    - saturday
+    - sunday
+    - today
+    - tomorrow
+    - last_month
+    - next_week
+    - next_month
+    - this_week
+    - this_month
+    - yesterday
+
+    """
+    if date_string in DATE_MAP.keys():
+        return datetime.combine(
+            DATE_MAP[date_string]()[0],
+            datetime.min.time()
+        )
+
+    else:
+        return datetime.strptime(date_string, format_)
