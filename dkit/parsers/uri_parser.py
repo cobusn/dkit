@@ -19,11 +19,13 @@
 # SOFTWARE.
 
 import re
+from urllib.parse import urlparse, parse_qs
 
-from .. import exceptions, messages
+from .. import messages
+from ..exceptions import DKitParseException
 
 
-COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4']  # , "snappy"]
+COMPRESSION_FORMATS = ['bz2', 'zip', 'gz', 'xz', 'lz4']
 ENCRYPTION_FORMATS = ['aes']
 RE_COMRESSION_FORMATS = "|".join(COMPRESSION_FORMATS)
 RE_ENCRYPTION_FORMATS = "|".join(ENCRYPTION_FORMATS)
@@ -32,24 +34,31 @@ FILE_DIALECTS = [
     'pkl', 'mpak', 'pke', 'avro', 'parquet'
 ]
 SHARED_MEMORY_DIALECTS = ["shm"]
-FILE_DB_DIALECTS = ["hdf5", "sqlite", "duckdb"]
-NETWORK_DIALECTS = [
-    "awsathena", "sybase", "mysql", "oracle", "mssql",
-    "postgres", "impala",
-]
+FILE_SQL_DIALECTS = ["sqlite", "duckdb"]
+FILE_DB_DIALECTS = ["hdf5"] + FILE_SQL_DIALECTS
+
+
+"""
 SQL_DRIVERS = {
-    "sybase": "sqlalchemy_sqlany",
+    # "sybase": "sqlalchemy_sqlany",
     # "firebird": "firebird+fdb",
     "hdf5": "hdf5",
     "impala": "impala",
     "mssql": "mssql+pymssql",
-    "mysql": "mysql+mysqldb",
+    "mysql+mysqldb": "mysql+mysqldb",
     "oracle": "oracle+cx_oracle",
     "postgresql": "postgresql",
     "sqlite": "sqlite",
-    "awsathena": "awsathena+rest",
+    "awsathena+rest": "awsathena+rest",
     "duckdb": "duckdb",
+    "mssql+pyodbc": "mssql+pyodbc",
 }
+NETWORK_DIALECTS = list(SQL_DRIVERS.keys())
+"""
+NETWORK_DIALECTS = [
+    "hdf5", "impala", "mssql", "mysql+mysqldb", "oracle+cx_oracle",
+    "postgresql", "sqlite", "awsathena+rest", "duckdb", "mssql+pyodbc"
+]
 
 
 class URIStruct:
@@ -57,7 +66,7 @@ class URIStruct:
     Helper class that ensure parsed dictionary contains the correct
     fields.
     """
-    def __init__(self, dialect=None, driver=None, database=None,
+    def __init__(self, driver=None, dialect=None, database=None,
                  username=None, password=None, host=None, port=None,
                  compression=None, parameters=None, entity=None):
         # encryption=None:
@@ -115,12 +124,12 @@ def parse(uri):
     if retval is not None:
         return retval
     else:
-        raise exceptions.DKitParseException(
+        raise DKitParseException(
             messages.MSG_0012.format(uri)
         )
 
 
-def _parse_file_driver(uri):
+def _parse_file_driver(uri: str):
     """parse file with specified driver"""
     rx = r"({}):\/\/\/(.+)$".format("|".join(
         FILE_DIALECTS + FILE_DB_DIALECTS + SHARED_MEMORY_DIALECTS
@@ -132,8 +141,11 @@ def _parse_file_driver(uri):
             # Its a database
             endpoint = _parse_file_db_endpoint(m.group(2))
             if endpoint is not None:
+                if dialect in FILE_SQL_DIALECTS:
+                    endpoint["driver"] = "sql"
+                else:
+                    endpoint["driver"] = dialect
                 endpoint["dialect"] = dialect
-                endpoint["driver"] = SQL_DRIVERS[dialect]
                 return URIStruct(**endpoint).as_dict()
             else:
                 return None
@@ -155,7 +167,7 @@ def _parse_file_driver(uri):
                 # encryption=_parse_encryption_from_filename(m.group(2))
             ).as_dict()
         else:
-            raise exceptions.DKitParseException(messages.MSG_0014.format(dialect))
+            raise DKitParseException(messages.MSG_0014.format(dialect))
     else:
         return None
 
@@ -164,7 +176,7 @@ def _parse_file_db_endpoint(host_string):
     """parse host details including port etc."""
     # user:password@hostname:port/database::entity[filter]
     rx = (
-        r"(?P<database>[a-zA-Z0-9_./]+)"                 # file
+        r"(?P<database>[a-zA-Z0-9_./:]+)"                 # file
         r"(?:\#(?P<entity>[a-zA-Z0-9/_-]+))?"             # entity
         # r"(?:#\[(?P<filter>.+)\])?)?"                  # filter
         r"$"                                             # end of rx
@@ -187,29 +199,50 @@ def _parse_uri_parameters(inner_text):
     return rv
 
 
+def _parse_netloc(netloc):
+    """used by _parse_network_db to parse the network location"""
+    ur = r"[A-Za-z0-9_-]"
+    # _pr = r"[A-Za-z0-9!@#$%^&*()_+-=[]{}'\"\\|,.<>/?]"
+    pr = r"[^@:]"
+    hn = r"[A-Za-z0-9_\-.]"
+    pattern = fr'(?P<un>{ur}+)?:?(?P<pw>{pr}+)?@(?P<h>{hn}+):?(?P<p>\d+)?'
+    match = re.match(pattern, netloc)
+
+    return {
+        "username": match.group('un'),
+        "password": match.group('pw'),
+        "host": match.group('h'),
+        "port": match.group('p'),
+    }
+
+
 def _parse_network_db(host_string):
-    """parse host details including port etc."""
-    # user:password@hostname:port/database?entity[filter]
-    rx = (
-        r"(?P<dialect>{}):\/\/".format("|".join(NETWORK_DIALECTS)) +
-        r"(?:(?P<username>.+):(?P<password>.*)@)?"   # username / password
-        r"(?P<host>[a-zA-Z0-9_.-]+)"                 # host
-        r"(?::(?P<port>[0-9]+))?"                    # port
-        r"(?:\/(?P<database>[-.\w]+))?"              # database
-        r"(?P<parameters>\?[\w\d_\-=&\s.|/:()*%]+)?"   # parameters
-        r"$"                                         # end of rx
-    )
-    m = re.match(rx, host_string)
-    if m is not None:
-        results = m.groupdict()
-        results["parameters"] = _parse_uri_parameters(
-            results["parameters"]
+    """
+        driver
+        username=None
+        password=None
+        host=None
+        port=None,
+        database=None
+        parameters=None
+    """
+    result = urlparse(host_string)
+    params = parse_qs(result.query)
+
+    if result.scheme not in NETWORK_DIALECTS:
+        raise DKitParseException(
+            f"invalid dialect: {result.scheme}"
         )
-        retval = URIStruct(**results).as_dict()
-        retval["driver"] = SQL_DRIVERS[retval["dialect"]]
-        return retval
-    else:
-        return None
+    database = result.path[1:] if result.path else None
+
+    rv = {
+        "driver": "sql",
+        "dialect": result.scheme,
+        "database": database,
+        "parameters": {k: v[0] for k, v in params.items()}
+    }
+    rv.update(_parse_netloc(result.netloc))
+    return rv
 
 
 def _parse_file_name(uri):
@@ -230,7 +263,7 @@ def _parse_dialect_from_filename(file_name):
     p = re.compile(r".+\.({})(?:\..+$)?".format("|".join(FILE_DIALECTS)))
     r = p.search(file_name)
     if r is None:
-        raise(exceptions.DKitParseException(messages.MSG_0013.format(file_name)))
+        raise DKitParseException(messages.MSG_0013.format(file_name))
     else:
         return r.group(1)
 

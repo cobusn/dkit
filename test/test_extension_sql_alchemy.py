@@ -20,6 +20,7 @@ import unittest
 import os
 import yaml
 from dkit.etl.extensions import ext_sql_alchemy
+from dkit.parsers.uri_parser import parse
 from dkit.etl import (reader, source, schema, transform)
 from dkit.utilities.identifier import obj_md5
 import jinja2
@@ -45,7 +46,7 @@ class TestSQLAlchemyTemplate(unittest.TestCase):
     """test template features"""
 
     def setUp(self):
-        self.accessor = ext_sql_alchemy.SQLAlchemyAccessor(NORTHWIND)
+        self.accessor = ext_sql_alchemy.SQLAlchemyAccessor(parse(NORTHWIND))
 
     def test_find_variables(self):
         """test locating undeclared variables in the template"""
@@ -140,10 +141,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
         for dialect in self.dialects:
-            #
-            # Fix awsathena..
-            #
-            if dialect not in ["hdf5", ]:
+            if dialect not in ["hdf5", "awsathena+rest" ]:
                 print(factory.create_sql_schema(dialect, person=self.validator))
 
     def test_sql_select(self):
@@ -152,7 +150,7 @@ class TestSQLAlchemyFactory(unittest.TestCase):
         """
         factory = ext_sql_alchemy.SQLAlchemyModelFactory()
         for dialect in self.dialects:
-            if dialect not in ["hdf5"]:
+            if dialect not in ["hdf5", "awsathena+rest"]:
                 print(factory.create_sql_select(dialect, person=self.validator))
 
 
@@ -166,7 +164,7 @@ class TestSQLAlchemyBase(unittest.TestCase):
         cls.table_name = "input"
         # cls.url = "sqlite:///input_files/sqlite.db"
         cls.url = "sqlite:///:memory:"
-        cls.accessor = ext_sql_alchemy.SQLAlchemyAccessor(cls.url, echo=False)
+        cls.accessor = ext_sql_alchemy.SQLAlchemyAccessor(parse(cls.url), echo=False)
 
     def create_model(self):
         self.accessor.create_table(self.table_name, self.validator)
@@ -207,7 +205,7 @@ class TestSQLAlchemyReflection(TestSQLAlchemyBase):
 
     def _get_reflector(self) -> ext_sql_alchemy.SQLAlchemyReflector:
         accessor = ext_sql_alchemy.SQLAlchemyAccessor(
-            NORTHWIND,
+            parse(NORTHWIND),
             echo=False
         )
         return ext_sql_alchemy.SQLAlchemyReflector(accessor)
