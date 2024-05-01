@@ -23,6 +23,7 @@ Maintain connections
 """
 
 from . import module, options
+from textwrap import dedent
 
 
 class ConnectionsModule(module.CRUDModule):
@@ -49,6 +50,30 @@ class ConnectionsModule(module.CRUDModule):
             services.model,
             self.args.model_uri
         )
+
+    def do_help(self):
+        """print help on connections"""
+        h = """
+        azure
+        require login to azure account (az login)
+          mssql+pyodbc://@my-server.database.windows.net/myDb?driver=ODBC+Driver+17+for+SQL+Server
+
+        mysql
+          mysql+mysqldb://user:now&zzy@sample-db.co.za:3306/database
+
+        athena:
+          awsathena+rest://@athena.af-south-1.amazonaws.com:443/db?s3_staging_dir=athena.af-south-1.amazonaws.com
+
+        oracle:
+          oracle+cx_oracle://user:pass@host:1521/PROD
+
+        postgres:
+            postgresql://user:pass@host/5432
+
+        sqlite:
+            sqlite://filename.db
+        """
+        self.print(dedent(h))
 
     def do_rm(self):
         """remove connection"""
@@ -93,5 +118,11 @@ class ConnectionsModule(module.CRUDModule):
         )
         options.add_option_defaults(parser_rm)
         options.add_option_connection_name(parser_rm)
+
+        # help
+        self.sub_parser.add_parser(
+            "help",
+            help=self.do_help.__doc__
+        )
 
         super().parse_args()

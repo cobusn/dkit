@@ -74,13 +74,12 @@ class ACmdApplication(ptk.CmdApplication):
 
             # exit
             if command.lower() == 'exit':
-                print("Good bye..")
+                echo("Good bye..")
                 self.quit = True
                 return
 
             # run registered command
             if command in self.completer.cmd_map:
-                # print(command)
                 runner = self.completer.cmd_map[command]
                 await runner.run(line)
             else:
@@ -113,8 +112,8 @@ class ACmdApplication(ptk.CmdApplication):
                     DKitArgumentException,
                     DKitShellException,
                 ) as E:
-                    print(str(E))
+                    echo(str(E))
                 except KeyError as E:
-                    print("Invalid Key: {}".format(E))
+                    echo("Invalid Key: {}".format(E))
                 except (EOFError, KeyboardInterrupt):
                     return
