@@ -171,6 +171,10 @@ class CmdApplication(object):
             else:
                 raise DKitShellException(f"Invalid command: {command}")
 
+        elif len(line) == 0:
+            # clear screen on blank input
+            clear()
+
     async def run(self):
         """
         Run application
