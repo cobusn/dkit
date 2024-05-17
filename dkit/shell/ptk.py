@@ -170,7 +170,7 @@ class CmdApplication(object):
             else:
                 raise DKitShellException(f"Invalid command: {command}")
 
-    async def run(self):
+    def run(self):
         """
         Run application
         """
