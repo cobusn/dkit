@@ -176,9 +176,13 @@ class ArrowSchemaGenerator(object):
         )
 
 
-def infer_arrow_schema(iterable, n=50):
+def infer_arrow_schema(iterable, n=50, enforce=True):
     """
     infer schema from iterable
+    args:
+        * iterable: data input
+        * n: number of samples to infer schema
+        * enforce: enforce schema if True
 
     returns:
         * arrow schema
@@ -186,10 +190,12 @@ def infer_arrow_schema(iterable, n=50):
     """
     i = iter(iterable)
     buffer = list(islice(i, n))
-    schema = make_arrow_schema(
-        Entity.from_iterable(buffer, p=1.0, k=n)
-    )
-    return schema, chain(buffer, i)
+    entity = Entity.from_iterable(buffer, p=1.0, k=n)
+    schema = make_arrow_schema(entity)
+    if enforce is True:
+        return schema, entity(chain(buffer, i))
+    else:
+        return schema, chain(buffer, i)
 
 
 def build_table(data, schema=None, micro_batch_size=CHUNK_SIZE) -> pa.Table:
@@ -327,6 +333,20 @@ class ParquetSink(sink.AbstractSink):
                 self.__write_all(out_stream, the_iterator)
         self.stats.stop()
         return self
+
+
+def auto_write_parquet(path: str, iterable, n=100):
+    """
+    infer schema and write to parquet file
+
+    args:
+        - path: file path
+        - iterable: iterable of dicts
+        - n: number of records used to infer schema
+    """
+    schema, data = infer_arrow_schema(iterable, n)
+    table = build_table(data, schema)
+    write_parquet_file(table, path)
 
 
 def write_parquet_file(table, path, fs=None, compression="snappy"):
