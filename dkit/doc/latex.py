@@ -741,14 +741,15 @@ class LongTable(TexFoundation):
         length = len(self.fields) - 1
         for i, field in enumerate(self.fields):
             s += r"  \multicolumn{1}{" + field["heading_align"][0].lower() + "}{"
+            s += "\\textcolor{tabletextcolor}{"
             if field["title"] is not None:
                 s += self.replace_chars(field["title"])
             else:
                 s += self.replace_chars(field["name"])
             if i < length:
-                s += "} &\n"
+                s += "}} &\n"
             else:
-                s += r"} \\ \\[-1em]" + "\n"
+                s += r"}} \\ \\[-1em]" + "\n"
         return s
 
     @property
