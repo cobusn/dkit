@@ -25,8 +25,7 @@ Refer to examples/example_ptk_aio.py
 """
 
 from . import ptk
-from .ptk import ProxyCmd #noqa
-from prompt_toolkit import print_formatted_text as echo
+from .ptk import ProxyCmd, echo, clear  # NoQA
 from prompt_toolkit.patch_stdout import patch_stdout
 from ..exceptions import (
     DKitApplicationException, DKitArgumentException, DKitShellException
@@ -85,6 +84,10 @@ class ACmdApplication(ptk.CmdApplication):
                 await runner.run(line)
             else:
                 raise DKitShellException(f"Invalid command: {command}")
+
+        elif len(line) == 0:
+            # clear screen on blank input
+            clear()
 
     async def run(self):
         """
