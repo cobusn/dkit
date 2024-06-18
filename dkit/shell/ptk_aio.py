@@ -80,6 +80,7 @@ class ACmdApplication(ptk.CmdApplication):
 
             if command not in self.completer.cmd_map:
                 command = self.default_cmd
+                line.insert(0, self.default_cmd)
 
             # run registered command
             if command in self.completer.cmd_map:
