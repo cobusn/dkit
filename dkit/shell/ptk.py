@@ -130,13 +130,14 @@ class CmdApplication(object):
         history_file: filename for history (ignored if None)
     """
     def __init__(self, commands=None, debug=False, history_file: str = None,
-                 settings=None):
+                 settings=None, default_cmd=None):
         self.debug = debug
         self.completer = CmdCompleter([])
         self.quit = False
         self.history_file = history_file
         self.commands = commands
         self.settings = settings
+        self.default_cmd = default_cmd
         if self.commands is not None:
             self.add_commands(self.commands)
 
@@ -162,6 +163,9 @@ class CmdApplication(object):
                 echo("Good bye..")
                 self.quit = True
                 return
+
+            if command not in self.completer.cmd_map:
+                command = self.default_cmd
 
             # run registered command
             if command in self.completer.cmd_map:

@@ -78,6 +78,9 @@ class ACmdApplication(ptk.CmdApplication):
                 self.quit = True
                 return
 
+            if command not in self.completer.cmd_map:
+                command = self.default_cmd
+
             # run registered command
             if command in self.completer.cmd_map:
                 runner = self.completer.cmd_map[command]
