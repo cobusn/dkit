@@ -266,6 +266,7 @@ class SchemaModule(module.CRUDModule):
         options.add_option_defaults(parser_export)
         parser_export.add_argument(
             "-t", "--type", choices=[
+                'dataclass',
                 'dot',
                 'model',
                 'pb',
