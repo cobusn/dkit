@@ -29,6 +29,7 @@ from re import RegexFlag
 
 from . import module, options
 from dkit.data import manipulate as mp, eda, iteration
+from dkit.data.json_utils import make_simple_encoder
 from dkit.plot import ggrammar
 from dkit.etl.extensions.ext_xlsx import XlsxSink
 import logging
@@ -126,6 +127,15 @@ class ExploreModule(module.MultiCommandModule):
                 self.args.input
             )
         )
+
+    def do_peek(self):
+        """print first n entries with optional sampling in JSON format"""
+        data = self.input_stream(
+            self.args.input
+        )
+        json = make_simple_encoder()
+        for row in data:
+            self.print(json.dumps(row, indent=2))
 
     def do_histogram(self):
         """generate histogram for field"""
@@ -403,6 +413,14 @@ class ExploreModule(module.MultiCommandModule):
         options.add_options_inputs(parser_table)
         options.add_option_column_width(parser_table)
         options.add_option_transpose(parser_table)
+
+        # peek
+        parser_peek = self.sub_parser.add_parser("peek", help=self.do_peek.__doc__)
+        options.add_option_n(parser_peek, default=10)
+        options.add_option_defaults(parser_peek)
+        options.add_options_inputs(parser_peek)
+        options.add_option_column_width(parser_peek)
+        options.add_option_transpose(parser_peek)
 
         # summary
         parser_summary = self.sub_parser.add_parser("summary", help=self.do_summary.__doc__)
