@@ -312,7 +312,7 @@ def make_simple_encoder() -> JsonSerializer:
     that will encode datetime to string
     """
     return JsonSerializer(
-        DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec()
+        DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec(), BytesCodec()
     )
 
 

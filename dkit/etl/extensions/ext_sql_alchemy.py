@@ -529,11 +529,11 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
         for i, (_name, type_map) in enumerate(entities.items()):
             retval += f"\n\n--\n-- {_name}\n--\n"
             _model = self.create_model(type_map.schema)
-            if dialect == "awsathena":
+            if dialect.startswith("awsathena"):
                 # athena require the location parameter
                 t_instance = _Table(
                     _name, _metadata, *_model,
-                    awsathena_location="${PATH}",
+                    awsathena_location="specify.path",
                     awsathena_file_format="PARQUET",
                     awsathena_compression="SNAPPY"
                 )
