@@ -38,4 +38,8 @@ secrets:
     key: gAAAAABmEFEnJSDeIgoHJbStlYKMCGUUDykeIM5ihEYvUo1rZOaV4PMF4HxRyPTmiIsgpMPjwJFHw6pL3LG6lwcpFPAvEIgGVg==
     parameters: gAAAAABmEFEnE0mYXi5y1Ebqz9G_Nqt0nApCKU2mEhlBIHPQobLB1njr5VoSaJmI_fBrgGaEYNakLsCGhE694TP3adzwsFo8ZcNncPA1p75E7HU75ew1VSj879o8RbEnEzikUmw9Oo_q
     secret: gAAAAABmEFEnm7Ps5X8enDu8JMqF4ym25y6uojBK8QuLTdyKytUb_HTbFYKbmMVKIww0EngKv-B277nOQXNyqg_ggT_Wyls5Sg==
+  test:
+    key: gAAAAABm8b_srWIR9vc0YyTso93QPfjyA_vBiQgk0pM2qRWDE2dBzaJ5L9etprGRkC2CyRAli6IvQDwICzUh0y7TmRHttvq2Kg==
+    parameters: gAAAAABm8b_s8j87oE1N02CY4dW49AaHAA7UH9wgmOJVUGxs8ViprRGyZLZZItPXdTNyntWBjdNbYGX0SHKVlmGCEvTcQV9ssw==
+    secret: gAAAAABm8b_sJTrNSMClDhPTyhNfAyG6jDHk1QQ8DfmNGHOCnQafxoFkg6o1LIUK6q1WZZjJfx7LirHno9Em1HI31t95VTM_0A==
 transforms: {}
