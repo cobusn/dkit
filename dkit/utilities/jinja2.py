@@ -40,6 +40,15 @@ def find_variables(template: str) -> List[str]:
     return list(jinja2.meta.find_undeclared_variables(ast))
 
 
+def render(template: str, **variables):
+    """convenience function to render a template
+
+    instantiate and render a template, nothing else
+    """
+    tpl = jinja2.Template(template)
+    return tpl.render(variables)
+
+
 def render_strict(template: str, **variables):
     """
     render a template but ensure all variables are
