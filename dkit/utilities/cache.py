@@ -69,3 +69,24 @@ class ObjectFileCache:
         if not isinstance(item, CacheEntry):
             raise ValueError("Invalid content proceed with cuation")
         return item.value
+
+    def delete_item(self, key):
+        """remove item from database"""
+        del self.db[self._make_key(key)]
+
+    def items(self):
+        """iterator for keys and values"""
+        for k in self.db.keys():
+            item = CacheEntry.from_serialized(self.db[k])
+            yield pickle.loads(k), item.value
+
+    def values(self):
+        """iterator for database values"""
+        for k in self.db.keys():
+            item = CacheEntry.from_serialized(self.db[k])
+            yield item.value
+
+    def keys(self):
+        """iterator of keys"""
+        for k in self.db.keys():
+            yield pickle.loads(k)
