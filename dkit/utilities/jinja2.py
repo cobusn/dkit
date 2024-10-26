@@ -25,7 +25,22 @@ Utilities for using jinja2
 # from ..utilities.cmd_helper import LazyLoad
 # jinja2 = LazyLoad("jinja2")
 import jinja2
+from jinja2 import meta
 from typing import List
+import re
+
+
+def is_template(string: str) -> bool:
+    """return true if input string contain standard jinja2 elements"""
+    jinja2_patterns = [
+        r'\{\{.*?\}\}',  # Matches {{ ... }}
+        r'\{\%.*?\%\}',  # Matches {% ... %}
+        r'\{#.*?#\}',    # Matches {# ... #} (comments)
+    ]
+    for pattern in jinja2_patterns:
+        if re.search(pattern, string):
+            return True
+    return False
 
 
 def find_variables(template: str) -> List[str]:
@@ -37,7 +52,7 @@ def find_variables(template: str) -> List[str]:
     """
     env = jinja2.Environment()
     ast = env.parse(template)
-    return list(jinja2.meta.find_undeclared_variables(ast))
+    return list(meta.find_undeclared_variables(ast))
 
 
 def render(template: str, **variables):
@@ -50,9 +65,9 @@ def render(template: str, **variables):
 
 
 def render_strict(template: str, **variables):
-    """
-    render a template but ensure all variables are
-    defined
+    """render a template but ensure all variables are defined
+
+    raises: jinja2.exceptions.UndefinedError
     """
     tpl = jinja2.Template(
         template,
