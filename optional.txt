@@ -1,6 +1,3 @@
-pandas
-ipython
-flask
 boltons
 collections-extended
 confluent_kafka
@@ -8,13 +5,16 @@ cx_Oracle
 duckdb
 duckdb_engine
 fastavro
+flask
 impyla
+ipython
 kaleido
 lxml
 matplotlib
 msgpack
 mysqlclient
 openpyxl
+pandas
 paramiko
 plotly
 posix_ipc
@@ -26,4 +26,5 @@ scipy
 sphinxcontrib-napoleon
 sqlalchemy-pyodbc-mssql
 tables
+xlrd
 zmq

@@ -1,0 +1,7 @@
+tqdm
+sphinx
+coverage
+faker
+pylint==2.5.2
+pytest
+pytest-cov
