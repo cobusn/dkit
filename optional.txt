@@ -21,7 +21,6 @@ posix_ipc
 psycopg2-binary
 pyathena
 python-levenshtein
-python-snappy
 scipy
 sphinxcontrib-napoleon
 sqlalchemy-pyodbc-mssql
