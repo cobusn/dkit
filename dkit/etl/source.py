@@ -431,7 +431,8 @@ class CsvDictSource(AbstractMultiReaderSource):
                  skip_lines=0, **kwargs):
         self.delimiter = delimiter
         self.headings = headings
-        super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
+        super().__init__(reader_list, field_names, log_trigger=log_trigger,
+                         skip_lines=skip_lines, **kwargs)
 
     def iter_all_fields(self):
         """return all columns"""
