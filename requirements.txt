@@ -1,11 +1,15 @@
 cffi
 collections_extended
+coverage
 cryptography
 cython
 faker
+faker
 inflect
 jinja2
+lz4
 mistune==0.8.4
+pdfrw
 pyarrow
 pylint==2.5.2
 pyparsing
@@ -15,6 +19,7 @@ python-dateutil
 pyyaml
 reportlab
 requests
+sphinx
 sqlalchemy>=1.4.46,<2.0
 squarify
 tabulate
