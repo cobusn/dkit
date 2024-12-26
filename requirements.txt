@@ -12,6 +12,7 @@ pdfrw
 pyarrow
 pyparsing
 python-dateutil
+python-snappy
 pyyaml
 reportlab
 requests
