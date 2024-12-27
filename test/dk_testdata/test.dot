@@ -23,6 +23,24 @@ size="8.3,11.7!"
 </TABLE>
 >];
 
+"mtcars" [shape=none, margin=0, label=<
+<TABLE sides="tlrb" border="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="0" width="200">
+    <TR><TD>mtcars</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="am">am</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="car">car</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="carb">carb</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="cyl">cyl</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="disp">disp</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="drat">drat</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="gear">gear</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="hp">hp</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="mpg">mpg</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="qsec">qsec</TD></TR>
+    <TR><TD  height="0.15" sides="lr" align="left" port="vs">vs</TD></TR>
+    <TR><TD  height="0.1" sides="lrb" align="left" port="wt">wt</TD></TR>
+</TABLE>
+>];
+
 
 # Relationships
 }

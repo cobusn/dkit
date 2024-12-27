@@ -30,7 +30,7 @@ class TestSharedMemoryManager(unittest.TestCase):
         saver = SHMSaver(data=data, target=target)
         loader = SHMLoader(saver.properties)
         shm_data = loader.get("data")
-        self.assertTrue(np.alltrue(shm_data == data))
+        self.assertTrue(np.all(shm_data == data))
         saver.close()
         saver.unlink()
 

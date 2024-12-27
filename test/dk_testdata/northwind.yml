@@ -2,7 +2,7 @@ __meta__:
   version: '0.1'
 connections:
   northwind:
-    database: testdata/northwind.db
+    database: dk_testdata/northwind.db
     dialect: sqlite
     driver: sqlite
 endpoints: {}
@@ -111,4 +111,5 @@ entities:
     TerritoryID: String(str_len=20, primary_key=True)
 queries: {}
 relations: {}
+secrets: {}
 transforms: {}

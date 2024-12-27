@@ -11,6 +11,7 @@ mistune==0.8.4
 pdfrw
 pyarrow
 pyparsing
+pyperclip
 python-dateutil
 python-snappy
 pyyaml
