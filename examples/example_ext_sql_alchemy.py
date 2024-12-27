@@ -3,6 +3,8 @@ import os
 from dkit.etl.extensions import ext_sql_alchemy
 from dkit.etl import (reader, source, schema, transform)
 from dkit.utilities.file_helper import yaml_load
+from dkit.etl.model import Connection
+
 
 the_schema = """
 id: {str_len: 11, type: string, primary_key: True}
@@ -16,8 +18,12 @@ year: {type: integer, index: True}
 
 validator = schema.EntityValidator(yaml_load(the_schema))
 table_name = "input"
-url = "sqlite:///test.db"
-accessor = ext_sql_alchemy.SQLAlchemyAccessor(url, echo=True)
+conn = Connection(
+    dialect="sqlite",
+    database="test.db",
+    driver="sqlite"
+)
+accessor = ext_sql_alchemy.SQLAlchemyAccessor(conn.as_dict(), echo=True)
 
 # Create database from model
 accessor.create_table(table_name, validator)

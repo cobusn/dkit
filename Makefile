@@ -11,7 +11,7 @@ all: sdist bdist
 
 test:
 	cd test && \
-		pytest --cov=dkit &&\
+		pytest --cov=dkit --cov=lib_dk &&\
 		coverage html &&\
 		coverage report
 

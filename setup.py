@@ -46,6 +46,12 @@ setup(
         "dkit.resources",
         "dkit.shell",
         "dkit.utilities",
+        "lib_dk"
     ],
+    entry_points={
+        "console_scripts": [
+            "dk = dk:main",
+        ]
+    },
     include_package_data=True,
 )

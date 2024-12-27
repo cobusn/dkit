@@ -1,7 +1,11 @@
+ipython
+sphinxcontrib-napoleon
 tqdm
 sphinx
 coverage
 faker
-pylint==2.5.2
+pylint
 pytest
 pytest-cov
+scipy
+confluent_kafka

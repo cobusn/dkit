@@ -7,6 +7,19 @@ connections:
     driver: sql
 endpoints: {}
 entities:
+  mpg:
+    class: String(str_len=10)
+    cty: Integer()
+    cyl: Integer()
+    displ: Float()
+    drv: String(str_len=1)
+    fl: String(str_len=1)
+    hwy: Integer()
+    index: Integer()
+    manufacturer: String(str_len=10)
+    model: String(str_len=22)
+    trans: String(str_len=10)
+    year: Integer()
   mtcars:
     am: Integer()
     car: String(str_len=19)
@@ -22,5 +35,5 @@ entities:
     wt: Float()
 queries: {}
 relations: {}
-transforms: {}
 secrets: {}
+transforms: {}
