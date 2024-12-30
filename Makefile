@@ -38,7 +38,6 @@ clean:
 	cd doc && make clean
 	cd doc/images && make clean
 	cd examples && make clean
-	cd scripts/dk && make clean
 	cd scripts/pyeek && make clean
 	cd scripts/xpstat && make clean
 	cd scripts/vigenere && make clean
