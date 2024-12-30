@@ -27,11 +27,6 @@ setup(
     ),
     author='Cobus Nel',
     author_email='cobus at nel.org.za',
-    build_requires=[
-        "cffi>=1.4.0",
-        "cython",
-    ],
-    test_require=load_dependency("test_requirements.txt"),
     install_requires=load_dependency("requirements.txt"),
     cffi_modules=["build_tdigest.py:tdigest_ffi"],
     packages=[
@@ -48,9 +43,10 @@ setup(
         "dkit.utilities",
         "lib_dk"
     ],
+    py_modules=["dk", ],
     entry_points={
         "console_scripts": [
-            "dk = dk:main",
+            "dk=dk:main",
         ]
     },
     include_package_data=True,

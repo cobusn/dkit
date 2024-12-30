@@ -1,4 +1,5 @@
 boltons
+cerberus
 cffi>=1.4.0
 collections_extended
 cryptography
@@ -20,3 +21,4 @@ requests
 sqlalchemy>=1.4.46,<2.0
 squarify
 tabulate
+tdigest
