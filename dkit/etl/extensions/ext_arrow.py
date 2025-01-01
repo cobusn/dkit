@@ -463,6 +463,9 @@ def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
         bp = "data/sales"
         clear_partition(fs, pc, dm, bp)
 
+    Note: both partition_cols and partition_map is required to ensure
+    data is not deleted accidentaly
+
     """
     fs = f_system if f_system else LocalFileSystem()
     p_path = make_partition_path(partition_cols, partition_map, base_path)
