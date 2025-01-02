@@ -57,8 +57,14 @@ class VaultModule(module.CRUDModule):
         """remove connection"""
         super().do_rm(self.args.secret)
 
+    def do_show(self):
+        """print secret"""
+        services = self.load_services()
+        secret = services.model.get_secret(self.args.secret)
+        self.print(json.dumps(secret.as_dict(), indent=4))
+
     def do_copy(self):
-        """copy secret to clipboard"""
+        """copy secret element to clipboard"""
         services = self.load_services()
         secret = services.model.get_secret(self.args.secret)
         match self.args.what:
@@ -128,13 +134,22 @@ class VaultModule(module.CRUDModule):
         # copy
         parser_copy = self.sub_parser.add_parser(
             "copy",
-            help=self.do_rm.__doc__
+            help=self.do_copy.__doc__
         )
         options.add_option_defaults(parser_copy)
         options.add_option_secret_name(parser_copy)
         parser_copy.add_argument(
             "what", choices=["key", "secret", "params", "json"],
         )
+
+        # show
+        parser_show = self.sub_parser.add_parser(
+            "show",
+            help=self.do_show.__doc__
+        )
+        options.add_option_defaults(parser_show)
+        options.add_option_secret_name(parser_show)
+
         # help
         self.sub_parser.add_parser(
             "help",
