@@ -1,13 +1,17 @@
 #
 # Makefile for dkit project 
 #
-
 PYTHON=python3
+TAG := $(shell $(PYTHON) -c 'import dkit; print(dkit.__version__)')
 # export SPHINXBUILD=/cygdrive/c/Anaconda/envs/py36/Scripts/sphinx-build
 
 .PHONY: test clean
 
 all: sdist bdist
+
+docker: Dockerfile Makefile
+	docker build -t dkit:latest .
+	docker tag dkit:latest dkit:$(TAG)
 
 test:
 	cd test && \

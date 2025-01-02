@@ -28,6 +28,7 @@ setup(
     author='Cobus Nel',
     author_email='cobus at nel.org.za',
     install_requires=load_dependency("requirements.txt"),
+    setup_requires=["cffi>=1.4.0"],
     cffi_modules=["build_tdigest.py:tdigest_ffi"],
     packages=[
         "dkit",
