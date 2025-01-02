@@ -1,4 +1,4 @@
-__version__ = "24.12.4"
+__version__ = "v25.01.1"
 
 NA_VALUE = None
 CHUNK_SIZE = 50_000               # Defualt chunk size for batching
