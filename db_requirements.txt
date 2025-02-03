@@ -1,3 +1,5 @@
+azure-identity
+pyodbc
 tables
 sqlalchemy-pyodbc-mssql
 pyathena
