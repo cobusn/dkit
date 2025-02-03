@@ -369,9 +369,15 @@ class AbstractPipeline(ABC):
         logger.info("joining feeder thread")
         feeder.join()   # should join immediately
         for i, instance in enumerate(self.instances):
-            logger.info(f"joining worker process {instance.pid}: {i+1}/{len(self.instances)}")
-            instance.join()
+            instance.join(2)
+            if instance.is_alive():
+                logger.info(f"worker process {instance.pid} is still running. killing..")
+                instance.terminate()
+                instance.join(2)
+            else:
+                logger.info(f"joined worker process {instance.pid}: {i+1}/{len(self.instances)}")
         log_listener.stop()
+        logger.info("stopped log listener")
 
 
 class ListPipeline(AbstractPipeline):

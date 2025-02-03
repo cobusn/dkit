@@ -261,6 +261,8 @@ class ReportBuilder(BuilderProxy):
             "lorem": Lorem(),
             "include": _include_file,
             "image": _include_image,
+            "round": round,
+            "int": int,
         }
         self.documents = {}
         self.presentations = {}
