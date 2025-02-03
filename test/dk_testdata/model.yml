@@ -193,6 +193,19 @@ entities:
     model: String(str_len=22)
     trans: String(str_len=10)
     year: Integer()
+  mtcars:
+    am: Integer()
+    car: String(str_len=19)
+    carb: Integer()
+    cyl: Integer()
+    disp: Float()
+    drat: Float()
+    gear: Integer()
+    hp: Integer()
+    mpg: Float()
+    qsec: Float()
+    vs: Integer()
+    wt: Float()
 queries:
   mpg:
     description: null
@@ -207,6 +220,7 @@ relations:
     - class
     - cty
     referred_entity: mpg
+secrets: {}
 transforms:
   mpg2spark:
     CLASS: ${class}
@@ -221,19 +235,6 @@ transforms:
     MODEL: ${model}
     TRANS: ${trans}
     YEAR: ${year}
-  tmpg:
-    class: ${class}
-    cty: ${cty}
-    cyl: ${cyl}
-    displ: ${displ}
-    drv: ${drv}
-    fl: ${fl}
-    hwy: ${hwy}
-    index: ${index}
-    manufacturer: ${manufacturer}
-    model: ${model}
-    trans: ${trans}
-    year: ${year}
   upper:
     class: title(${class})
     cty: ${cty}

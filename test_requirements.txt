@@ -1,0 +1,11 @@
+ipython
+sphinxcontrib-napoleon
+tqdm
+sphinx
+coverage
+faker
+pylint
+pytest
+pytest-cov
+scipy
+confluent_kafka

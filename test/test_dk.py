@@ -26,38 +26,42 @@ class TestConfig(unittest.TestCase):
     """
     Test config module
     """
-    def test_init_config(self):
-        """admin init_config"""
+    def test_init_raises(self):
+        """check that exception is raised if ini file exist"""
         with self.assertRaises(exceptions.DKitApplicationException):
             admin_module.AdminModule(
-                ["init_config", "--config", "testdata/tst.ini"]
+                ["init_config", "--config", "dk_testdata/tst.ini"]
             ).run()
-        os.remove("testdata/tst.ini")
+        # os.remove("dk_testdata/tst.ini")
+
+    def test_init_config(self):
+        """admin init_config"""
         admin_module.AdminModule(
-            ["init_config", "--config", "testdata/ini.cfg"]
+            ["init_config", "--config", "dk_testdata/ini.cfg"]
         ).run()
-        os.remove("testdata/tst.ini")
+        if os.path.exists("dk_testdata/ini.cfg"):
+            os.remove("dk_testdata/ini.cfg")
 
     def test_init_model(self):
         """admin init_model"""
         with self.assertRaises(exceptions.DKitApplicationException):
             admin_module.AdminModule(
-                ["init_model", "--model", "testdata/model_test.json"]
+                ["init_model", "--model", "dk_testdata/model_test.json"]
             ).run()
-        os.remove("testdata/model_test.json")
+        os.remove("dk_testdata/model_test.json")
         admin_module.AdminModule(
-            ["init_model", "--model", "testdata/model_test.json"]
+            ["init_model", "--model", "dk_testdata/model_test.json"]
         ).run()
 
     def test_convert(self):
         """admin convert"""
         admin_module.AdminModule(
-            ["convert", "-m", "model.yml", "--destination", "testdata/model_test.json"]
+            ["convert", "-m", "model.yml", "--destination", "dk_testdata/model_test.json"]
         ).run()
 
         # using default model
         admin_module.AdminModule(
-            ["convert", "-m", "model.yml", "--destination", "testdata/model_test.json"]
+            ["convert", "-m", "model.yml", "--destination", "dk_testdata/model_test.json"]
         ).run()
 
 
@@ -68,7 +72,7 @@ class TestConnections(unittest.TestCase):
     def test_0_add(self):
         """connections add"""
         connections_module.ConnectionsModule(
-            ["add", "-m", "model.yml", "-c", "test.uri", "testdata/mpg.csv"]
+            ["add", "-m", "model.yml", "-c", "test.uri", "dk_testdata/mpg.csv"]
         ).run()
 
     def test_1_ls(self):
@@ -101,70 +105,70 @@ class TestExplore(TestDK):
     def test_count(self):
         """admin init_config"""
         tests = [
-            ["count", "-d", "manufacturer", "testdata/mpg.csv"],
+            ["count", "-d", "manufacturer", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
     def test_distinct(self):
         """admin init_config"""
         tests = [
-            ["distinct", "-d", "manufacturer", "testdata/mpg.csv"],
-            ["distinct", "-l", "-d", "manufacturer", "testdata/mpg.csv"],
+            ["distinct", "-d", "manufacturer", "dk_testdata/mpg.csv"],
+            ["distinct", "-l", "-d", "manufacturer", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
     def test_fields(self):
         """x fields"""
         tests = [
-            ["fields", "testdata/mpg.csv"],
-            ["fields", "-l", "testdata/mpg.csv"],
+            ["fields", "dk_testdata/mpg.csv"],
+            ["fields", "-l", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
     def test_head(self):
         "x head"
         tests = [
-            ["head", "testdata/mpg.csv"],
-            ["head", "-n", "5", "testdata/mpg.csv"],
+            ["head", "dk_testdata/mpg.csv"],
+            ["head", "-n", "5", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
     def test_regex(self):
         """x search"""
         tests = [
-            ["search", "-e", "audi", "testdata/mpg.csv"],
-            ["search", "-e", "audi", "testdata/mpg.csv", "--table"],
-            ["search", "-e", "audi", "testdata/mpg.csv", "-i", "--table"],
-            ["match", "-e", "audi", "testdata/mpg.csv", "-i", "--table"],
+            ["search", "-e", "audi", "dk_testdata/mpg.csv"],
+            ["search", "-e", "audi", "dk_testdata/mpg.csv", "--table"],
+            ["search", "-e", "audi", "dk_testdata/mpg.csv", "-i", "--table"],
+            ["match", "-e", "audi", "dk_testdata/mpg.csv", "-i", "--table"],
         ]
         self.go(tests)
 
     def test_table(self):
         "x table"
         tests = [
-            ["table", "testdata/mpg.csv"],
+            ["table", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
     def _test_histogram(self):
         "x table"
         tests = [
-            ["histogram", "-d", "displ", "testdata/mpg.jsonl"],
+            ["histogram", "-d", "displ", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
 
     def test_summary(self):
         "x summary"
         tests = [
-            ["summary", "-d", "displ", "testdata/mpg.jsonl"],
-            ["summary", "-f", "${displ} > 3", "-d", "displ", "testdata/mpg.jsonl"],
+            ["summary", "-d", "displ", "dk_testdata/mpg.jsonl"],
+            ["summary", "-f", "${displ} > 3", "-d", "displ", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
 
     def _test_plot(self):
         "x plot"
         tests = [
-            ["plot", "-x", "cty", "-y", "hwy", "testdata/mpg.jsonl"],
+            ["plot", "-x", "cty", "-y", "hwy", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
 
@@ -177,34 +181,38 @@ class TestRelations(TestDK):
 
     def test_0_add(self):
         tests = [
-            ["add", "-m", "testdata/northwind.yml", "-L", "CustomerCustomerDemo", "--lc",
-             "CustomerID", "-R", "Customers", "--rc", "CustomerID"]
+            [
+                "add", "-m", "dk_testdata/northwind.yml",
+                "-M", "CustomerCustomerDemo", "--mc", "CustomerID",
+                "-O", "Customers", "--oc", "CustomerID"
+            ]
         ]
         self.go(tests)
 
     def test_1_ls(self):
         tests = [
-            ["ls", "-m", "testdata/northwind.yml", ]
+            ["ls", "-m", "dk_testdata/northwind.yml", ]
         ]
         self.go(tests)
 
     def test_2_print(self):
         tests = [
-            ["print", "-m", "testdata/northwind.yml", "-r", "customercustomerdemo_customers", ]
+            ["print", "-m", "dk_testdata/northwind.yml", "-r", "customercustomerdemo_customers", ]
         ]
         self.go(tests)
 
     def test_3_rm(self):
+        # Relations moved to a new module
         tests = [
-            ["rm", "-m", "testdata/northwind.yml", "-r", "customercustomerdemo_customers", ]
+            ["rm", "-m", "dk_testdata/northwind.yml", "-r", "customercustomerdemo_customers", ]
         ]
         self.go(tests)
 
     def test_4_sql_reflect(self):
         tests = [
-            ["sql-reflect", "-m", "testdata/northwind.yml",  "--append", "-c", "northwind",
+            ["sql-reflect", "-m", "dk_testdata/northwind.yml",  "--append", "-c", "northwind",
              "EmployeeTerritories"],
-            ["rm", "-m", "testdata/northwind.yml", "-r", "employeeterritories_employees"],
+            # ["rm", "-m", "dk_testdata/northwind.yml", "-r", "employeeterritories_employees"],
         ]
         self.go(tests)
 
@@ -220,31 +228,31 @@ class TestRun(TestDK):
     def test_etl_file(self):
         """test etl json to csv using uri"""
         tests = [
-            ["etl", "-m", "testdata/model.yml", "-o", "testdata/test.csv", "testdata/mpg.jsonl"]
+            ["etl", "-m", "dk_testdata/model.yml", "-o", "dk_testdata/test.csv", "dk_testdata/mpg.jsonl"]
         ]
         self.go(tests)
 
     def test_query(self):
         """test running a query"""
         tests = [
-            ["query", "-m", "testdata/northwind.yml", "--query", "select * from mpg",
-             "sqlite:///testdata/mpg.db"],
+            ["query", "-m", "dk_testdata/northwind.yml", "--query", "select * from mpg",
+             "sqlite:///dk_testdata/mpg.db"],
         ]
         self.go(tests)
 
     def test_melt(self):
         tests = [
             ["melt", "-i", "Year", "-K", "month", "-V", "temp",
-             "testdata/nottem.jsonl"]
+             "dk_testdata/nottem.jsonl"]
         ]
         self.go(tests)
 
     def test_pivot(self):
         tests = [
             ["pivot", "-g", "manufacturer", "--mean", "hwy", "-p", "class", "--table",
-             "testdata/mpg.jsonl"],
+             "dk_testdata/mpg.jsonl"],
             ["pivot", "-g", "manufacturer", "--mean", "hwy", "-p", "class",
-             "testdata/mpg.jsonl"],
+             "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
 
@@ -260,16 +268,16 @@ class TestTransforms(TestDK):
     def test_transforms(self):
         """queries add"""
         tests = [
-            ["create", "-m", "testdata/model.yml", "-e", "mpg", "-t", "tmpg"],
-            ["ls", "-m", "testdata/model.yml"],
-            ["print", "-m", "testdata/model.yml", "-t", "tmpg"],
-            ["rm", "--yes", "-m", "testdata/model.yml", "-t", "tmpg"]
+            ["create", "-m", "dk_testdata/model.yml", "-e", "mpg", "-t", "tmpg"],
+            ["ls", "-m", "dk_testdata/model.yml"],
+            ["print", "-m", "dk_testdata/model.yml", "-t", "tmpg"],
+            ["rm", "--yes", "-m", "dk_testdata/model.yml", "-t", "tmpg"]
         ]
         self.go(tests)
 
     def test_uuid(self):
         tests = [
-            ["uuid", "testdata/mpg.csv"],
+            ["uuid", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
@@ -285,8 +293,8 @@ class _TestEndpoints(TestDK):
     def _test_0_add(self):
         """queries add"""
         tests = [
-            ["add", "-m", "testdata/model.yml", "-e", "nw_customers", "--file",
-             "testdata/select.sql"]
+            ["add", "-m", "dk_testdata/model.yml", "-e", "nw_customers", "--file",
+             "dk_testdata/select.sql"]
         ]
         self.go(tests)
 
@@ -302,28 +310,28 @@ class TestQueries(TestDK):
     def test_0_add(self):
         """queries add"""
         tests = [
-            ["add", "-m", "testdata/model.yml", "-q", "qMpg", "--file", "testdata/select.sql"]
+            ["add", "-m", "dk_testdata/model.yml", "-q", "qMpg", "--file", "dk_testdata/select.sql"]
         ]
         self.go(tests)
 
     def test_1_ls(self):
         """queries ls -y model.yml"""
         tests = [
-            ["ls", "-m", "testdata/model.yml"]
+            ["ls", "-m", "dk_testdata/model.yml"]
         ]
         self.go(tests)
 
     def test_2_print(self):
         """print endpoint"""
         tests = [
-            ["print", "-m", "testdata/model.yml", "-q", "qMpg"]
+            ["print", "-m", "dk_testdata/model.yml", "-q", "qMpg"]
         ]
         self.go(tests)
 
     def test_3_rm(self):
         """queries rm"""
         tests = [
-            ["rm", "-m", "testdata/model.yml", "-q", "qMpg"]
+            ["rm", "-m", "dk_testdata/model.yml", "-q", "qMpg"]
         ]
         self.go(tests)
 
@@ -337,8 +345,8 @@ class TestSchema(TestDK):
     def test_infer(self):
         "s infer"
         tests = [
-            ["infer", "testdata/mpg.csv"],
-            ["infer", "-e", "mpg", "testdata/mpg.csv"],
+            ["infer", "dk_testdata/mpg.csv"],
+            ["infer", "-e", "mpg", "dk_testdata/mpg.csv"],
         ]
         self.go(tests)
 
@@ -374,9 +382,9 @@ class TestSchema(TestDK):
     def test_export(self):
         "s export"
         tests = [
-            ["export", "-t", "dot", "-o", "testdata/test.dot"],
-            ["export", "-t", "model", "-o", "testdata/model.yml"],
-            ["export", "-t", "spark", "-o", "testdata/spark_test.py"],
+            ["export", "-t", "dot", "-o", "dk_testdata/test.dot"],
+            ["export", "-t", "model", "-o", "dk_testdata/model.yml"],
+            ["export", "-t", "spark", "-o", "dk_testdata/spark.py"],
         ]
         self.go(tests)
 
@@ -398,11 +406,11 @@ class TestXML(TestDK):
     def test_0_stat(self):
         """queries add"""
         tests = [
-            ["stats", "testdata/books.xml"],
-            ["stats", "-l", "testdata/books.xml"],
-            ["stats", "-l", "--sort", "testdata/books.xml"],
-            ["stats", "-l", "--sort", "-N", "testdata/books.xml"],
-            ["stats", "-l", "--sort", "-N", "--reversed", "testdata/books.xml"],
+            ["stats", "dk_testdata/books.xml"],
+            ["stats", "-l", "dk_testdata/books.xml"],
+            ["stats", "-l", "--sort", "dk_testdata/books.xml"],
+            ["stats", "-l", "--sort", "-N", "dk_testdata/books.xml"],
+            ["stats", "-l", "--sort", "-N", "--reversed", "dk_testdata/books.xml"],
         ]
         self.go(tests)
 
