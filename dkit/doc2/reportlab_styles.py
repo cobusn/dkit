@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Cobus Nel
+# Copyright (c) 2025 Cobus Nel
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -17,21 +17,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from datetime import datetime
 from . import fontsize_map
 import yaml
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from importlib.resources import open_binary, open_text
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import (
-    Image, ListFlowable, Paragraph, SimpleDocTemplate, Spacer, Flowable,
-    Table, TableStyle, Preformatted, PageBreak
-)
 from reportlab.lib import colors, pagesizes
 from reportlab.lib.units import cm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from .pdf_helpers import PdfImage
+from .pdf_helper import PdfImage
 
 
 class RLStyler(object):
@@ -60,7 +57,8 @@ class RLStyler(object):
     @property
     def title_date(self):
         fmt = self.local_style["page"]["title_date_format"]
-        return fmt.format(self.doc.date)
+        _date = self.doc.date if self.doc.date else datetime.now()
+        return fmt.format(_date)
 
     @property
     def left_margin(self):
@@ -143,11 +141,10 @@ class RLStyler(object):
             fontName="Times-Roman",
             fontSize=8,
             leading=8,
-            spaceAfter=10,
+            spaceAfter=5,
+            spaceBefore=5,
         )
-
-        # Print all attributes of Verbatim
-        # self.__print_style(self.style.byName['BodyText'])
+        # self.__print_style(self.style.byName["Verbatim"])
 
         # BlockQuote
         self.style.byName['BlockQuote'] = ParagraphStyle(
@@ -155,14 +152,30 @@ class RLStyler(object):
             parent=self.style['Normal'],
             firstLineIndent=10,
             leftIndent=10,
-            spaceBefore=10,
-            spaceAfter=10,
+            spaceBefore=5,
+            spaceAfter=5,
         )
 
         # Update Code style
         code = self.style.byName["Code"]
-        code.spaceBefore = 10
-        code.spaceAfter = 10
+        code.spaceBefore = 5
+        code.spaceAfter = 5
+        code.leftIndent = 10
+
+        # Bodytext
+        bt = self.style.byName["BodyText"]
+        bt.spaceBefore = 5
+        bt.spaceAfter = 5
+
+        # Update List styles
+        for style in ["OrderedList", "UnorderedList"]:
+            ol = self.style.byName[style]
+            ol.spaceBefore = 0
+            ol.spaceAfter = 0
+            ol.leftIndent = 10
+            ol.bulletFontSize = self.style["BodyText"].fontSize
+            ol.bulletColor = self.style["BodyText"].textColor
+            # self.__print_style(self.style.byName[style])
 
         # Update style / provided local stylesheet
         for style, updates in self.local_style["reportlab"]["styles"].items():
@@ -174,6 +187,16 @@ class RLStyler(object):
                     setattr(this, k, fontsize_map[v])
                 else:
                     setattr(this, k,  v)
+
+        # Update List styles
+        for style in ["OrderedList", "UnorderedList"]:
+            ol = self.style.byName[style]
+            ol.spaceBefore = 0
+            ol.spaceAfter = 0
+            ol.leftIndent = 10
+            ol.bulletFontSize = self.style["BodyText"].fontSize
+            ol.bulletColor = self.style["BodyText"].textColor
+            # self.__print_style(self.style.byName[style])
 
     def later_pages(self, canvas: Canvas, style_sheet):
         canvas.saveState()
@@ -189,8 +212,6 @@ class RLStyler(object):
 
         canvas.line(tl, ty, tr, ty)   # top line
         canvas.line(tl, by, tr, by)   # bottom line
-
-        # text
 
         # title
         canvas.setFont(self.title_font_name, 8)
@@ -252,26 +273,3 @@ class RLStyler(object):
         canvas.setFont(self.author_font_name, 10)
         canvas.drawString(title_x, 160,  self.title_date)
         canvas.restoreState()
-
-
-class RLDocument:
-
-    def __init__(self):
-        self.content = []
-        self.styler = None
-        # self.styler = self.styler(doc, self.local_style)
-
-    def run(self, file_name):
-        renderer = SimpleDocTemplate(
-            file_name,
-            pagesize=self.styler.page_size,
-            rightMargin=self.styler.right_margin,
-            leftMargin=self.styler.left_margin,
-            topMargin=self.styler.top_margin,
-            bottomMargin=self.styler.bottom_margin
-        )
-        renderer.build(
-            self.content,
-            onFirstPage=self.styler.first_page,
-            onLaterPages=self.styler.later_pages
-        )
