@@ -1,3 +1,3 @@
-python -m pip install deps/*.whl
-python -m pip install Cython wheel
+python -m pip install pip --upgrade
+python -m pip install Cython cffi wheel setuptools
 pip install .

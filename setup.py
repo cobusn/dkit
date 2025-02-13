@@ -2,7 +2,7 @@ from setuptools import setup
 from Cython.Build import cythonize
 import dkit
 from typing import List
-
+from build_tdigest import tdigest_ffi
 """
 Setup
 """
