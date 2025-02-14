@@ -17,6 +17,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Reportlab Style repository
+"""
 from datetime import datetime
 from . import fontsize_map
 import yaml
@@ -28,10 +31,10 @@ from reportlab.lib.units import cm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from .pdf_helper import PdfImage
+from .rl_helper import PdfImage
 
 
-class RLStyler(object):
+class DefaultStyler(object):
 
     def __init__(self, document, local_style=None):
         if local_style:
