@@ -1,10 +1,35 @@
+# Copyright (c) 2025 Cobus Nel
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+Cannonical Document Structure that can be used to translate to
+various other formats such as PDF, HTML, Word etc.
+"""
+
 from dataclasses import dataclass, asdict
-from datetime import datetime
-from typing import Dict
 import typing
 from ..data import json_utils as ju
 from dataclass_wizard import JSONWizard
-
+from jinja2 import Template
+from .md_to_doc import render_doc_format
+import functools
 
 encoder = ju.JsonSerializer(
     ju.DateTimeCodec(),
@@ -13,6 +38,19 @@ encoder = ju.JsonSerializer(
     ju.PandasTimestampCodec(),
     ju.PandasNATCodec()
 )
+
+
+def _jsonise(doc_object) -> str:
+    """Format output of function as json.
+
+    Args:
+        - fn: class with as_dict function
+
+    Returns:
+        - string
+    """
+    j = as_json(doc_object)
+    return f"```jsoninclude\n{j}\n```\n"
 
 
 def as_json(obj):
@@ -25,14 +63,46 @@ def as_json(obj):
     )
 
 
-@dataclass
 class Document:
-    title: str
-    sub_title: str
-    author: str
-    date: datetime = datetime.now()
-    email: str = ""
-    contact: str = ""
+
+    def __init__(self, title=None, sub_title=None, author=None, date=None,
+                 email=None, contact=None):
+        self.title = title
+        self.sub_title = sub_title
+        self.author = author
+        self.date = date
+        self.email = email
+        self.contact = contact
+        self.jinja_objects = {
+            "image": self._jinja_include_image,
+        }
+        self.elements = []
+
+    def _jinja_include_image(self, source, title=None, width=None, height=None, align="center"):
+        """
+        include images using jinja templates
+        """
+        return _jsonise(
+            Image(
+                source,
+                title,
+                align,
+                width,
+                height
+            )
+        )
+
+    def add_element(self, element):
+        self.elements.append(element)
+
+    def add_markdown(self, markdown, **objects):
+        """parse and add markdown"""
+        local = dict(self.jinja_objects)
+        local.update(objects)
+        rendered = Template(markdown).render(**local)
+        elements = render_doc_format(rendered)
+        self.elements.extend(elements)
+        # self.elements.extend(self.iter_make_elements(elements))
 
 
 @dataclass
@@ -76,7 +146,7 @@ class Image(JSONWizard):
     title: str = None
     align: str = "center"
     width: float | None = None
-    height: float | None  = None
+    height: float | None = None
 
 
 class Str(Inline):
@@ -184,6 +254,7 @@ class Column(_TableElement):
         data = row[self.name]
         return self.format_.format(data)
 
+
 @dataclass
 class SparkLine(_TableElement):
     spark_data: List
@@ -219,3 +290,12 @@ class Table(JSONWizard):
         else:
             return False
 
+
+def wrap_json(func):
+    """Decorator that designate report output as json_include"""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return _jsonise(func(*args, **kwargs))
+
+    return wrapper

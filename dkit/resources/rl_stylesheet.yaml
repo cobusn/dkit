@@ -35,7 +35,7 @@ reportlab:
     Normal: 
       fontName: SourceSansPro
       fontSize: normalsize 
-      #  textColor: "#378245"
+      # textColor: "#378245"
       # textColor: "#05386E"
       textColor: "#5A5A5A"
       alignment: 4                    # TA_JUSTIFY

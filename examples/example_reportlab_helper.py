@@ -1,5 +1,5 @@
 import sys; sys.path.insert(0, "..")   # noqa
-from dkit.doc2.reportlab_helper import RLDocument, as_jsoninclude
+from dkit.doc2.rl_renderer import RLRenderer
 from dkit.doc2 import document as doc
 from lorem_text import lorem
 # from dkit.doc2.renderer import render_doc_format
@@ -112,20 +112,18 @@ Here's an image:
 """
 ![Image alt text](https://via.placeholder.com/150 "Placeholder Image")
 """
-
-pdf_doc = RLDocument("Test Document", "Reportlab Helper", "Author Name", email="email@address.com",
-                     allow_soft_breaks=False)
-pdf_doc.add_markdown("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
+pdf_doc = doc.Document("Test Document", "Reportlab Helper", "Author Name",
+                       email="email@address.com")
 pdf_doc.add_markdown("# Heading 1")
 pdf_doc.add_markdown(lorem.paragraph())
 pdf_doc.add_markdown(lorem.paragraph())
+pdf_doc.add_markdown("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
 pdf_doc.add_element(doc.Heading([doc.Str("Heading 2")], 1))
 pdf_doc.add_element(doc.Paragraph([doc.Str(lorem.paragraph())]))
 pdf_doc.add_markdown(md)
 pdf_doc.add_markdown(md2)
 pdf_doc.add_markdown(md_code)
 pdf_doc.add_markdown(md_big)
-# print(render_doc_format(md_big))
 
 
 class Data:
@@ -134,7 +132,7 @@ class Data:
         with source.load("examples/data/nottem_temp.jsonl") as infile:
             self.data = list(infile)[:12]
 
-    @as_jsoninclude
+    @doc.wrap_json
     def table(self):
         table = doc.Table(
             self.data,
@@ -148,13 +146,12 @@ class Data:
         return table
 
 
-data = Data()
 md_table = """
 # A Table
 Lets add a ... drumroll ... Table
 
 {{ data.table() }}
 """
-pdf_doc.add_markdown(md_table, data=data)
+pdf_doc.add_markdown(md_table, data=Data())
 
-pdf_doc.render("test.pdf")
+RLRenderer(pdf_doc, allow_soft_breaks=False).render("test.pdf")
