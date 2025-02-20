@@ -22,14 +22,19 @@
 Cannonical Document Structure that can be used to translate to
 various other formats such as PDF, HTML, Word etc.
 """
-
-from dataclasses import dataclass, asdict
+import functools
+import os
+import tempfile
 import typing
-from ..data import json_utils as ju
+from dataclasses import dataclass, asdict
+from datetime import datetime
+
 from dataclass_wizard import JSONWizard
 from jinja2 import Template
+
+from ..data import json_utils as ju
 from .md_to_doc import render_doc_format
-import functools
+
 
 encoder = ju.JsonSerializer(
     ju.DateTimeCodec(),
@@ -66,12 +71,11 @@ def as_json(obj):
 class Document:
 
     def __init__(self, title=None, sub_title=None, author=None, date=None,
-                 email=None, contact=None):
+                 contact=None):
         self.title = title
         self.sub_title = sub_title
         self.author = author
-        self.date = date
-        self.email = email
+        self.date = date if date else datetime.now()
         self.contact = contact
         self.jinja_objects = {
             "image": self._jinja_include_image,
@@ -95,14 +99,20 @@ class Document:
     def add_element(self, element):
         self.elements.append(element)
 
-    def add_markdown(self, markdown, **objects):
+    def add_template_files(self, files: list[str], **objects: object):
+        """add markdown templates from a list of files"""
+        for fname in files:
+            with open(fname, "rt") as infile:
+                text = infile.read()
+                self.add_template(text, **objects)
+
+    def add_template(self, template, **objects):
         """parse and add markdown"""
         local = dict(self.jinja_objects)
         local.update(objects)
-        rendered = Template(markdown).render(**local)
+        rendered = Template(template).render(**local)
         elements = render_doc_format(rendered)
         self.elements.extend(elements)
-        # self.elements.extend(self.iter_make_elements(elements))
 
 
 @dataclass
@@ -237,6 +247,19 @@ class _TableElement:
 
 @dataclass
 class Column(_TableElement):
+    """
+    Table Column
+
+    args:
+        - name: field name
+        - title: display title
+        - width: in cm
+        - align: left, right, center
+        - heading_align: left, right, center"
+        - dedup: hide cells the same as the one above (not implemented)
+        - format_: string format
+        - summary: True if adding summation to last row (not implemented)
+    """
     name: str
     title: str
     width: float = 2
@@ -289,6 +312,32 @@ class Table(JSONWizard):
             return True
         else:
             return False
+
+
+def wrap_matplotlib(filename=None, align="center", width=None, height=None):
+    """wrap matplotlib object.
+
+    make sure the function return a pyplot object
+
+    NOTE: IF no filename is specified, a temporary pdf file will be created
+    in the /tmp folder
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            plt = func(*args, **kwargs)
+            if not filename:
+                fd, name = tempfile.mkstemp(suffix=".pdf")
+                os.close(fd)
+            else:
+                name = filename
+            plt.savefig(name)
+            rv = _jsonise(
+                Image(name, align=align, width=width, height=height)
+            )
+            return rv
+        return wrapper
+    return decorator
 
 
 def wrap_json(func):

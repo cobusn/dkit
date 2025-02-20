@@ -21,26 +21,36 @@
 Reportlab Style repository
 """
 from datetime import datetime
-from . import fontsize_map
-import yaml
-from reportlab.pdfbase.pdfmetrics import stringWidth
 from importlib.resources import open_binary, open_text
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+import yaml
 from reportlab.lib import colors, pagesizes
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen.canvas import Canvas
+from pydantic import BaseModel
+from . import fontsize_map, document as doc
 from .rl_helper import PdfImage
 
 
 class DefaultStyler(object):
+    """default rl_renderer styler
 
-    def __init__(self, document, local_style=None):
+    Used by rl_render to generate pdf documents
+    this class can be inherited to implement new styles
+    for different document standards
+    """
+
+    def __init__(self, document: doc.Document, local_style: dict = None):
         if local_style:
             self.local_style = local_style
         else:
-            self.local_style = self.load_local_style()
+            self.local_style = self.load_local_style(
+                "dkit.resources", "rl_stylesheet.yaml"
+            )
         self.doc = document
         self.style = getSampleStyleSheet()
         self.unit = cm
@@ -50,11 +60,15 @@ class DefaultStyler(object):
     def __getitem__(self, key):
         return self.style[key]
 
-    def load_local_style(self):
+    def load_local_style(self, location, filename):
         """
         load default style update
+
+        arguments:
+            - location: module name
+            - filename: yaml file name
         """
-        with open_text("dkit.resources", "rl_stylesheet.yaml") as infile:
+        with open_text(location, filename) as infile:
             return yaml.safe_load(infile)
 
     @property
@@ -132,8 +146,6 @@ class DefaultStyler(object):
             print(k, v)
 
     def update_styles(self):
-        # print list of syles
-        # print(list(self.style.byName.keys()))
 
         # Create Verbatim style
         self.style.byName['Verbatim'] = ParagraphStyle(
@@ -155,8 +167,6 @@ class DefaultStyler(object):
             parent=self.style['Normal'],
             firstLineIndent=10,
             leftIndent=10,
-            spaceBefore=5,
-            spaceAfter=5,
         )
 
         # Update Code style
@@ -178,7 +188,6 @@ class DefaultStyler(object):
             ol.leftIndent = 10
             ol.bulletFontSize = self.style["BodyText"].fontSize
             ol.bulletColor = self.style["BodyText"].textColor
-            # self.__print_style(self.style.byName[style])
 
         # Update style / provided local stylesheet
         for style, updates in self.local_style["reportlab"]["styles"].items():
@@ -201,46 +210,6 @@ class DefaultStyler(object):
             ol.bulletColor = self.style["BodyText"].textColor
             # self.__print_style(self.style.byName[style])
 
-    def later_pages(self, canvas: Canvas, style_sheet):
-        canvas.saveState()
-        ty = self.page_height - self.top_margin
-        tl = self.left_margin
-        tr = self.page_width - self.right_margin
-        by = self.bottom_margin
-
-        # lines
-        canvas.setStrokeColor(self.text_color)
-        canvas.setFillColor(self.text_color)
-        canvas.setLineWidth(0.1)
-
-        canvas.line(tl, ty, tr, ty)   # top line
-        canvas.line(tl, by, tr, by)   # bottom line
-
-        # title
-        canvas.setFont(self.title_font_name, 8)
-        canvas.drawString(tl, ty + 12, self.doc.title)
-
-        # subtitle
-        canvas.setFont(self.author_font_name, 8)
-        canvas.drawString(tl, ty + 2, self.doc.sub_title)
-
-        # date
-        canvas.setFont(self.author_font_name, 8)
-        tw = stringWidth(self.title_date, self.author_font_name, 8)
-        canvas.drawString(tr - tw, ty + 6, self.title_date)
-
-        # author
-        canvas.drawString(tl, by - 10, self.doc.author)
-        tw = stringWidth(self.title_date, self.author_font_name, 8)
-
-        # page number
-        n = canvas.getPageNumber()
-        page_num = str(f"Page: {n}")
-        tw = stringWidth(page_num, self.author_font_name, 8)
-        canvas.drawString(tr - tw, by - 10, page_num)
-
-        canvas.restoreState()
-
     @property
     def contact_email(self):
         rv = self.doc.contact if self.doc.contact else ""
@@ -253,26 +222,111 @@ class DefaultStyler(object):
 
     def first_page(self, canvas: Canvas, style_sheet):
         """default function for first pages"""
+        class FirstPageConf(BaseModel):
+            package: str
+            image: str
+            text_color: str
+            title_color: str
+            title_xy: tuple[int, int]
+            title_font_size: int
+            subtitle_xy: tuple[int, int]
+            subtitle_font_size: int
+            author_xy: tuple[int, int]
+            author_font_size: int
+            contact_xy: tuple[int, int]
+            contact_font_size: int
+            date_font_size: int
+            date_xy: tuple[int, int]
+
         canvas.saveState()
-        canvas.setFont('Times-Bold', 16)
+        # canvas.setFont('Times-Bold', 16)
+        conf = FirstPageConf(**self.local_style["reportlab"]["front_page"])
 
         # image
-        # with open_binary("dkit.resources", "ddfrontpage.pdf") as infile:
-        with open_binary("dkit.resources", "background.pdf") as infile:
+        with open_binary(conf.package, conf.image) as infile:
             pdf = PdfImage(infile, self.page_width, self.page_height)
             pdf.drawOn(canvas, 0, 0)
 
-        title_x = self.page_width / 15
-        title_y = 2.2 * self.page_height / 3
-        canvas.setFont(self.title_font_name, 22)
-        # canvas.setFillColor(colors.white)
-        canvas.setFillColor(colors.darkgray)
-        canvas.drawString(title_x, title_y, self.doc.title)
-        canvas.setFont(self.title_font_name, 16)
-        canvas.drawString(title_x, title_y - 22, self.doc.sub_title)
-        canvas.setFont(self.author_font_name, 14)
-        canvas.drawString(title_x, title_y - 44, f"by: {self.doc.author}")
-        canvas.drawString(title_x, title_y - 60, self.contact_email)
-        canvas.setFont(self.author_font_name, 10)
-        canvas.drawString(title_x, 160,  self.title_date)
+        # color
+        canvas.setFillColor(conf.title_color)
+
+        # title
+        x, y = conf.title_xy
+        canvas.setFont(self.title_font_name, conf.title_font_size)
+        canvas.drawString(x, y, self.doc.title)
+
+        # main color
+        canvas.setFillColor(conf.text_color)
+
+        # subtitle
+        x, y = conf.subtitle_xy
+        canvas.setFont(self.title_font_name, conf.subtitle_font_size)
+        canvas.drawString(x, y, self.doc.sub_title)
+
+        # author
+        x, y = conf.author_xy
+        canvas.setFont(self.author_font_name, conf.author_font_size)
+        canvas.drawString(x, y, self.doc.author)
+
+        # email
+        x, y = conf.contact_xy
+        canvas.setFont(self.author_font_name, conf.contact_font_size)
+        canvas.drawString(x, y, self.doc.contact)
+
+        # date
+        x, y = conf.date_xy
+        canvas.setFont(self.author_font_name, conf.date_font_size)
+        canvas.drawString(x, y,  self.title_date)
+        canvas.restoreState()
+
+    def later_pages(self, canvas: Canvas, style_sheet):
+        class LaterPage(BaseModel):
+            top_line: bool
+            bottom_line: bool
+            add_title: bool = True
+            add_sub_title: bool = True
+            add_date: bool = True
+
+        conf = LaterPage(**self.local_style["reportlab"]["later_pages"])
+        canvas.saveState()
+        ty = self.page_height - self.top_margin
+        tl = self.left_margin
+        tr = self.page_width - self.right_margin
+        by = self.bottom_margin
+
+        # lines
+        canvas.setStrokeColor(self.text_color)
+        canvas.setFillColor(self.text_color)
+        canvas.setLineWidth(0.1)
+        if conf.top_line:
+            canvas.line(tl, ty, tr, ty)
+        if conf.bottom_line:
+            canvas.line(tl, by, tr, by)   # bottom line
+
+        # title
+        if conf.add_title:
+            canvas.setFont(self.title_font_name, 8)
+            canvas.drawString(tl, ty + 12, self.doc.title)
+
+        # subtitle
+        if conf.add_sub_title:
+            canvas.setFont(self.author_font_name, 8)
+            canvas.drawString(tl, ty + 2, self.doc.sub_title)
+
+        # date
+        if conf.add_date:
+            canvas.setFont(self.author_font_name, 8)
+            tw = stringWidth(self.title_date, self.author_font_name, 8)
+            canvas.drawString(tr - tw, ty + 6, self.title_date)
+
+        # author
+        canvas.drawString(tl, by - 10, self.doc.author)
+        tw = stringWidth(self.title_date, self.author_font_name, 8)
+
+        # page number
+        n = canvas.getPageNumber()
+        page_num = str(f"Page: {n}")
+        tw = stringWidth(page_num, self.author_font_name, 8)
+        canvas.drawString(tr - tw, by - 10, page_num)
+
         canvas.restoreState()

@@ -34,7 +34,7 @@ setup(
         "dkit",
         "dkit.algorithms",
         "dkit.data",
-        "dkit.doc",
+        "dkit.doc2",
         "dkit.etl",
         "dkit.etl.extensions",
         "dkit.parsers",

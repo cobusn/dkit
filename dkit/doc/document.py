@@ -77,7 +77,10 @@ class DocumentContainer(MutableMapping):
 
 class Document(DocumentContainer):
 
-    def __init__(self, title=None, sub_title=None, author=None, date=None, email=None, contact=None):
+    def __init__(
+        self, title=None, sub_title=None, author=None, email=None,
+        contact=None, date=None
+    ):
         super().__init__()
         self.title = title
         self.sub_title = sub_title

@@ -127,6 +127,8 @@ class DocRenderer(BaseRenderer):
         raise Exception(f"linebreak not yet defined: {token}")
 
     def inline_html(self, token: Dict[str, Any], state: BlockState) -> str:
+        if token["raw"] == "<locals>":
+            raise Exception(f"<locals> tag exception raised.  Check that decorators have parameters where required")
         raise Exception(f"Inline HTML not supported: {token['raw']}")
 
     def thematic_break(self, token: Dict[str, Any], state: BlockState) -> str:
