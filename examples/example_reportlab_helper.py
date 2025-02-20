@@ -1,9 +1,13 @@
 import sys; sys.path.insert(0, "..")   # noqa
-from dkit.doc2.rl_renderer import RLRenderer
-from dkit.doc2 import document as doc
+import matplotlib.pyplot as plt
 from lorem_text import lorem
-# from dkit.doc2.renderer import render_doc_format
+
+from dkit.doc2 import document as doc
+from dkit.doc2.rl_renderer import RLRenderer
 from dkit.etl import source
+
+
+# from dkit.doc2.renderer import render_doc_format
 
 
 md = """# Heading 1 with *emph*
@@ -113,17 +117,17 @@ Here's an image:
 ![Image alt text](https://via.placeholder.com/150 "Placeholder Image")
 """
 pdf_doc = doc.Document("Test Document", "Reportlab Helper", "Author Name",
-                       email="email@address.com")
-pdf_doc.add_markdown("# Heading 1")
-pdf_doc.add_markdown(lorem.paragraph())
-pdf_doc.add_markdown(lorem.paragraph())
-pdf_doc.add_markdown("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
+                       contact="email@address.com")
+pdf_doc.add_template("# Heading 1")
+pdf_doc.add_template(lorem.paragraph())
+pdf_doc.add_template(lorem.paragraph())
+pdf_doc.add_template("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
 pdf_doc.add_element(doc.Heading([doc.Str("Heading 2")], 1))
 pdf_doc.add_element(doc.Paragraph([doc.Str(lorem.paragraph())]))
-pdf_doc.add_markdown(md)
-pdf_doc.add_markdown(md2)
-pdf_doc.add_markdown(md_code)
-pdf_doc.add_markdown(md_big)
+pdf_doc.add_template(md)
+pdf_doc.add_template(md2)
+pdf_doc.add_template(md_code)
+pdf_doc.add_template(md_big)
 
 
 class Data:
@@ -131,6 +135,15 @@ class Data:
     def __init__(self):
         with source.load("examples/data/nottem_temp.jsonl") as infile:
             self.data = list(infile)[:12]
+
+    @doc.wrap_matplotlib(width=5, height=5, filename="plot.pdf")
+    def plot(self):
+        plt.figure(figsize=(6, 4))
+        plt.plot([1, 2, 3, 4], [5, 6, 7, 8])
+        plt.xlabel("X-axis")
+        plt.ylabel("Y-axis")
+        plt.title("My Matplotlib Plot")
+        return plt
 
     @doc.wrap_json
     def table(self):
@@ -151,7 +164,12 @@ md_table = """
 Lets add a ... drumroll ... Table
 
 {{ data.table() }}
+
+## Image
+And a matplotlib plot:
+
+{{ data.plot() }}
 """
-pdf_doc.add_markdown(md_table, data=Data())
+pdf_doc.add_template(md_table, data=Data())
 
 RLRenderer(pdf_doc, allow_soft_breaks=False).render("test.pdf")
