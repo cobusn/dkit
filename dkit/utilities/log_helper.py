@@ -21,6 +21,7 @@
 """
 Convenience functions and classes dealing with logging
 """
+import os
 import logging
 import sys
 from logging.handlers import QueueHandler, QueueListener
@@ -58,7 +59,19 @@ def init_file_logger(filename, message=None, name=None, level=DEFAULT_LOG_LEVEL)
     """
     Return simple file logger
     """
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     handler = logging.FileHandler(filename)
+    return init_logger(message, name, level, handler)
+
+
+def init_rotating_file_logger(filename, message=None, name=None,
+                              level=DEFAULT_LOG_LEVEL,
+                              max_bytes=20 * 1024 * 1024,
+                              backup_count=10):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    handler = logging.handlers.RotatingFileHandler(
+        filename, maxBytes=max_bytes, backupCount=backup_count
+    )
     return init_logger(message, name, level, handler)
 
 
