@@ -65,10 +65,13 @@ class ArrowServices(ETLServices):
     def get_s3_fs(self, secret_name: str):
         """instantiate Arrow S3 instance"""
         secret = self.model.get_secret(secret_name)
+        region = secret.parameters.get("region", None)
+        if region is None:
+            logger.info("No region specified for S3 data source")
         return S3FileSystem(
-            secret.key,
-            secret.secret,
-            region=secret.parameters["region"]
+            access_key=secret.key,
+            secret_key=secret.secret,
+            region=region
         )
 
 
