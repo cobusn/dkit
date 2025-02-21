@@ -32,19 +32,23 @@ Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
 =========== =============== =================================================
 """
-from ... import CHUNK_SIZE, messages
-from ...utilities.cmd_helper import LazyLoad
-from .. import source, sink
-from ...data.iteration import chunker
-from ..model import Entity
-from itertools import islice, chain
-from jinja2 import Template
 import logging
-from typing import Dict, List
+from itertools import islice, chain
 from os import path
-# pa = LazyLoad("pyarrow")
+from typing import Dict, List
+
 import pyarrow as pa
-from pyarrow.fs import FileSystem, LocalFileSystem
+from jinja2 import Template
+from pyarrow.fs import FileSystem, LocalFileSystem, S3FileSystem
+
+from .. import source, sink
+from ... import CHUNK_SIZE, messages
+from ...data.iteration import chunker
+from ...utilities.cmd_helper import LazyLoad
+from ..model import Entity, ETLServices
+
+
+# pa = LazyLoad("pyarrow")
 # import pyarrow.parquet as pq
 pq = LazyLoad("pyarrow.parquet")
 
@@ -54,6 +58,18 @@ logger = logging.getLogger("ext_arrow")
 __all__ = []
 
 # convert cannonical to arrow
+
+
+class ArrowServices(ETLServices):
+
+    def get_s3_fs(self, secret_name: str):
+        """instantiate Arrow S3 instance"""
+        secret = self.model.get_secret(secret_name)
+        return S3FileSystem(
+            secret.key,
+            secret.secret,
+            region=secret.parameters["region"]
+        )
 
 
 def make_decimal(t=None):
