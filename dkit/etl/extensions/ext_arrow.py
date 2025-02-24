@@ -30,6 +30,7 @@ Sept 2022   Cobus Nel       Added:
 May 2023    Cobus Nel       Added Unsigned int types
 Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
+Feb 2025    Cobus Nel       Added ArrowServices
 =========== =============== =================================================
 """
 import logging
