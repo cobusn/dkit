@@ -1,18 +1,46 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "cython", "cffi>=1.4.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "dkit"
-version = ".0.1"
+name = "libdkit"
 authors = [
-  { name="Example Author", email="author@example.com" },
+  { name="Cobus Nel"},
 ]
-description = "A small example package"
+description = "Data Processing Toolkit"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: MIT License",
 ]
+dynamic = ["dependencies", "version"]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/cobusn/dkit"
+Issues = "https://github.com/cobusn/dkit/issues"
+
+[tool.setuptools]
+packages=[
+    "dkit",
+    "dkit.algorithms",
+    "dkit.data",
+    "dkit.doc",
+    "dkit.etl",
+    "dkit.etl.extensions",
+    "dkit.parsers",
+    "dkit.plot",
+    "dkit.resources",
+    "dkit.shell",
+    "dkit.utilities",
+    "lib_dk"
+]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {attr = "dkit.__version__"}
+
+[project.scripts]
+dk = "lib_dk.dk:main"
