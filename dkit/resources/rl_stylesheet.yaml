@@ -10,6 +10,24 @@
 
 reportlab:
   # Reportlab specific customisations
+  front_page:
+    package: dkit.resources 
+    image: background.pdf
+    text_color: "#A9A9A9"
+    title_color: "#A9A9A9"
+    title_xy: [40, 500]
+    subtitle_xy: [40, 480]
+    author_xy: [40, 360]
+    contact_xy: [40, 340]
+    contact_font_size: 16
+    date_xy: [40, 160]
+    title_font_size: 22
+    subtitle_font_size: 16
+    author_font_size: 14
+    date_font_size: 10
+  later_pages:
+    top_line: True 
+    bottom_line: True 
   styles:
     Heading1:
       #textColor: "#05386E"
@@ -35,7 +53,7 @@ reportlab:
     Normal: 
       fontName: SourceSansPro
       fontSize: normalsize 
-      #  textColor: "#378245"
+      # textColor: "#378245"
       # textColor: "#05386E"
       textColor: "#5A5A5A"
       alignment: 4                    # TA_JUSTIFY
@@ -54,6 +72,9 @@ reportlab:
       spaceAfter: 10
     BlockQuote: 
       fontName: Times-Italic
+      leftIndent: 10
+      spceBefore: 5
+      spaceAfter: 5
     Code:
       fontName: Times-Roman 
       leading: 10
@@ -79,10 +100,8 @@ page:
   title_date_format: "{:%d %B %Y}"
 table:
   heading_color: "#FFFFFF"
-    # heading_background: "#05386E"
   heading_background: "#5A5A5A"
   fontSize: footnotesize
-    # font_color: "#05386E" 
   font_color: "#5A5A5A"
   font: SourceSansPro
 matplotlib:
