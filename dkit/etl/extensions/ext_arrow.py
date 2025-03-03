@@ -63,7 +63,6 @@ __all__ = []
 
 class ArrowServices(ETLServices):
 
-<<<<<<< HEAD
     def get_s3_fs(self, secret_name: str) -> S3FileSystem:
         """instantiate Arrow S3 instance"""
         secret = self.model.get_secret(secret_name)
@@ -74,15 +73,6 @@ class ArrowServices(ETLServices):
             access_key=secret.key,
             secret_key=secret.secret,
             region=region
-=======
-    def get_s3_fs(self, secret_name: str):
-        """instantiate Arrow S3 instance"""
-        secret = self.model.get_secret(secret_name)
-        return S3FileSystem(
-            secret.key,
-            secret.secret,
-            region=secret.parameters["region"]
->>>>>>> reportlab
         )
 
 
