@@ -8,11 +8,13 @@ inflect
 jinja2
 lz4
 matplotlib
-mistune==0.8.4
+mistune
+openpyxl
 pdfrw
 pyarrow
 pyparsing
 pyperclip
+pydantic
 python-dateutil
 python-snappy
 pyyaml

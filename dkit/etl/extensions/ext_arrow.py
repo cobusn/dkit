@@ -30,6 +30,7 @@ Sept 2022   Cobus Nel       Added:
 May 2023    Cobus Nel       Added Unsigned int types
 Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
+Feb 2025    Cobus Nel       Added ArrowServices
 =========== =============== =================================================
 """
 import logging
@@ -62,7 +63,7 @@ __all__ = []
 
 class ArrowServices(ETLServices):
 
-    def get_s3_fs(self, secret_name: str):
+    def get_s3_fs(self, secret_name: str) -> S3FileSystem:
         """instantiate Arrow S3 instance"""
         secret = self.model.get_secret(secret_name)
         region = secret.parameters.get("region", None)
