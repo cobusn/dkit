@@ -15,12 +15,14 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
-
+import random
 import sys
 import unittest
+from collections import Counter
 import common
 sys.path.insert(0, "..")
-from dkit.data import helpers
+from dkit.data.fake_helper import random_string #noqa
+from dkit.data import helpers  #noqa
 
 
 class TestDataHelper(common.TestBase):
@@ -44,6 +46,20 @@ class TestDataHelper(common.TestBase):
                 helpers.validate_luhn_hash(n),
                 True
             )
+
+    def test_get_partition(self):
+        rs = random_string(100)
+        p1 = helpers.get_partition(rs)
+        p2 = helpers.get_partition(rs)
+        self.assertEquals(p1, p2)
+
+    def test_partition_distribution(self):
+        """test distribution of partitions"""
+        counter = Counter(
+            helpers.get_partition(random_string(random.randrange(5, 100)))
+            for _ in range(10000)
+        )
+        print("partition spread", counter.most_common())
 
 
 if __name__ == '__main__':
