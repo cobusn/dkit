@@ -434,3 +434,17 @@ def parse_date(date_string, format_: str = "%Y%m%d") -> datetime:
 
     else:
         return datetime.strptime(date_string, format_)
+
+
+def days_in_month(year, month):
+    """
+    Returns the number of days in a given month and year.
+
+    Args:
+        year: The year (integer).
+        month: The month (integer, 1-12).
+
+    Returns:
+        The number of days in the specified month (integer).  Returns -1 if invalid input.
+    """
+    return calendar.monthrange(year, month)[1]

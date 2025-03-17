@@ -2,7 +2,7 @@
 canned fake data for testing purpose
 """
 import random
-
+import string
 from faker import Factory
 from random import choice
 from faker.providers import BaseProvider
@@ -216,3 +216,16 @@ def za_id_number(person):
     abc = a + b + c
     z = str(helpers.luhn_hash(abc))
     return abc + z
+
+
+def random_string(length: int = 25):
+    """create random strings of specified length
+
+    args:
+        len: string length
+
+    returns:
+        random string
+    """
+    letters = string.ascii_letters
+    return ''.join(random.choice(letters) for i in range(length))
