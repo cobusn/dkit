@@ -75,6 +75,13 @@ class ArrowServices(ETLServices):
             region=region
         )
 
+    def get_arrow_schema(self, entity_name):
+        """
+        load arrow schema from model entity
+        """
+        schema = self.model.entities[entity_name]
+        return make_arrow_schema(schema)
+
 
 def make_decimal(t=None):
     """create decimal value"""
