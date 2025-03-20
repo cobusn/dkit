@@ -1,43 +1,33 @@
-#
-# Copyright (C) 2014  Cobus Nel
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-#
 """
- Simple SMTP Server used for testing purposes.
- This server will listen on port 25 on the local server
-
- Cobus Nel
- $Rev: 12 $
-
+Simple SMTP Server used for testing purposes.
+This server will listen on port 25 on the local server
 """
-import smtpd
-import asyncore
+import asyncio
+from aiosmtpd.controller import Controller
 
 
-class CustomSMTPServer(smtpd.SMTPServer):
+class MySMTPServer:
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
-        print('Receiving message from:', peer)
-        print('Message addressed from:', mailfrom)
-        print('Message addressed to  :', rcpttos)
-        print('Message length        :', len(data))
-        print(data)
-        return
+    async def handle_DATA(self, server, session, envelope):
+        print(f"Peer: {session.peer}")
+        print(f"From: {envelope.mail_from}")
+        print(f"To: {envelope.rcpt_tos}")
+        print(f"Message Length: {len(envelope.content)} bytes")
+        return "250 OK"
 
 
-server = CustomSMTPServer(('127.0.0.1', 2525), None)
-# server = smtpd.DebuggingServer(('127.0.0.1', 25), None)
-asyncore.loop()
+async def main():
+    controller = Controller(MySMTPServer(), hostname='localhost', port=2525)
+    controller.start()
+    print("started")
+    try:
+        await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        pass
+    finally:
+        controller.stop()
+        print("SMTP server stopped.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
