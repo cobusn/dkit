@@ -40,7 +40,7 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import COMMASPACE, formatdate
 import os
 import smtplib
-
+from pydantic import BaseModel
 # Default smtp timeout of 10 seconds.
 DEFAULT_SMTP_TIMEOUT = 300
 
@@ -68,8 +68,11 @@ class SmtpMessage:
         if self.body.__class__.__name__ == "MIMEMultipart":
             msg = self.body
         else:
-            msg = MIMEMultipart()
-            msg.attach(MIMEText(self.body, self.body_type))
+            if isinstance(self.body, str):
+                msg = MIMEText(self.body)
+            else:
+                msg = MIMEMultipart()
+                msg.attach(MIMEText(self.body, self.body_type))
 
         msg['From'] = self.sender
         msg['To'] = COMMASPACE.join(self.recipients)
@@ -93,10 +96,20 @@ class SmtpMessage:
 
 class SmtpClient:
 
+    class Config(BaseModel):
+        """Used to instantiate e.g. from config file"""
+        server: str
+        username: str = None
+        password: str = None
+        port: int = 25
+        authenticate: bool = False
+        use_tls: bool = False
+        smtp_debug_level: int = 0
+
     def __init__(self, server, port: int = 25, username: str = None, password: str = None,
                  authenticate: bool = False, use_tls: bool = False,
                  smtp_debug_level: int = 0,
-                 timeout: int = DEFAULT_SMTP_TIMEOUT):
+                 timeout: int = DEFAULT_SMTP_TIMEOUT, **kwargs):
         self.server = server
         self.port = port
         self.username = username
@@ -109,7 +122,7 @@ class SmtpClient:
     def send(self, message: SmtpMessage):
         """Send the email"""
         smtp = smtplib.SMTP(self.server, self.port, timeout=self.timeout)
-        recipients = message.recipients + message.cc + message.bcc
+        recipients = message.recipients + message.cc
         if self.use_tls:
             if smtp.has_extn("STARTTLS"):
                 smtp.starttls()

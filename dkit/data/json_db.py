@@ -42,7 +42,7 @@ class JSONDB(Mapping):
         self.suffix = suffix
 
     def _file_path(self, key):
-        return self.path / f"{self.transform(key)}.{self.suffix}"
+        return self.path / f"{self._transform(key)}.{self.suffix}"
 
     def _reverse_transform(self, filename: str):
         """translate filname back to key"""
