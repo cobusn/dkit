@@ -40,8 +40,9 @@ encoder = ju.JsonSerializer(
     ju.DateTimeCodec(),
     ju.DateCodec(),
     ju.Decimal2FloatCodec(),
-    ju.PandasTimestampCodec(),
-    ju.PandasNATCodec()
+    # uncomment below if pandas needed
+    # ju.PandasTimestampCodec(),
+    # ju.PandasNATCodec()
 )
 
 
@@ -69,18 +70,38 @@ def as_json(obj):
 
 
 class Document:
+    """
+    Initialize a document
 
-    def __init__(self, title=None, sub_title=None, author=None, date=None,
-                 contact=None):
+    Args:
+        - title: document main title
+        - sub_title: document subtitle
+        - author: document author
+        - date: defaults to today's date. Else provide a string
+        - contact: contact details for title page
+    """
+
+    def __init__(self, title: str = None, sub_title: str = None,
+                 author: str = None, title_date: str = None, contact: str = None):
         self.title = title
         self.sub_title = sub_title
         self.author = author
-        self.date = date if date else datetime.now()
+        self._title_date = title_date
+        self._date = datetime.now()
         self.contact = contact
         self.jinja_objects = {
             "image": self._jinja_include_image,
+            "page_break": self._jinja_include_page_break,
         }
         self.elements = []
+
+    def _jinja_include_page_break(self, threshold=None):
+        """
+        include images using jinja templates
+        """
+        return _jsonise(
+            PageBreak(threshold)
+        )
 
     def _jinja_include_image(self, source, title=None, width=None, height=None, align="center"):
         """
@@ -128,6 +149,12 @@ class HorizontalLine:
 @dataclass
 class LineBreak:
     "Line break"
+
+
+@dataclass
+class PageBreak(JSONWizard):
+    "Line break"
+    threshold: int | None = None
 
 
 @dataclass
@@ -219,6 +246,7 @@ def from_json(json):
     obj_map = {
         "Image": Image,
         "Table": Table,
+        "PageBreak": PageBreak,
     }
     obj_dict = encoder.loads(json)
     name = obj_dict["t"]
@@ -314,7 +342,7 @@ class Table(JSONWizard):
             return False
 
 
-def wrap_matplotlib(filename=None, align="center", width=None, height=None):
+def wrap_matplotlib(filename=None, align="center", width=None, height=None, kind=".png"):
     """wrap matplotlib object.
 
     make sure the function return a pyplot object
@@ -322,16 +350,47 @@ def wrap_matplotlib(filename=None, align="center", width=None, height=None):
     NOTE: IF no filename is specified, a temporary pdf file will be created
     in the /tmp folder
     """
+    assert kind in [".pdf", ".jpg", ".png"]
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             plt = func(*args, **kwargs)
             if not filename:
-                fd, name = tempfile.mkstemp(suffix=".pdf")
+                fd, name = tempfile.mkstemp(suffix=kind)
                 os.close(fd)
             else:
                 name = filename
             plt.savefig(name)
+            rv = _jsonise(
+                Image(name, align=align, width=width, height=height)
+            )
+            return rv
+        return wrapper
+    return decorator
+
+
+def wrap_imagebytes(filename=None, align="center", width=None, height=None):
+    """wrap image from BytesIO object
+
+    make sure the function return a BytesIO image
+
+    NOTE: IF no filename is specified, a temporary png file will be created
+    in the /tmp folder
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            png = func(*args, **kwargs)
+            if png is None or png.getvalue() is None:
+                return ''
+            if not filename:
+                fd, name = tempfile.mkstemp(suffix=".png")
+                os.close(fd)
+            else:
+                name = filename
+            with open(name, 'wb') as f:
+                f.write(png.getvalue())
             rv = _jsonise(
                 Image(name, align=align, width=width, height=height)
             )

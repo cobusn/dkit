@@ -4,6 +4,7 @@ from lorem_text import lorem
 
 from dkit.doc2 import document as doc
 from dkit.doc2.rl_renderer import RLRenderer
+from dkit.doc2.docx_renderer import DocxRenderer
 from dkit.etl import source
 
 
@@ -121,7 +122,7 @@ pdf_doc = doc.Document("Test Document", "Reportlab Helper", "Author Name",
 pdf_doc.add_template("# Heading 1")
 pdf_doc.add_template(lorem.paragraph())
 pdf_doc.add_template(lorem.paragraph())
-pdf_doc.add_template("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
+# pdf_doc.add_template("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
 pdf_doc.add_element(doc.Heading([doc.Str("Heading 2")], 1))
 pdf_doc.add_element(doc.Paragraph([doc.Str(lorem.paragraph())]))
 pdf_doc.add_template(md)
@@ -136,7 +137,7 @@ class Data:
         with source.load("examples/data/nottem_temp.jsonl") as infile:
             self.data = list(infile)[:12]
 
-    @doc.wrap_matplotlib(width=5, height=5, filename="plot.pdf")
+    @doc.wrap_matplotlib(width=5, height=5, filename="plot.png", kind=".png")
     def plot(self):
         plt.figure(figsize=(6, 4))
         plt.plot([1, 2, 3, 4], [5, 6, 7, 8])
@@ -173,3 +174,4 @@ And a matplotlib plot:
 pdf_doc.add_template(md_table, data=Data())
 
 RLRenderer(pdf_doc, allow_soft_breaks=False).render("test.pdf")
+DocxRenderer(pdf_doc).render("test.docx")

@@ -25,8 +25,7 @@ import docx
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm
-from .docx_helper import add_hyperlink
-# from docx.enum.text import WD_BREAK
+from .docx_helper import add_hyperlink, create_codeblock_style, DocxConfig
 import functools
 HEADING_COUNTER = 0
 
@@ -34,17 +33,31 @@ HEADING_COUNTER = 0
 class DocxRenderer:
     """Render document elements to docx"""
 
-    def __init__(self, document: doc.Document, allow_soft_breaks=False):
+    def __init__(self, document: doc.Document, allow_soft_breaks: bool = False,
+                 config: DocxConfig = None, template: str = None):
+        if config is None:
+            config = DocxConfig()
         self.allow_soft_breaks = allow_soft_breaks  # allow breaks in a paragraph
-        # self.spacer_height = 0.0 * cm       # used by soft breaks
-        # self.paragraph_style = "BodyText"   # can change depending on type of block
-        # self.styler = styler(document)
         self.doc = document
-        self.xdoc = docx.Document()
+        self.config = config
+        if template is None:
+            self.xdoc = docx.Document()
+        else:
+            self.xdoc = docx.Document(template)
+        # Create custom style
+        create_codeblock_style(self.xdoc)
+
+        # State variables
         self.current_paragraph = None
-        self.current_style = "Normal"
+        self.current_style = self.config.sty_normal
         self.list_level = None  # used by lists to determine level
         self.list_type = None     # used by lists
+
+    def set_properties(self):
+        """set document properties"""
+        self.xdoc.core_properties.author = self.doc.author
+        self.xdoc.core_properties.title = self.doc.title
+        self.xdoc.core_properties.subject = self.doc.sub_title
 
     def make_elements(self, elements):
         for element in elements:
@@ -53,6 +66,11 @@ class DocxRenderer:
     @functools.singledispatchmethod
     def make(self, element):
         raise TypeError(f"Unsupported data type: {type(element)}")
+
+    @make.register(doc.Code)
+    def make_code(self, element: doc.Str):
+        run = self.current_paragraph.add_run(element.content)
+        return run
 
     @make.register(doc.Str)
     def make_str(self, element: doc.Str):
@@ -75,9 +93,9 @@ class DocxRenderer:
         buf = self.current_style
         self.list_level = element.depth + 1
         if element.ordered is True:
-            self.list_type = "Number"
+            self.list_type = self.config.sty_number_list
         else:
-            self.list_type = "Bullet"
+            self.list_type = self.config.sty_bullet
         self.current_style = self._get_bullet_style()
         for elem in element.content:
             self.make(elem)
@@ -93,7 +111,7 @@ class DocxRenderer:
         self.make_elements(element.content)
 
     def _add_paragraph(self, text="", style=None):
-        if style:
+        if style is not None:
             self.current_style = style
         self.current_paragraph = self.xdoc.add_paragraph(
             text=text,
@@ -147,19 +165,32 @@ class DocxRenderer:
 
     @make.register(doc.SoftBreak)
     def make_soft_break(self, element: doc.SoftBreak):
-        run = self.current_paragraph.add_run()
-        run.add_break()
+        if self.allow_soft_breaks:
+            run = self.current_paragraph.add_run()
+            run.add_break()
+
+    @make.register(doc.PageBreak)
+    def make_page_break(self, element: doc.PageBreak):
+        self.xdoc.add_page_break()
+
+    @make.register(doc.CodeBlock)
+    def make_code_block(self, element: doc.CodeBlock):
+        buffer = self.current_style  # Save for later"
+        self._add_paragraph(
+            element.content,
+            style=self.config.sty_code_block
+        )
+        self._add_paragraph(style=buffer)
 
     @make.register(doc.BlockQuote)
-    def make_block_quoete(self, element: doc.BlockQuote):
+    def make_block_quote(self, element: doc.BlockQuote):
         buffer = self.current_style  # Save for later"
-        self.current_style = "Quote"
+        self.current_style = self.config.sty_quote
         self.make_elements(element.content)
         self.current_style = buffer
 
     @make.register(doc.Image)
     def make_image(self, element: doc.Image):
-        print(element)
         para = self._add_paragraph()
         run = para.add_run()
         run.add_picture(
@@ -195,14 +226,13 @@ class DocxRenderer:
     def make_table(self, element: doc.Table):
         rows = len(element.data) + 1
         cols = len(element.columns)
-        table = self.xdoc.add_table(rows, cols, style="Table Grid")   # add style here
+        table = self.xdoc.add_table(rows, cols, style=self.config.sty_table)
         table.autofit = False
         table.alignment = self._translate_table_alignment(element.align)
 
         # set table column widths
         for i, col in enumerate(element.columns):
             table.columns[i].width = Cm(col.width)
-            print(Cm(col.width))
 
         # set headers
         headers = table.rows[0].cells
@@ -218,12 +248,12 @@ class DocxRenderer:
             row = table.rows[i + 1]
             for j, col in enumerate(element.columns):
                 cell = row.cells[j]
-                cell.text = data_row[col.name]
+                cell.text = str(data_row[col.name])
                 cell.width = col.width
                 for p in cell.paragraphs:
                     p.alignment = self._translate_alignment(col.align)
 
-
     def render(self, file_name: str):
+        self.set_properties()
         self.make_elements(self.doc.elements)
         self.xdoc.save(file_name)

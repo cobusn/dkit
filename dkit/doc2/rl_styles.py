@@ -74,7 +74,7 @@ class DefaultStyler(object):
     @property
     def title_date(self):
         fmt = self.local_style["page"]["title_date_format"]
-        _date = self.doc.date if self.doc.date else datetime.now()
+        _date = self.doc._title_date if self.doc._title_date else self.doc._date
         return fmt.format(_date)
 
     @property
