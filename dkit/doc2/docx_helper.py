@@ -1,6 +1,78 @@
+# Copyright (c) 2025 Cobus Nel
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """
+Utilities for workinw with docx and Word Documents
 """
 import docx
+from docx.shared import Pt
+from docx.enum.style import WD_STYLE_TYPE
+from docx.shared import Cm, Inches
+
+from pydantic import BaseModel
+
+
+class DocxConfig(BaseModel):
+    """For configuration of DocxRenderer"""
+    sty_normal: str = "Normal"
+    sty_code_block: str = "CodeBlock"
+    sty_bullet: str = "Bullet"
+    sty_number_list: str = "Number"
+    sty_quote: str = "Quote"
+    sty_table: str = "Table Grid"
+
+
+def create_codeblock_style(doc: docx.Document):
+    """return a CodeBlock style. Create it if needed"""
+    styles = doc.styles  # Access the document's styles object
+    if "CodeBlock" not in styles:
+        custom_body_style = styles.add_style('CodeBlock', WD_STYLE_TYPE.PARAGRAPH)
+        body_font = custom_body_style.font
+        body_font.name = 'Courier New'
+        body_font.size = Pt(12)
+        body_font.bold = False
+        body_font.italic = False
+        body_font.underline = False
+        body_paragraph_format = custom_body_style.paragraph_format
+        body_paragraph_format.space_before = Inches(0)
+        body_paragraph_format.space_after = Inches(0.08)  # After paragraph spacing
+
+
+def get_or_create_codeblock_style(doc: docx.Document):
+    """return a CodeBlock style. Create it if needed"""
+    breakpoint()
+    if "BlockCode" not in doc.styles:
+        styles = document.styles
+        style = styles.add_style('BlockCode', WD_STYLE_TYPE.PARAGRAPH)
+        # style.unhide_when_used = True
+        font = style.font
+        font.name = 'Courier New'  # Monospace
+        font.size = Pt(10)
+        font.italic = True
+
+        # Add a background color (using shading)
+        paragraph_format = style.paragraph_format
+        paragraph_format.first_line_indent = Cm(1)
+        paragraph_format.left_indent = Cm(1)
+        paragraph_format.right_indent = Cm(1)
+
+    return "BlockCode"
 
 
 def get_or_create_hyperlink_style(d):
@@ -36,7 +108,7 @@ def get_or_create_hyperlink_style(d):
 def add_hyperlink(paragraph, text, url):
     """add hyperlink to a paragraph
 
-    source: https://stackoverflow.com/questions/47666642/adding-an-hyperlink-in-msword-by-using-python-docx"
+    source: https://stackoverflow.com/questions/47666642/adding-an-hyperlink-in-msword-by-using-python-docx"  # noqa
     """
     # This gets access to the document.xml.rels file and gets a new relation id value
     part = paragraph.part
