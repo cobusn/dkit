@@ -18,18 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""
+ETL helper classes for common tasks:
+
+Extract:
+
+    - extracting SQL
+    - extracting SQL using templates
+
+Load:
+    - writing to S3
+"""
 import json
 import logging
 from abc import ABC, abstractmethod
 
+from jinja2 import Template
 from pyarrow.fs import FileSystem
 
+from ..data.iteration import chunker
 from .extensions.ext_arrow import build_table, make_arrow_schema, write_parquet_dataset
 from .extensions.ext_athena import SchemaGenerator
 from .extensions.ext_sql_alchemy import SQLServices
 from .model import Entity
-from ..data.iteration import chunker
-
+import xxhash
+import diskcache
+import os
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +52,54 @@ class AbstractExtractor(ABC):
     @abstractmethod
     def __call__(self):
         pass
+
+
+class CachedSQLETL:
+    """
+    SQL ETL utility that cache results based on the SQL statment
+    useful to reduce round trips to the database
+    """
+    def __init__(self, services: SQLServices, connection: str,
+                 cache_folder="cache", cache_name=None, cache_expire=None):
+        self._cache_folder = cache_folder
+        self._cache_name = cache_name if cache_name else self.__class__.__name__
+        self.expire = cache_expire
+        self.cache = diskcache.Cache(self.cache_path)
+        self.services = services
+        self.connection = connection
+
+    @property
+    def cache_path(self):
+        return os.path.join(self._cache_folder, self._cache_name)
+
+    def _extract(self, sql):
+        conn = self.services.model.get_connection(self.connection)
+        return list(
+            self.services.run_query(
+                conn, sql)
+        )
+
+    def extract(self, sql):
+        """extract data"""
+        key = xxhash.xxh3_64_intdigest(sql)
+        if key in self.cache:
+            return self.cache.get(key)
+        else:
+            data = self._extract(sql)
+            self.cache.set(key, data, expire=self.expire)
+
+    def transform(self, data):
+        return data
+
+    def load(self, data):
+        return data
+
+    def run(self, sql):
+        return self.load(
+            self.transform(
+                self.extract(sql)
+            )
+        )
 
 
 class SQLExtractor(AbstractExtractor):
@@ -61,6 +123,53 @@ class SQLExtractor(AbstractExtractor):
         return self.services.run_query(
             self.services.model.get_connection(self.conn),
             sql
+        )
+
+
+class TemplateSQLExtractor(AbstractExtractor):
+    """SQL Template query extractor
+
+    Arguments:
+        - sql_servcies: SQLServcies instance
+        - conn: connection name
+        - entity: entity name
+        - query_name: query name (as stored in model)
+        - query_str: SQL string
+
+    query_name and query_str is mutually exclusive one must be
+    defined.
+    """
+
+    def __init__(self, sql_services: SQLServices, conn: str, entity: str,
+                 query_name: str = None, query_sql: str = None):
+        self.services = sql_services
+        self.conn = conn
+        self.entity = entity
+        self.query_name = query_name
+        self.query_sql = query_sql
+        if all([query_name, query_sql]) or (not any([query_name, query_sql])):
+            raise ValueError("only one of `query_name' or 'query_sql' must be defined")
+
+    def make_sql(self, **parameters):
+        """create sql and render template"""
+        if self.query_sql is not None:
+            sql = Template(self.query_sql).render(**parameters)
+        elif self.query_name is not None:
+            query = self.services.model.queries[self.query_name]
+            sql = query.template.render(**parameters)
+        else:
+            raise ValueError("only one of `query_name' or 'query_sql' must be defined")
+        return sql
+
+    def schema(self, table_name):
+        """return entity schema"""
+        return self.services.model.entities[self.entity]
+
+    def __call__(self, **parameters):
+        """run query for interval between start and stop"""
+        return self.services.run_query(
+            self.services.model.get_connection(self.conn),
+            self.make_sql(**parameters)
         )
 
 
