@@ -1,0 +1,15 @@
+# INSTALL
+
+# From the Python Package Index
+
+```
+python -m pip install libdkit
+```
+
+# From source
+
+```
+python -m pip install pip --upgrade
+python -m pip install Cython wheel setuptools cffi
+pip install .
+```

@@ -220,7 +220,6 @@ class SQLAlchemyAccessor(object):
         self.__inspect = None
 
     def make_engine(self, conn: Dict, echo: bool):
-
         if conn["dialect"] == "mssql+pyodbc" and conn["username"] is None:
             # Assume Azure Connection
             from sqlalchemy import event

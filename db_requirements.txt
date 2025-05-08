@@ -1,0 +1,11 @@
+azure-identity
+pyodbc
+tables
+sqlalchemy-pyodbc-mssql
+pyathena
+psycopg2-binary
+mysqlclient
+impyla
+cx_Oracle
+duckdb
+duckdb_engine

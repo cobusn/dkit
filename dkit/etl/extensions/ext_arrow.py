@@ -30,21 +30,26 @@ Sept 2022   Cobus Nel       Added:
 May 2023    Cobus Nel       Added Unsigned int types
 Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
+Feb 2025    Cobus Nel       Added ArrowServices
 =========== =============== =================================================
 """
-from ... import CHUNK_SIZE, messages
-from ...utilities.cmd_helper import LazyLoad
-from .. import source, sink
-from ...data.iteration import chunker
-from ..model import Entity
-from itertools import islice, chain
-from jinja2 import Template
 import logging
-from typing import Dict, List
+from itertools import islice, chain
 from os import path
-# pa = LazyLoad("pyarrow")
+from typing import Dict, List
+
 import pyarrow as pa
-from pyarrow.fs import FileSystem, LocalFileSystem
+from jinja2 import Template
+from pyarrow.fs import FileSystem, LocalFileSystem, S3FileSystem
+
+from .. import source, sink
+from ... import CHUNK_SIZE, messages
+from ...data.iteration import chunker
+from ...utilities.cmd_helper import LazyLoad
+from ..model import Entity, ETLServices
+
+
+# pa = LazyLoad("pyarrow")
 # import pyarrow.parquet as pq
 pq = LazyLoad("pyarrow.parquet")
 
@@ -54,6 +59,28 @@ logger = logging.getLogger("ext_arrow")
 __all__ = []
 
 # convert cannonical to arrow
+
+
+class ArrowServices(ETLServices):
+
+    def get_s3_fs(self, secret_name: str) -> S3FileSystem:
+        """instantiate Arrow S3 instance"""
+        secret = self.model.get_secret(secret_name)
+        region = secret.parameters.get("region", None)
+        if region is None:
+            logger.info("No region specified for S3 data source")
+        return S3FileSystem(
+            access_key=secret.key,
+            secret_key=secret.secret,
+            region=region
+        )
+
+    def get_arrow_schema(self, entity_name):
+        """
+        load arrow schema from model entity
+        """
+        schema = self.model.entities[entity_name]
+        return make_arrow_schema(schema)
 
 
 def make_decimal(t=None):
@@ -462,6 +489,9 @@ def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
         dm = {"month_id": 20231001, "day_id": 20231002}
         bp = "data/sales"
         clear_partition(fs, pc, dm, bp)
+
+    Note: both partition_cols and partition_map is required to ensure
+    data is not deleted accidentaly
 
     """
     fs = f_system if f_system else LocalFileSystem()

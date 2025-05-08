@@ -1,17 +1,21 @@
 #
 # Makefile for dkit project 
 #
-
 PYTHON=python3
+TAG := $(shell $(PYTHON) -c 'import dkit; print(dkit.__version__)')
 # export SPHINXBUILD=/cygdrive/c/Anaconda/envs/py36/Scripts/sphinx-build
 
 .PHONY: test clean
 
 all: sdist bdist
 
+docker: Dockerfile Makefile
+	docker build -t dkit:latest .
+	docker tag dkit:latest dkit:$(TAG)
+
 test:
 	cd test && \
-		pytest --cov=dkit &&\
+		pytest --cov=dkit --cov=lib_dk &&\
 		coverage html &&\
 		coverage report
 
@@ -38,7 +42,6 @@ clean:
 	cd doc && make clean
 	cd doc/images && make clean
 	cd examples && make clean
-	cd scripts/dk && make clean
 	cd scripts/pyeek && make clean
 	cd scripts/xpstat && make clean
 	cd scripts/vigenere && make clean

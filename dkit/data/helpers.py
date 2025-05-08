@@ -21,6 +21,9 @@
 from .. import NA_VALUE
 import pickle
 from hashlib import md5
+import xxhash
+import random
+import string
 
 BOOL_MAPPING = {
     1:    True,
@@ -99,7 +102,7 @@ def luhn_hash(number):
     a = sum([int(i) for i in r[1::2]])
     b = str(2 * int("".join(r[::2])))
     c = sum([int(i) for i in b])
-    return (10 - ((a+c) % 10)) % 10
+    return (10 - ((a + c) % 10)) % 10
 
 
 def validate_luhn_hash(number):
@@ -108,3 +111,20 @@ def validate_luhn_hash(number):
     """
     num = str(number)
     return luhn_hash(num[:-1]) == int(num[-1])
+
+
+def get_partition(input_string: str, num_partitions: int = 10, hash=xxhash.xxh32) -> int:
+    """Calculates the partition index for a string using xxHash and modulo.
+
+    Args:
+        - input_string: The string to partition.
+        - num_partitions: The desired number of partitions.
+
+    Returns:
+        The partition index (an integer between 0 and num_partitions - 1).
+    """
+    if num_partitions <= 0:
+        raise ValueError("Number of partitions must be positive.")
+    hash_value = hash(input_string).intdigest()
+    partition_index = hash_value % num_partitions
+    return partition_index
