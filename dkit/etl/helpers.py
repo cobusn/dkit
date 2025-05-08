@@ -35,6 +35,7 @@ from abc import ABC, abstractmethod
 
 from jinja2 import Template
 from pyarrow.fs import FileSystem
+from jinja2 import Template
 
 from ..data.iteration import chunker
 from .extensions.ext_arrow import build_table, make_arrow_schema, write_parquet_dataset

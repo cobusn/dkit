@@ -190,6 +190,18 @@ class TestTimeHelper(common.TestBase):
             datetime(2024, 12, 12)
         )
 
+    def test_day_in_month(self):
+        self.assertEqual(
+            time_helper.days_in_month(2024, 2),
+            29
+        )
+        self.assertEqual(
+            time_helper.days_in_month(2024, 12),
+            31
+        )
+        with self.assertRaises(ValueError):
+            time_helper.days_in_month(2024, 13)
+
 
 if __name__ == '__main__':
     unittest.main()
