@@ -59,7 +59,9 @@ def init_file_logger(filename, message=None, name=None, level=DEFAULT_LOG_LEVEL)
     """
     Return simple file logger
     """
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    directory = os.path.dirname(filename)
+    if directory:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
     handler = logging.FileHandler(filename)
     return init_logger(message, name, level, handler)
 
