@@ -49,6 +49,12 @@ from textwrap import dedent
 logger = logging.getLogger(__name__)
 
 
+DEFAULT_CACHE_EXPIRATION = 86400  # on day
+
+
+#
+# Fix this...
+#
 def is_select_statement(sql_string):
     """perform a basic test to see if a string is likely a SQL query
 
@@ -90,7 +96,8 @@ class CachedSQLETL:
     """
     def __init__(self, services: SQLServices, connection: str,
                  cache_folder: str = "cache", cache_name: str = None,
-                 cache_expire: bool = None, disable_cache: bool = False):
+                 cache_expire: int = DEFAULT_CACHE_EXPIRATION,
+                 disable_cache: bool = False):
         self._cache_folder = cache_folder
         self._cache_name = cache_name if cache_name else self.__class__.__name__
         self.expire = cache_expire
