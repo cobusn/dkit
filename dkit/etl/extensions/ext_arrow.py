@@ -40,7 +40,7 @@ from typing import Dict, List
 
 import pyarrow as pa
 from jinja2 import Template
-from pyarrow.fs import FileSystem, LocalFileSystem, S3FileSystem
+from pyarrow.fs import FileSystem, LocalFileSystem, S3FileSystem, AwsDefaultS3RetryStrategy
 
 from .. import source, sink
 from ... import CHUNK_SIZE, messages
@@ -72,7 +72,8 @@ class ArrowServices(ETLServices):
         return S3FileSystem(
             access_key=secret.key,
             secret_key=secret.secret,
-            region=region
+            region=region,
+            retry_strategy=AwsDefaultS3RetryStrategy(max_attempts=5)
         )
 
     def get_arrow_schema(self, entity_name):

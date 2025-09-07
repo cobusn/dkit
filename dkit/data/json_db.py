@@ -79,5 +79,8 @@ class JSONDB(Mapping):
 
     def __getitem__(self, key):
         fp = self._file_path(key)
-        with open(fp) as infile:
-            return json.load(infile)
+        try:
+            with open(fp) as infile:
+                return json.load(infile)
+        except FileNotFoundError:
+            raise KeyError(key)
