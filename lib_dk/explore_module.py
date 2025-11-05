@@ -27,6 +27,7 @@ import itertools
 import sys
 from re import RegexFlag
 
+from curses_components.grid import GridComponent
 from . import module, options
 from dkit.data import manipulate as mp, eda, iteration
 from dkit.data.json_utils import make_simple_encoder
@@ -284,6 +285,16 @@ class ExploreModule(module.MultiCommandModule):
         logger.info(f"Writing sample output to '{self.args.output}'")
         XlsxSink(self.args.output).process_dict(sample)
 
+    def do_view(self):
+        """display data in a curses based grid"""
+        grid = GridComponent(
+            max_col_width=self.args.width if self.args.width > 0 else 30
+        )
+        grid.display(
+            self.input_stream(self.args.input),
+            max_rows=self.args.n
+        )
+
     def do_table(self):
         """print all data in a table"""
         self.tabulate(
@@ -405,6 +416,14 @@ class ExploreModule(module.MultiCommandModule):
         parser_sample.add_argument("-o", "--output", help="output to file (sample.xlsx)",
                                    default="sample.xlsx")
         options.add_option_glob(parser_sample, entity="table", help_="Table names")
+
+        # gridview
+        parser_grid = self.sub_parser.add_parser("view", help=self.do_view.__doc__)
+        options.add_option_n(parser_grid, default=100_000)
+        options.add_option_defaults(parser_grid)
+        options.add_options_inputs(parser_grid)
+        options.add_option_column_width(parser_grid)
+        options.add_option_transpose(parser_grid)
 
         # table
         parser_table = self.sub_parser.add_parser("table", help=self.do_table.__doc__)
