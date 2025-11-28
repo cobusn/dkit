@@ -32,11 +32,17 @@ import json
 from ..utilities.file_helper import FileObjStub, sanitise_name
 import bz2
 import gzip
+import sys
+if sys.version_info >= (3, 14):
+    from compression import zstd
+else:
+    from backports import zstd
 
 
 C_OPTIONS = {
     "bz2": bz2,
     "gz": gzip,
+    "zstd": zstd
 }
 
 
@@ -49,13 +55,20 @@ class JSONDB(Mapping):
     args:
         - path: file path to folder used to store json files
         - suffix: file suffix for json files (e.g. json)
-        - compress: compress files. provide the compression library (bz2 or gz)
+        - compress: compress files. provide the compression library:
+            - bz2
+            - gz
+            - zstd
+        - allow_null: will not store Null values if enabled.  Useful for
+        processes where null means a failure (and raise a ValueError)
 
     throws:
         - TypeError if the key is not of type str
+        - ValueError if value is None and allow_null is False
     """
-    def __init__(self, path: str, compress=None):
+    def __init__(self, path: str, compress=None, allow_null: bool = True):
         self.path: Path = Path(path)
+        self.allow_null = allow_null
         if compress is None:
             self.file_io = FileObjStub
             self.suffix = "json"
@@ -80,9 +93,14 @@ class JSONDB(Mapping):
         return sanitise_name(key)
 
     def append(self, key, value):
-        fname = self._file_path(key)
-        with self.file_io.open(fname, "wt") as outfile:
-            json.dump(value, outfile)
+        if value is None and self.allow_null is False:
+            raise ValueError(
+                f"'{key}' has Null value and allow_null is False"
+            )
+        else:
+            fname = self._file_path(key)
+            with self.file_io.open(fname, "wt") as outfile:
+                json.dump(value, outfile)
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
