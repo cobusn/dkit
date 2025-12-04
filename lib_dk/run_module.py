@@ -25,6 +25,7 @@ import argparse
 import json
 
 from . import module, options
+from curses_components.grid import GridComponent
 from dkit import exceptions
 from dkit.data import manipulate as mp, containers, aggregation as agg
 from dkit.etl.extensions import ext_sql_alchemy
@@ -96,8 +97,8 @@ class RunModule(module.MultiCommandModule):
         self.args.fields = field_list
         if self.args.table is True:
             a = list(aggr(self.input_stream(
-                    self.args.input, fields=aggr.required_fields)
-                ))
+                self.args.input, fields=aggr.required_fields)
+            ))
             self.tabulate(a)
         else:
             self.push_to_uri(
@@ -177,15 +178,25 @@ class RunModule(module.MultiCommandModule):
             # only retrieve first 100 rows
             data = []
             i = srv.run_template_query(
-                    connection,
-                    str_query,
-                    variables=variables
-                )
+                connection,
+                str_query,
+                variables=variables
+            )
             for i, row in enumerate(i):
                 data.append(row)
                 if i > 100:
                     break
             self.tabulate(data)
+
+        elif self.args.view:
+            grid = GridComponent()
+            data = srv.run_template_query(
+                connection,
+                str_query,
+                variables=variables
+            )
+            grid.display(data)
+
         else:
             self.push_to_uri(
                 self.args.output,
@@ -377,6 +388,7 @@ class RunModule(module.MultiCommandModule):
         options.add_query_group(group_query)
         options.add_option_output_uri(parser_query)
         options.add_option_tabulate(parser_query)
+        options.add_option_view(parser_query)
         parser_query.add_argument(
             '-p', '-param', action='append', dest='parameter',
             default=[],

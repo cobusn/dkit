@@ -32,17 +32,43 @@ Load:
 import json
 import logging
 from abc import ABC, abstractmethod
-
-from pyarrow.fs import FileSystem
+import re
 from jinja2 import Template
+from pyarrow.fs import FileSystem
 
+from ..data.iteration import chunker
 from .extensions.ext_arrow import build_table, make_arrow_schema, write_parquet_dataset
 from .extensions.ext_athena import SchemaGenerator
 from .extensions.ext_sql_alchemy import SQLServices
 from .model import Entity
-from ..data.iteration import chunker
-
+from ..utilities.jinja2 import render_strict
+import xxhash
+import diskcache
+import os
+from textwrap import dedent
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_CACHE_EXPIRATION = 86400  # on day
+
+
+#
+# Fix this...
+#
+def is_select_statement(sql_string):
+    """perform a basic test to see if a string is likely a SQL query
+
+    Args:
+        : The string to check.
+
+    Returns:
+        True if the string appears to be a SELECT statement, False otherwise.
+    """
+    pattern = r"^\s*SELECT\s+.+\s+FROM\s+.+;?\s*"
+    pattern = r"(?i)\s*SELECT\s+.+?\s+FROM\s+.+?(?:\s*WHERE\s*.+)?"
+    match = re.match(pattern, sql_string, re.IGNORECASE)
+    # return bool(match)
+    return True
 
 
 class AbstractExtractor(ABC):
@@ -50,6 +76,97 @@ class AbstractExtractor(ABC):
     @abstractmethod
     def __call__(self):
         pass
+
+
+class CachedSQLETL:
+    """
+    SQL ETL utility that cache results based on the SQL statment
+    useful to reduce round trips to the database
+
+    If this class is Subclassed, the Docstring can be SQL and
+    will be used if an SQL statement is not supplied
+
+    Args:
+        - services: SQLServices instance
+        - connection: connection name
+        - cache_folder: name of folder used for cache
+        - cache_name: name of cache
+        - cache_expire: seconds until expiration
+        - disable_cache: retrieve from cache if available else from query
+    """
+    def __init__(self, services: SQLServices, connection: str,
+                 cache_folder: str = "cache", cache_name: str = None,
+                 cache_expire: int = DEFAULT_CACHE_EXPIRATION,
+                 disable_cache: bool = False):
+        self._cache_folder = cache_folder
+        self._cache_name = cache_name if cache_name else self.__class__.__name__
+        self.expire = cache_expire
+        self.cache = diskcache.Cache(self.cache_path)
+        self.services = services
+        self.connection = connection
+        self.disable_cache = disable_cache
+
+    def _get_docstring_sql(self):
+        """
+        check if the docstring is SQL and return this as SQL
+        Useful for quick work
+
+        Raises Exception if the docstring does not match SQL
+        """
+        if is_select_statement(self.__doc__):
+            return dedent(self.__doc__)
+        else:
+            raise ValueError("docstring does not appear to be valid SQL")
+
+    @property
+    def cache_path(self):
+        return os.path.join(self._cache_folder, self._cache_name)
+
+    def _extract(self, sql):
+        conn = self.services.model.get_connection(self.connection)
+        return list(
+            self.services.run_query(conn, sql)
+        )
+
+    def _render(self, sql: str, variables: dict):
+        if variables:
+            return render_strict(sql, **variables)
+        else:
+            return sql
+
+    def extract(self, sql, params):
+        """extract data"""
+        if sql is None:
+            # Assume docstring is an SQL statement
+            sql = self._get_docstring_sql()
+        _sql = self._render(sql, params)
+        key = xxhash.xxh3_64_intdigest(_sql)
+        if key in self.cache and not self.disable_cache:
+            return self.cache.get(key)
+        else:
+            data = self._extract(_sql)
+            self.cache.set(key, data, expire=self.expire)
+            return data
+
+    def transform(self, data):
+        return data
+
+    def load(self, data):
+        return list(data)
+
+    def run(self, sql=None, params: dict = None):
+        """run query
+
+        args:
+            - sql: sql string or template
+            - params: dictionary of parameters
+
+        """
+        return self.load(
+            self.transform(
+                self.extract(sql, params)
+            )
+        )
 
 
 class SQLExtractor(AbstractExtractor):
