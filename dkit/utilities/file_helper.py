@@ -17,6 +17,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+File Utilities
+
+- FileLock: Use a file to lock a resource
+- FileObjStub: use obj.open() to open files (for interchangeability with bz2)
+- sanitise_name: strip unwanted characters from a filename
+- yaml_load: helper to use the C Loader
+-
+"""
 import os
 import time
 import errno
@@ -26,18 +35,37 @@ import yaml
 from typing import Union, TextIO, Text
 import re
 from ..exceptions import DkitFileLockException
-
+import builtins
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
 
+
 __all__ = [
     "FileLock",
+    "FileObjStub",
     "sanitise_name",
     "yaml_load",
 ]
+
+
+class FileObjStub:
+    """Mimics the bz2 interface but just uses normal open().
+
+    simple stub that allow you to use normal files interchangably
+    with interfaces such as bz2.
+
+    e.g:
+        ``` python
+        fobj = FileObj (or bz2)
+        f = fobj.open(filename)
+        ```
+    """
+    @staticmethod
+    def open(filename, mode="rt", *args, **kwargs):
+        return builtins.open(filename, mode, *args, **kwargs)
 
 
 def yaml_load(stream: Union[TextIO, Text]):
@@ -46,7 +74,6 @@ def yaml_load(stream: Union[TextIO, Text]):
 
     Args:
         - stream: file like object
-
     """
     return yaml.load(stream, Loader=Loader)
 
@@ -69,15 +96,15 @@ def temp_filename(root=None, suffix=None) -> pathlib.Path:
     return retval
 
 
-def sanitise_name(file_name):
+def sanitise_name(file_name, sub="_"):
     """
     sanitize text to be suitable as filenames:
 
         -   change to lower case
-        -   replace spaces with underscore
+        -   replace spaces with substitute
     """
-    s = re.sub(r"[^\w\s]", '', file_name.strip().lower())
-    s = re.sub(r"\s+", '-', s)
+    s = re.sub(r"[^\w\s]", sub, file_name.strip().lower())
+    s = re.sub(r"\s+", '_', s)
     return s
 
 #

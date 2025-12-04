@@ -414,6 +414,12 @@ def add_option_tabulate(parser):
                         help=add_option_tabulate.__doc__)
 
 
+def add_option_view(parser):
+    """display data in a curses based grid view"""
+    parser.add_argument('-w', '--view', action="store_true", default=False,
+                        help=add_option_view.__doc__)
+
+
 def add_option_logging(parser):
     """add option for transform name"""
     me_group = parser.add_mutually_exclusive_group()

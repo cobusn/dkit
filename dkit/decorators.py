@@ -29,9 +29,10 @@ import functools
 import sys
 import time
 import warnings
+import logging
 
 
-__all__ = ["deprecated", "timeit"]
+__all__ = ["deprecated", "timer", "log_timer"]
 
 
 def deprecated(message=None):
@@ -54,7 +55,7 @@ def deprecated(message=None):
     return outer_fn
 
 
-def timeit(f):
+def timer(f):
     """
     time duration of function all every time it is called
     """
@@ -63,6 +64,28 @@ def timeit(f):
         ts = time.perf_counter()
         result = f(*args, **kw)
         te = time.perf_counter()
-        sys.stderr.write(f"function: '{f.__name__}' took: {te-ts:.2f} sec to complete.\n")
+        sys.stderr.write(f"function: '{f.__name__}' took: {te - ts:.2f} sec to complete.\n")
         return result
     return wrap
+
+
+def log_timer(func):
+    """
+    A decorator that measures the execution time of a function
+    and logs the duration at the INFO level.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        timer_logger = logging.getLogger("log_timer")
+        start_time = time.perf_counter()  # Use perf_counter for precise timing
+        result = None
+        try:
+            result = func(*args, **kwargs)
+        finally:
+            end_time = time.perf_counter()
+            duration = end_time - start_time
+            timer_logger.info(
+                f"Function '{func.__name__}' executed in {duration:.4f} seconds."
+            )
+        return result
+    return wrapper
