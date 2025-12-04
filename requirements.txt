@@ -25,3 +25,4 @@ squarify
 tabulate
 tdigest
 xxhash
+backports.zstd
