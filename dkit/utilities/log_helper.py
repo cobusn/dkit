@@ -32,13 +32,12 @@ from .. import DEFAULT_LOG_MESSAGE
 DEFAULT_LOG_LEVEL = logging.INFO
 
 
-def init_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL, handler=None):
+def init_logger(name=None, message=None, level=DEFAULT_LOG_LEVEL, handler=None):
     """
     generic logger initialization function
     """
     logger = logging.getLogger(name)
-    _message = message or DEFAULT_LOG_MESSAGE
-    formatter = logging.Formatter(_message)
+    formatter = logging.Formatter(message or DEFAULT_LOG_MESSAGE)
     handler = handler or logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -55,48 +54,53 @@ def init_null_logger(message=None, name=None):
     return logger
 
 
-def init_file_logger(filename, message=None, name=None, level=DEFAULT_LOG_LEVEL):
+def init_file_logger(filename, name=None, message=None, level=DEFAULT_LOG_LEVEL):
     """
     Return simple file logger
     """
+    _message = message or DEFAULT_LOG_MESSAGE
     directory = os.path.dirname(filename)
     if directory:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
     handler = logging.FileHandler(filename)
-    return init_logger(message, name, level, handler)
+    return init_logger(name, _message, level, handler)
 
 
-def init_rotating_file_logger(filename, message=None, name=None,
+def init_rotating_file_logger(filename, name=None, message=None,
                               level=DEFAULT_LOG_LEVEL,
                               max_bytes=20 * 1024 * 1024,
                               backup_count=10):
+    _message = message or DEFAULT_LOG_MESSAGE
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    return init_logger(message, name, level, handler)
+    return init_logger(name, _message, level, handler)
 
 
-def init_stream_logger(stream, message=None, name=None, level=DEFAULT_LOG_LEVEL):
+def init_stream_logger(stream, name=None, message=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger
     """
+    _message = message or DEFAULT_LOG_MESSAGE
     handler = logging.StreamHandler(stream)
-    return init_logger(message, name, level, handler)
+    return init_logger(name, _message, level, handler)
 
 
-def init_stderr_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL):
+def init_stderr_logger(name=None, message=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger to stderr
     """
-    return init_stream_logger(sys.stderr, message=None, name=None, level=level)
+    _message = message or DEFAULT_LOG_MESSAGE
+    return init_stream_logger(sys.stderr, message=_message, name=name, level=level)
 
 
-def init_stdout_logger(message=None, name=None, level=DEFAULT_LOG_LEVEL):
+def init_stdout_logger(name=None, message=None, level=DEFAULT_LOG_LEVEL):
     """
     Return stream logger to stderr
     """
-    return init_stream_logger(sys.stdout, message=None, name=None, level=level)
+    _message = message or DEFAULT_LOG_MESSAGE
+    return init_stream_logger(sys.stdout, message=_message, name=name, level=level)
 
 
 def init_queue_logger(queue, name, level=DEFAULT_LOG_LEVEL):
@@ -116,10 +120,5 @@ def init_queue_listener(queue):
 
     rememeber to start and stop
     """
-    # _message = message or DEFAULT_LOG_MESSAGE
-    # _handler = handler or logging.StreamHandler(sys.stderr)
-    # _formatter = logging.Formatter(_message)
-    # _handler.setFormatter(_formatter)
-    # _handler.setLevel(level)
     listener = QueueListener(queue, *logging.getLogger(__name__).handlers)
     return listener
