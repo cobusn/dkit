@@ -271,6 +271,7 @@ class SchemaModule(module.CRUDModule):
                 'model',
                 'pb',
                 'pyarrow',
+                "pandas",
                 'spark',
                 'sql.create',
                 'sql.select',

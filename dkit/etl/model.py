@@ -878,6 +878,14 @@ class ETLServices(object):
             arrow_entities = {k: v.as_entity_validator() for k, v in entities.items()}
             exported = exporter.SchemaGenerator(**arrow_entities).create_schema()
 
+        elif kind == "pandas":
+            # pandas
+            exporter = importlib.import_module("dkit.etl.extensions.ext_pandas")
+            entities = {
+                k: v.as_entity_validator() for k, v in entities.items()
+            }
+            exported = exporter.PandasSchemaGenerator(**entities).create_schema()
+
         elif kind == "spark":
             # pyspark
             exporter = importlib.import_module("dkit.etl.extensions.ext_spark")
