@@ -39,6 +39,7 @@ bdist:
 
 clean:
 	python3 setup.py clean --all
+	rm -rf '*.egg.info'
 	cd doc && make clean
 	cd doc/images && make clean
 	cd examples && make clean
