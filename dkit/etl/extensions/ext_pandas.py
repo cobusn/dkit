@@ -63,7 +63,7 @@ import pandas as pd
 # {{ entity }}
 schema_{{ entity }} = {
 {%- for field, typ in typemap.schema.items() %}
-    {{ field }}: '{{ tm[typ['type']] }}',
+    '{{ field }}': '{{ tm[typ['type']] }}',
 {%- endfor %}
 }
 {% endfor %}
