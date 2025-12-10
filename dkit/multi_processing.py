@@ -29,6 +29,7 @@ This library provides for two types of multiprocessing applications:
     parameters of each entry and the result stored in the `result` property
 
 """
+import sys
 import logging
 import multiprocessing
 import queue
@@ -43,7 +44,7 @@ from .data.bencode import md5_hash
 from .utilities import log_helper as lh, instrumentation
 from .utilities.identifier import uid
 from .data.iteration import chunker
-
+from logging.handlers import QueueListener
 
 logger = logging.getLogger(__name__)
 
@@ -175,8 +176,9 @@ class Journal(object):
 
     def empty(self):
         """return True when all items have been accounted for"""
-        not_completed = [i for i in self.db.values() if not i.completed]
-        return len(not_completed) == 0
+        with self.lock:
+            not_completed = [i for i in self.db.values() if not i.completed]
+            return len(not_completed) == 0
 
     def sync(self):
         """sync to file (where applicable)"""
@@ -221,7 +223,11 @@ class Worker(multiprocessing.Process):
         self.timeout = 0.5  # seconds
         self.logger = lh.init_queue_logger(queue_log, self.name)
 
+    def on_start(self) -> None:
+        pass
+
     def start(self):
+        self.on_start()
         super().start()
         self.logger.debug(f"Started process id {self.pid}")
 
@@ -271,7 +277,7 @@ class AbstractPipeline(ABC):
     def __init__(self,  workers: Dict[Worker, int], message_type,
                  worker_args: Dict = None, queue_size: int = 100,
                  journal: Journal = None, chunk_size=100, queue_timeout=0.5,
-                 log_trigger=10_000, unique_messages: bool = False):
+                 logger=None, log_trigger=10_000, log_level=logging.INFO):
         self.workers = workers
         self.message_type = message_type
         self.args = worker_args or {}
@@ -283,7 +289,7 @@ class AbstractPipeline(ABC):
         self.chunk_size = chunk_size
         self.queue_timeout = queue_timeout
         self.log_trigger: int = log_trigger
-
+        self.log_level = log_level
         self.shared_lock: multiprocessing.Lock = multiprocessing.Lock()
         self.queue_log = multiprocessing.Queue(self.queue_size)
         self.queues = []
@@ -294,12 +300,24 @@ class AbstractPipeline(ABC):
         self.evt_input_completed = multiprocessing.Event()
         self.q_inbound = None
         self.q_outbound = None
+        self.logger = logger or self._default_logger()
+
+    def _default_logger(self) -> logging.Logger:
+        logger = logging.getLogger("dkit.multiprocessing")
+        if not logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(
+                logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+            )
+            logger.addHandler(handler)
+            logger.setLevel(self.log_level)
+        return logger
 
     def _create_workers(self):
         """
         Create worker processes
         """
-        logger.info("Instantiating worker processes.")
+        self.logger.info("Instantiating worker processes.")
         self.q_inbound = q_in = multiprocessing.Queue(self.queue_size)
         self.queues.append(self.q_inbound)
         for Worker, instances in self.workers.items():
@@ -333,7 +351,7 @@ class AbstractPipeline(ABC):
         msg = "ITER_IN: {}, ITER_OUT: {}, Q_IN: {}, Q_OUT: {}".format(
             iter_in, iter_out, q_in, q_out
         )
-        logger.info(msg)
+        self.logger.info(msg)
 
     @abstractmethod
     def _yield_results(self, message):
@@ -347,9 +365,10 @@ class AbstractPipeline(ABC):
         """
         main iteration loop
         """
-        log_listener = lh.init_queue_listener(self.queue_log)
-        self._create_workers()
+        handlers = self.logger.handlers
+        log_listener = QueueListener(self.queue_log, *handlers, respect_handler_level=True)
         log_listener.start()
+        self._create_workers()
 
         # start feeding thread
         feeder = threading.Thread(target=self._feeder, args=(data,))
@@ -366,8 +385,9 @@ class AbstractPipeline(ABC):
 
         # shut down
         self.evt_stop.set()   # signal processes to stop
-        logger.info("joining feeder thread")
+        self.logger.info("joining feeder thread")
         feeder.join()   # should join immediately
+        self.logger.info("joining feeder thread completed")
         for i, instance in enumerate(self.instances):
             instance.join(2)
             if instance.is_alive():
@@ -375,7 +395,7 @@ class AbstractPipeline(ABC):
                 instance.terminate()
                 instance.join(2)
             else:
-                logger.info(f"joined worker process {instance.pid}: {i+1}/{len(self.instances)}")
+                logger.info(f"joined worker process {instance.pid}: {i + 1}/{len(self.instances)}")
         log_listener.stop()
         logger.info("stopped log listener")
 
@@ -393,14 +413,16 @@ class ListPipeline(AbstractPipeline):
         * chunk_size: number of jobs to chunk in a batch
         * queue_timeout: queue timeout duration
         * log_trigger: update on this trigger
-        * unique_messages: only process messages with unique parameters
     """
-
+    '''
     def __init__(self,  workers: Dict[Worker, int], worker_args: Dict = None,
                  queue_size: int = 100, journal: Journal = None,
                  chunk_size=100, queue_timeout=0.5, log_trigger=10_000):
         super().__init__(workers, ListMessage, worker_args, queue_size, journal,
-                         chunk_size, queue_timeout, log_trigger)
+                       chunk_size, queue_timeout, log_trigger)
+    '''
+    def __init__(self, workers: Dict[Worker, int], *args, **kwargs):
+        super().__init__(workers, ListMessage, *args, **kwargs)
 
     def _feeder(self, data):
         """separate thread to feed data into queues."""
@@ -436,13 +458,15 @@ class TaskPipeline(AbstractPipeline):
         * log_trigger: update on this trigger
         * message_type: kind of worker messages
 
-    """
     def __init__(self, workers: Dict[Worker, int], worker_args: Dict = None,
                  chunk_size=100, queue_size: int = 100, journal: Journal = None,
                  queue_timeout=0.5, log_trigger=10_000,
                  message_type=UIDTaskMessage):
         super().__init__(workers, message_type, worker_args, queue_size, journal,
                          chunk_size, queue_timeout, log_trigger)
+    """
+    def __init__(self, workers: Dict[Worker, int], *args, **kwargs):
+        super().__init__(workers, message_type=UIDTaskMessage, *args, **kwargs)
 
     def _yield_results(self, message):
         yield message.result
@@ -456,12 +480,11 @@ class TaskPipeline(AbstractPipeline):
                 self.journal.enter(msg)
                 self.q_inbound.put(msg)
                 self.journal.sync()
-                self.counter_in.increment()
             else:
                 logger.warning(f"message with id {msg._id} already completed")
-            # only one feeder thread so no need to lock this
-            # line:
+            # this counter counts the number of inputs processed so it is
+            # ok to increment counter even if it has been journaled already
             self.counter_in.increment()
 
-        logger.info("data feed comleted")
+        logger.info("data feed completed")
         self.evt_input_completed.set()
