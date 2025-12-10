@@ -73,9 +73,11 @@ def init_rotating_file_logger(filename, name=None, message=None,
     _message = message or DEFAULT_LOG_MESSAGE
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     handler = logging.handlers.RotatingFileHandler(
-        filename, maxBytes=max_bytes, backupCount=backup_count
+        filename=filename,
+        maxBytes=max_bytes,
+        backupCount=backup_count
     )
-    return init_logger(name, _message, level, handler)
+    return init_logger(name=name, message=_message, level=level, handler=handler)
 
 
 def init_stream_logger(stream, name=None, message=None, level=DEFAULT_LOG_LEVEL):
