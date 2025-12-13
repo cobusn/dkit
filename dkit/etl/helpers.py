@@ -78,7 +78,73 @@ class AbstractExtractor(ABC):
         pass
 
 
-class CachedSQLETL:
+class SQLETL:
+    """
+    SQL ETL utility
+
+    If this class is Subclassed, the Docstring can be SQL and
+    will be used if an SQL statement is not supplied
+
+    Args:
+        - services: SQLServices instance
+        - connection: connection name
+    """
+    def __init__(self, services: SQLServices, connection: str):
+        self.services = services
+        self.connection = connection
+
+    def _get_docstring_sql(self):
+        """
+        check if the docstring is SQL and return this as SQL
+        Useful for quick work
+
+        Raises Exception if the docstring does not match SQL
+        """
+        if is_select_statement(self.__doc__):
+            return dedent(self.__doc__)
+        else:
+            raise ValueError("docstring does not appear to be valid SQL")
+
+    def _extract(self, sql):
+        conn = self.services.model.get_connection(self.connection)
+        return list(
+            self.services.run_query(conn, sql)
+        )
+
+    def _render(self, sql: str, variables: dict):
+        if variables:
+            return render_strict(sql, **variables)
+        else:
+            return sql
+
+    def extract(self, sql, params):
+        """extract data"""
+        _sql = sql or self._get_docstring_sql()
+        r_sql = self._render(_sql, params)
+        return self._extract(r_sql)
+
+    def transform(self, data):
+        return data
+
+    def load(self, data):
+        return list(data)
+
+    def run(self, sql=None, params: dict = None):
+        """run query
+
+        args:
+            - sql: sql string or template
+            - params: dictionary of parameters
+
+        """
+        return self.load(
+            self.transform(
+                self.extract(sql, params)
+            )
+        )
+
+
+class CachedSQLETL(SQLETL):
     """
     SQL ETL utility that cache results based on the SQL statment
     useful to reduce round trips to the database
@@ -106,67 +172,21 @@ class CachedSQLETL:
         self.connection = connection
         self.disable_cache = disable_cache
 
-    def _get_docstring_sql(self):
-        """
-        check if the docstring is SQL and return this as SQL
-        Useful for quick work
-
-        Raises Exception if the docstring does not match SQL
-        """
-        if is_select_statement(self.__doc__):
-            return dedent(self.__doc__)
-        else:
-            raise ValueError("docstring does not appear to be valid SQL")
-
     @property
     def cache_path(self):
         return os.path.join(self._cache_folder, self._cache_name)
 
-    def _extract(self, sql):
-        conn = self.services.model.get_connection(self.connection)
-        return list(
-            self.services.run_query(conn, sql)
-        )
-
-    def _render(self, sql: str, variables: dict):
-        if variables:
-            return render_strict(sql, **variables)
-        else:
-            return sql
-
     def extract(self, sql, params):
         """extract data"""
-        if sql is None:
-            # Assume docstring is an SQL statement
-            sql = self._get_docstring_sql()
-        _sql = self._render(sql, params)
-        key = xxhash.xxh3_64_intdigest(_sql)
+        base_sql = sql or self._get_docstring_sql()
+        rendered = self._render(base_sql, params)
+        key = xxhash.xxh3_64_intdigest(rendered)
         if key in self.cache and not self.disable_cache:
             return self.cache.get(key)
         else:
-            data = self._extract(_sql)
+            data = self._extract(rendered)
             self.cache.set(key, data, expire=self.expire)
             return data
-
-    def transform(self, data):
-        return data
-
-    def load(self, data):
-        return list(data)
-
-    def run(self, sql=None, params: dict = None):
-        """run query
-
-        args:
-            - sql: sql string or template
-            - params: dictionary of parameters
-
-        """
-        return self.load(
-            self.transform(
-                self.extract(sql, params)
-            )
-        )
 
 
 class SQLExtractor(AbstractExtractor):
