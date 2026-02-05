@@ -444,6 +444,8 @@ def make_partition_path(partition_cols: List[str], partition_map: Dict,
     Arguments:
         * partition_cols: list of columns used for partitioning. e.g
     """
+    if base_path is None:
+        raise ValueError("parameter base_path cannot be None'")
     for k in partition_cols:
         if k not in partition_map:
             raise KeyError(messages.MSH_0028.format(k))

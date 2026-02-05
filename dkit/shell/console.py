@@ -240,3 +240,15 @@ class Colors(object):
         purple = '\033[45m'
         cyan = '\033[46m'
         lightgrey = '\033[47m'
+
+
+def ask_yes_no(prompt: str) -> bool:
+    """Asks a yes/no question in the CLI and returns True/False."""
+    while True:
+        response = input(f"{prompt} (y/n): ").lower().strip()
+        if response in ['y', 'yes']:
+            return True
+        elif response in ['n', 'no']:
+            return False
+        else:
+            print("Invalid input. Please enter 'y' or 'n'.")
