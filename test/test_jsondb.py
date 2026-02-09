@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 sys.path.insert(0, "..") # noqa
 # from dkit.utilities.cache import ObjectFileCache
-from dkit.data.json_db import JSONDB
+from dkit.data.json_db import JSONDB2
 # from datetime import datetime
 
 
@@ -32,7 +32,7 @@ class TestJSONDB(unittest.TestCase):
 
     def setUp(self):
         self._tmpdir = tempfile.mkdtemp(prefix="jsondb_")
-        self.db = JSONDB(self._tmpdir)
+        self.db = JSONDB2(self._tmpdir)
 
     def tearDown(self):
         shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -58,7 +58,7 @@ class TestJSONDB(unittest.TestCase):
     def test_4_compress(self):
         for c in ["gz", "bz2"]:
             with tempfile.TemporaryDirectory(prefix=f"jsondb_{c}_") as tmpdir:
-                dbz = JSONDB(tmpdir, compress=c)
+                dbz = JSONDB2(tmpdir, compress=c)
                 self._populate(dbz)
                 self.assertEqual(dict(dbz.items()), data)
                 self._delete_all(dbz)
@@ -72,7 +72,7 @@ class TestJSONDB(unittest.TestCase):
     def test_6_raises_wrong_compression(self):
         """test raise on wrong key type"""
         with self.assertRaises(ValueError):
-            _ = JSONDB("data/jsondb", "wrong")
+            _ = JSONDB2("data/jsondb", "wrong")
 
     def test_7_illegal_characters(self):
         """test with keys that have illegal characters"""
@@ -92,7 +92,7 @@ class TestJSONDB(unittest.TestCase):
 
     def test_9_disallow_null(self):
         """test disallowing null values"""
-        db = JSONDB(self._tmpdir, allow_null=False)
+        db = JSONDB2(self._tmpdir, allow_null=False)
         with self.assertRaises(ValueError):
             db["null"] = None
 
@@ -109,9 +109,9 @@ class TestJSONDB(unittest.TestCase):
         self._populate(self.db)
         time.sleep(0.01)
         after = datetime.now()
-        filtered = JSONDB(self._tmpdir, created_after=after)
+        filtered = JSONDB2(self._tmpdir, created_after=after)
         self.assertEqual(dict(filtered.items()), {})
-        filtered2 = JSONDB(self._tmpdir, created_after=before - timedelta(seconds=1))
+        filtered2 = JSONDB2(self._tmpdir, created_after=before - timedelta(seconds=1))
         self.assertEqual(dict(filtered2.items()), data)
 
     def test_12_missing_index_populates_on_access(self):
@@ -120,7 +120,7 @@ class TestJSONDB(unittest.TestCase):
         index_path = Path(self._tmpdir) / ".index.json"
         if index_path.exists():
             index_path.unlink()
-        db2 = JSONDB(self._tmpdir)
+        db2 = JSONDB2(self._tmpdir)
         self.assertFalse(db2._has_index())
         _ = db2["1"]
         index = db2._load_index()
@@ -129,7 +129,7 @@ class TestJSONDB(unittest.TestCase):
 
     def test_13_performance_1000(self):
         """benchmark add/read 1000 entries (no assertions on timing)"""
-        db = JSONDB(self._tmpdir)
+        db = JSONDB2(self._tmpdir)
         entries = {str(i): i for i in range(1000)}
 
         start = timeit.default_timer()
