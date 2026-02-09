@@ -34,6 +34,7 @@ import pathlib
 import yaml
 from typing import Union, TextIO, Text
 import re
+import unicodedata
 from ..exceptions import DkitFileLockException
 import builtins
 
@@ -96,15 +97,31 @@ def temp_filename(root=None, suffix=None) -> pathlib.Path:
     return retval
 
 
-def sanitise_name(file_name, sub="_"):
+def sanitise_name(file_name, sub="_", max_length=255):
     """
     sanitize text to be suitable as filenames:
 
-        -   change to lower case
-        -   replace spaces with substitute
+        - normalize unicode to ASCII
+        - change to lower case
+        - replace spaces with substitute
+        - enforce max length
+        - avoid reserved names
     """
-    s = re.sub(r"[^\w\s]", sub, file_name.strip().lower())
-    s = re.sub(r"\s+", '_', s)
+    normalized = unicodedata.normalize("NFKD", str(file_name))
+    ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+    s = re.sub(r"[^\w\s]", sub, ascii_name.strip().lower())
+    s = re.sub(r"\s+", "_", s)
+    s = s.strip("_") or "file"
+    s = s[:max_length]
+    reserved = {
+        "con", "prn", "aux", "nul",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+    }
+    if s.lower() in reserved:
+        s = f"{s}_"
+        if len(s) > max_length:
+            s = s[:max_length]
     return s
 
 #
