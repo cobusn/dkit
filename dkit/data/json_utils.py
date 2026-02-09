@@ -5,6 +5,8 @@ import json
 import decimal
 import importlib
 import base64
+from uuid import UUID
+
 from ..utilities.time_helper import local_tz_offset
 
 
@@ -26,6 +28,17 @@ class CustomCodec(object):
 
     def decode(self, obj):
         raise NotImplementedError
+
+
+class UUIDCodec(CustomCodec):
+    """
+    Store bytes object as Base64 strings
+    """
+    def __init__(self):
+        super().__init__(UUID)
+
+    def encode(self, obj):
+        return str(obj)
 
 
 class BytesCodec(CustomCodec):
@@ -312,7 +325,7 @@ def make_simple_encoder() -> JsonSerializer:
     that will encode datetime to string
     """
     return JsonSerializer(
-        DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec(), BytesCodec()
+        DateStrCodec(), DateTimeStrCodec(), Decimal2FloatCodec(), BytesCodec(), UUIDCodec()
     )
 
 
@@ -321,5 +334,5 @@ def make_encoder() -> JsonSerializer:
     create json encoder that encode dates to int
     """
     return JsonSerializer(
-        DateTimeCodec(), DateCodec(), Decimal2FloatCodec(), BytesCodec()
+        DateTimeCodec(), DateCodec(), Decimal2FloatCodec(), BytesCodec(), UUIDCodec()
     )
