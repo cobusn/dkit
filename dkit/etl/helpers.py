@@ -182,6 +182,7 @@ class CachedSQLETL(SQLETL):
         rendered = self._render(base_sql, params)
         key = xxhash.xxh3_64_intdigest(rendered)
         if key in self.cache and not self.disable_cache:
+            logger.info(f"loading data from cache {self._cache_name}")
             return self.cache.get(key)
         else:
             data = self._extract(rendered)
