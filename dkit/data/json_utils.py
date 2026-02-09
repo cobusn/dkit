@@ -5,6 +5,7 @@ import json
 import decimal
 import importlib
 import base64
+from uuid import UUID
 
 from ..utilities.time_helper import local_tz_offset
 
@@ -31,14 +32,15 @@ class CustomCodec(object):
 
 class UUIDCodec(CustomCodec):
     """
-    Store bytes object as Base64 strings
+    Encode UUID to str
+
+    No reverse encoding specified, kept as str
     """
     def __init__(self):
-        self.uuid = importlib.import_module("uuid")
-        super().__init__(self.uuid.UUID)
+        super().__init__(UUID)
 
     def encode(self, obj):
-        str(obj)
+        return str(obj)
 
 
 class BytesCodec(CustomCodec):
