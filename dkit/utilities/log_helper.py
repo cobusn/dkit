@@ -124,3 +124,25 @@ def init_queue_listener(queue):
     """
     listener = QueueListener(queue, *logging.getLogger(__name__).handlers)
     return listener
+
+
+def make_app_logger(name: str, file_name: str, std_err: bool = False, verbose: bool = False):
+    """
+    helper to set up a rotating file logger for an app
+
+    Used to set up a logger for top level application
+
+    args:
+        - name: logger name
+        - file_name: log filename
+        - std_err: output to stderr as well
+        - verbose: enable logging.DEBUG
+
+    returns:
+        logger instance
+    """
+    logger = init_rotating_file_logger(file_name, name)
+    logger.addHandler(logging.StreamHandler(sys.stderr))
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+    return logger
