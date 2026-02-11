@@ -142,7 +142,8 @@ def make_app_logger(name: str, file_name: str, std_err: bool = False, verbose: b
         logger instance
     """
     logger = init_rotating_file_logger(file_name, name)
-    logger.addHandler(logging.StreamHandler(sys.stderr))
+    if std_err:
+        logger.addHandler(logging.StreamHandler(sys.stderr))
     if verbose:
         logger.setLevel(logging.DEBUG)
     return logger
