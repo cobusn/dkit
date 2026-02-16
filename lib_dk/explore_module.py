@@ -235,7 +235,7 @@ class ExploreModule(module.MultiCommandModule):
         fields = self.args.search_fields if self.args.search_fields else None
 
         # hack to only extract the required fields
-        self.args.fields = fields
+        # self.args.fields = fields
 
         is_match = re_filter(self.args.pattern, fields, flags)
         self.do_output(
