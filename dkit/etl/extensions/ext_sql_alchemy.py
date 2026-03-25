@@ -883,7 +883,7 @@ class SQLServices(model.ETLServices):
         )
         accessor.close()
 
-    def sample_from_db(self, conn_name, *tables, n=1000):
+    def sample_from_db(self, conn_name, *tables, n=1000) -> dict:
         """sample n records from each table in a database
 
         Arguments:
