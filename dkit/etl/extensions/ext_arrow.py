@@ -337,6 +337,7 @@ class ParquetSink(sink.AbstractSink):
         if schema is None:
             logger.info("No schema provided, generating arrow schema from data")
             _schema, _data = infer_arrow_schema(data, 1_000)
+            breakpoint()
         else:
             _schema = make_arrow_schema(schema)
 

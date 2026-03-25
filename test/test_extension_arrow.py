@@ -112,7 +112,7 @@ class TestPyArrowExtension(unittest.TestCase):
 
 class A_TestParquetSink(unittest.TestCase):
 
-    def __test_parquet_sink_auto_schema(self):
+    def test_parquet_sink_auto_schema(self):
         """test writing to parquet with auto generated schema"""
         w = FileWriter(PARQUET_FILE, "wb")
         snk = ParquetSink(w)
@@ -121,12 +121,12 @@ class A_TestParquetSink(unittest.TestCase):
 
 class B_TestParquetSource(unittest.TestCase):
 
-    def __test_parquet_source(self):
+    def test_parquet_source(self):
         """test writing to parquet with auto generated schema"""
         r = FileReader(PARQUET_FILE, "rb")
         src = ParquetSource([r])
         data = list(src)
-        self.assertEqual(
+        self.assertAlmostEqual(
             data,
             MTCARS
         )
@@ -162,8 +162,8 @@ class TestDataSets(unittest.TestCase):
 
     def test_make_partition_path(self):
         self.assertEqual(
-            make_partition_path(self.partitions, self.td),
-            "month_id=20231101/day_id=20231104"
+            make_partition_path(self.partitions, self.td, "."),
+            "./month_id=20231101/day_id=20231104"
         )
         self.assertEqual(
             make_partition_path(self.partitions, self.td, "s3://bucket"),
@@ -179,7 +179,7 @@ class TestDataSets(unittest.TestCase):
             "month_id": 20231101,
         }
         with self.assertRaises(KeyError) as _:
-            make_partition_path(self.partitions, td)
+            make_partition_path(self.partitions, td, ".")
 
     def test_make_partition_path_null(self):
         td = {}

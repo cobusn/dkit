@@ -26,6 +26,7 @@ import importlib
 import itertools
 import sys
 from re import RegexFlag
+import os
 
 from curses_components.grid import GridComponent
 from . import module, options
@@ -33,6 +34,7 @@ from dkit.data import manipulate as mp, eda, iteration
 from dkit.data.json_utils import make_simple_encoder
 from dkit.plot import ggrammar
 from dkit.etl.extensions.ext_xlsx import XlsxSink
+from dkit.etl import sink
 import logging
 
 logger = logging.getLogger(__name__)
@@ -281,9 +283,22 @@ class ExploreModule(module.MultiCommandModule):
             n=self.args.n
         )
 
+        # force lowercase table names?
+        if self.args.lower is True:
+            sample = {table.lower(): data for table, data in sample.items()}
+
         # write to output
-        logger.info(f"Writing sample output to '{self.args.output}'")
-        XlsxSink(self.args.output).process_dict(sample)
+        if self.args.xlsx:
+            logger.info(f"Writing sample output to '{self.args.xlsx}'")
+            XlsxSink(self.args.xlsx).process_dict(sample)
+        elif self.args.jsonl:
+            folder = self.args.jsonl
+            os.makedirs(self.args.jsonl, exist_ok=True)
+            for table, data in sample.items():
+                fname = f"{folder}/{table}.jsonl"
+                logger.info(f"writing to {fname}")
+                with sink.load(fname) as outfile:
+                    outfile.process(data)
 
     def do_view(self):
         """display data in a curses based grid"""
@@ -413,8 +428,13 @@ class ExploreModule(module.MultiCommandModule):
         options.add_option_defaults(parser_sample)
         options.add_option_connection_name(parser_sample)
         options.add_option_n(parser_sample, default=1000)
-        parser_sample.add_argument("-o", "--output", help="output to file (sample.xlsx)",
-                                   default="sample.xlsx")
+        output = parser_sample.add_mutually_exclusive_group(required=True)
+        output.add_argument("--xlsx", help="output as sheets in this xlsx file")
+        output.add_argument("--jsonl", help="output as jsonl files in this folder")
+        parser_sample.add_argument(
+            "--lower", default=False, action="store_true",
+            help="force table names to lowercase"
+        )
         options.add_option_glob(parser_sample, entity="table", help_="Table names")
 
         # gridview
