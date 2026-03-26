@@ -125,6 +125,7 @@ CANNONICAL_ROW_SCHEMA = {
     "double": "Double()",
     "integer": "Integer()",
     "int8": "Int8()",
+    "int16": "Int16()",
     "int32": "Int32()",
     "int64": "Int64()",
     "string": "String()",
