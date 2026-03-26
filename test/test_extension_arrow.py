@@ -18,7 +18,7 @@ from dkit.etl.model import Entity
 from dkit.etl.reader import FileReader
 from dkit.etl.schema import EntityValidator
 from dkit.etl.writer import FileWriter
-
+from dkit.etl import sink
 
 PARQUET_FILE = "output/mtcars.parquet"
 with source.load("data/mtcars.jsonl") as infile:
@@ -37,8 +37,9 @@ class TestPyArrowSchemaExport(unittest.TestCase):
             }
         )
 
-    def __test_schema(self):
+    def test_schema(self):
         g = ArrowSchemaGenerator(client=self.client)
+        print(g.create_schema())
         h = adler32(g.create_schema().encode())
         self.assertTrue(h in (3140830570,))
 
@@ -110,6 +111,24 @@ class TestPyArrowExtension(unittest.TestCase):
         )
 
 
+class TestDataTypesCoverage(unittest.TestCase):
+    """make sure all data types are written and read correctly"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data = list(generate_data_rows())
+
+    def test_a_write(self):
+        # print(self.data[0])
+        with sink.load("data/coverage.parquet") as outfile:
+            outfile.process(self.data)
+
+    def test_b_read(self):
+        with source.load("data/coverage.parquet") as infile:
+            retrieved = list(infile)
+            self.assertEqual(retrieved, self.data)
+
+
 class A_TestParquetSink(unittest.TestCase):
 
     def test_parquet_sink_auto_schema(self):
@@ -121,12 +140,38 @@ class A_TestParquetSink(unittest.TestCase):
 
 class B_TestParquetSource(unittest.TestCase):
 
+    def assertRowsAlmostEqual(self, actual, expected, places=4):
+        self.assertEqual(len(actual), len(expected))
+
+        for i, (actual_row, expected_row) in enumerate(zip(actual, expected)):
+            self.assertEqual(
+                set(actual_row.keys()),
+                set(expected_row.keys()),
+                f"row {i} keys differ"
+            )
+            for key in expected_row:
+                actual_value = actual_row[key]
+                expected_value = expected_row[key]
+                if isinstance(actual_value, float) and isinstance(expected_value, float):
+                    self.assertAlmostEqual(
+                        actual_value,
+                        expected_value,
+                        places=places,
+                        msg=f"row {i} field {key!r} differs"
+                    )
+                else:
+                    self.assertEqual(
+                        actual_value,
+                        expected_value,
+                        f"row {i} field {key!r} differs"
+                    )
+
     def test_parquet_source(self):
         """test writing to parquet with auto generated schema"""
         r = FileReader(PARQUET_FILE, "rb")
         src = ParquetSource([r])
         data = list(src)
-        self.assertAlmostEqual(
+        self.assertRowsAlmostEqual(
             data,
             MTCARS
         )

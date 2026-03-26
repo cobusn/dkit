@@ -25,6 +25,7 @@ library attempt to identify the types.
 import collections
 import decimal
 import datetime
+import re
 import statistics
 import dateutil.parser
 from itertools import islice
@@ -44,13 +45,74 @@ TypeStats = collections.namedtuple(
 )
 
 
+MONTH_NAME_PATTERN = re.compile(
+    r"^\s*\d{1,2}\s+"
+    r"(jan|january|feb|february|mar|march|apr|april|may|jun|june|"
+    r"jul|july|aug|august|sep|sept|september|oct|october|nov|november|"
+    r"dec|december)"
+    r"\s+\d{2,4}\s*$",
+    re.IGNORECASE
+)
+DATE_ONLY_PATTERNS = [
+    (re.compile(r"^\s*\d{4}[-/]\d{1,2}[-/]\d{1,2}\s*$"), ["%Y-%m-%d", "%Y/%m/%d"]),
+    (re.compile(r"^\s*\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\s*$"), ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y"]),
+]
+DATETIME_PATTERNS = [
+    (
+        re.compile(r"^\s*\d{4}-\d{1,2}-\d{1,2}[ T]\d{1,2}:\d{2}:\d{2}(\.\d+)?\s*$"),
+        ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%f"],
+    ),
+    (
+        re.compile(r"^\s*\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?\s*$"),
+        ["%H:%M", "%H:%M:%S", "%H:%M:%S.%f"],
+    ),
+]
+
+
 def _get_main_type(types):
     """attempt to extract the dominant type for a field"""
     # note the sequence is important
-    seq = [str, datetime.datetime, datetime.date, decimal.Decimal, bool, float, int, None]
+    seq = [str, bytes, datetime.datetime, datetime.date, decimal.Decimal, bool, float, int, None]
     for t in seq:
         if t in types:
             return t
+
+
+def _try_parse_formats(value, formats, type_):
+    for fmt in formats:
+        try:
+            datetime.datetime.strptime(value, fmt)
+            return type_
+        except ValueError:
+            continue
+    return None
+
+
+def _infer_date_type(value):
+    stripped = value.strip()
+
+    if MONTH_NAME_PATTERN.match(stripped):
+        inferred = _try_parse_formats(
+            stripped,
+            ["%d %b %Y", "%d %B %Y", "%d %b %y", "%d %B %y"],
+            datetime.date
+        )
+        if inferred is not None:
+            return inferred
+
+    for pattern, formats in DATETIME_PATTERNS:
+        if pattern.match(stripped):
+            inferred = _try_parse_formats(stripped, formats, datetime.datetime)
+            if inferred is not None:
+                return inferred
+
+    for pattern, formats in DATE_ONLY_PATTERNS:
+        if pattern.match(stripped):
+            inferred = _try_parse_formats(stripped, formats, datetime.date)
+            if inferred is not None:
+                return inferred
+
+    return None
 
 
 class ExtractSchemaInline(object):
@@ -91,6 +153,9 @@ class InferSchema(object):
     infer schema for an iterable of  dictionary records.
 
     additional data is collected to describe the schema
+
+    Arguments:
+        - strict: if
     """
     __type_map = {
         None: "string",
@@ -98,6 +163,7 @@ class InferSchema(object):
         float: "float",
         bool: "boolean",
         str: "string",
+        bytes: "binary",
         decimal.Decimal: "decimal",
         datetime.date: "date",
         datetime.datetime: "datetime",
@@ -186,11 +252,12 @@ class InferSchema(object):
 
 def infer_type(input, empty_str=None, strict=True):
     """
-    infer data type from python string
+    provide data type for a supplied Python object
 
-    Attempt to infer the data type of input.  Input is assumed to be string.
-    If input is a different type that type is returned. If input is an
-    empty string, the empty_str value is returned.
+    if the input is not a string, it will return the data type if the object
+    if the input is a string, then attempt to guess the datatype
+
+    This is useful in dealing with data from CSV input of unknown schema
 
     Reference:
 
@@ -198,14 +265,16 @@ def infer_type(input, empty_str=None, strict=True):
               determine-the-type-of-a-value-which-is-represented-as-string-in-python
     * https://stackoverflow.com/questions/10261141/determine-type-of-value-from-a-string-in-python
 
-    :param empty_str: type of empty string
-    :param strict: remove commas from numbers (e.g. 300,000)
+    args:
+        - input: the object under consideration
+        - empty_str: type to produce for an empty string
+        - strict: remove commas from numbers (e.g. 300,000)
     """
 
     if input is None:
         return None
 
-    if type(input) == str:
+    if type(input) is str:
         # if empty string return empty_str value
         if len(input) == 0:
             return empty_str
@@ -241,15 +310,9 @@ def infer_type(input, empty_str=None, strict=True):
         if candidate in (int, float, bool):
             return candidate
         else:
-            if len(input) > 4:
-                # Not a number check for dates
-                try:
-                    date_type = dateutil.parser.parse(input)
-                    return type(date_type)
-                except (ValueError, OverflowError):
-                    # Ok is a str after all
-                    return str
-            else:
-                return str
+            inferred_date_type = _infer_date_type(input)
+            if inferred_date_type is not None:
+                return inferred_date_type
+            return str
     else:
         return type(input)
