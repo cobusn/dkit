@@ -3,8 +3,9 @@
 * improve test coverage
 
 # Next
-* Handle Dicts and List data types 
 * Upgrade to sqlalchemy 2
+* add float_32 and float_64 for explicit types
+* Handle Dicts and List data types 
 * validations on parsing Decimal(precision=X, scale=Y), will currently parse
   without defaults or errors;
 * AWS S3 integration (s3fs..)
