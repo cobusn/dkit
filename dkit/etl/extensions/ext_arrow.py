@@ -58,7 +58,42 @@ logger = logging.getLogger("ext_arrow")
 
 __all__ = []
 
-# convert cannonical to arrow
+
+def make_decimal(t=None):
+    """create decimal value"""
+    if not t:
+        t = {
+            "precision": 12,
+            "scale": 2,
+        }
+    precision = t.get("precision", 12)
+    scale = t.get("scale", 2)
+    if precision < 38:
+        return pa.decimal128(precision, scale)
+    else:
+        return pa.decimal256(precision, scale)
+
+
+ARROW_TYPEMAP = {
+    "float": lambda t: pa.float64(),
+    "double": lambda t: pa.float64(),
+    "integer": lambda t: pa.int32(),
+    "int8": lambda t: pa.int8(),
+    "int16": lambda t: pa.int16(),
+    "int32": lambda t: pa.int32(),
+    "int64": lambda t: pa.int64(),
+    "uint8": lambda t: pa.uint8(),
+    "uint16": lambda t: pa.uint16(),
+    "uint32": lambda t: pa.uint32(),
+    "uint64": lambda t: pa.uint64(),
+    "string": lambda t: pa.string(),
+    "boolean": lambda t: pa.bool_(),
+    "binary": lambda t: pa.binary(),
+    # "datetime":  pa.time32("s"),
+    "datetime": lambda t: pa.timestamp("us"),
+    "date": lambda t: pa.date32(),
+    "decimal": make_decimal,
+}
 
 
 class ArrowServices(ETLServices):
@@ -82,43 +117,6 @@ class ArrowServices(ETLServices):
         """
         schema = self.model.entities[entity_name]
         return make_arrow_schema(schema)
-
-
-def make_decimal(t=None):
-    """create decimal value"""
-    if not t:
-        t = {
-            "precision": 12,
-            "scale": 2,
-        }
-    precision = t.get("precision", 12)
-    scale = t.get("scale", 2)
-    if precision < 38:
-        return pa.decimal128(precision, scale)
-    else:
-        return pa.decimal256(precision, scale)
-
-
-ARROW_TYPEMAP = {
-    "float": lambda t: pa.float32(),
-    "double": lambda t: pa.float64(),
-    "integer": lambda t: pa.int32(),
-    "int8": lambda t: pa.int16(),    # int8 not available
-    "int16": lambda t: pa.int16(),
-    "int32": lambda t: pa.int32(),
-    "int64": lambda t: pa.int64(),
-    "uint8": lambda t: pa.uint16(),  # int8 not available
-    "uint16": lambda t: pa.uint16(),
-    "uint32": lambda t: pa.uint32(),
-    "uint64": lambda t: pa.uint64(),
-    "string": lambda t: pa.string(),
-    "boolean": lambda t: pa.bool_(),
-    "binary": lambda t: pa.binary(),
-    # "datetime":  pa.time32("s"),
-    "datetime": lambda t: pa.timestamp("s"),
-    "date": lambda t: pa.date32(),
-    "decimal": make_decimal,
-}
 
 
 str_template = """
@@ -204,7 +202,7 @@ class ArrowSchemaGenerator(object):
         )
 
 
-def infer_arrow_schema(iterable, n=50, enforce=True):
+def infer_arrow_schema(iterable, n=50, enforce=False):
     """
     infer schema from iterable
     args:
@@ -337,7 +335,6 @@ class ParquetSink(sink.AbstractSink):
         if schema is None:
             logger.info("No schema provided, generating arrow schema from data")
             _schema, _data = infer_arrow_schema(data, 1_000)
-            breakpoint()
         else:
             _schema = make_arrow_schema(schema)
 

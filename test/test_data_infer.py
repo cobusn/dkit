@@ -70,14 +70,56 @@ class TestInferType(common.TestBase):
             t = infer_type(test, strict=False)
             self.assertEqual(t, str)
 
+    def test_date(self):
+        """
+        test infer date types
+        """
+        tests = ["1 jan 2010", "5/5/2015", "5/5/05", "5-5-2015", "3 December 2016"]
+        for test in tests:
+            t = infer_type(test, strict=False)
+            self.assertEqual(t, datetime.date)
+
     def test_datetime(self):
         """
         test infer datetime types
         """
-        tests = ["1 jan 2010", "5/5/2015", "5/5/05", "5-5-2015", "3 December 2016", "12:00"]
+        tests = [
+            "2010-01-05 12:13:14",
+            "2010-01-05T12:13:14",
+            "12:00",
+        ]
         for test in tests:
             t = infer_type(test, strict=False)
             self.assertEqual(t, datetime.datetime)
+
+    def test_date_like_false_positives_remain_strings(self):
+        """
+        test date detection does not consume general text
+        """
+        tests = [
+            "report 2024 final",
+            "model 3",
+            "1233ss",
+            "Janus",
+            "batch-2024-a",
+            "Q1 2024",
+        ]
+        for test in tests:
+            t = infer_type(test, strict=False)
+            self.assertEqual(t, str)
+
+    def test_invalid_date_like_strings_remain_strings(self):
+        """
+        test invalid date like values are not inferred as datetime
+        """
+        tests = [
+            "2024-13-01",
+            "2024-02-30",
+            "2024-99-99 10:00:00",
+        ]
+        for test in tests:
+            t = infer_type(test, strict=False)
+            self.assertEqual(t, str)
 
 
 class TestInferTypes(common.TestBase):

@@ -96,6 +96,7 @@ class EntityValidator(cerberus.Validator):
         "datetime": parse_datetime,
         "date": parse_datetime,
         "decimal": parse_decimal,
+        "binary": bytes,
     }
     # This list is just a reminder of what types are
     # defined, it is used by `dk schema show_types`
