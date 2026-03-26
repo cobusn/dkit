@@ -20,7 +20,7 @@
 
 
 """
-Extension for pyarrow
+PyArrow schema, parquet, and dataset helpers for dkit ETL pipelines.
 
 =========== =============== =================================================
 July 2019   Cobus Nel       Initial version
@@ -31,12 +31,18 @@ May 2023    Cobus Nel       Added Unsigned int types
 Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
 Feb 2025    Cobus Nel       Added ArrowServices
+Mar 2025    Cobus Nel       Refactor:
+                            - typing
+                            - tests
+                            - logic errors
 =========== =============== =================================================
 """
 import logging
+import textwrap
+from collections.abc import Iterator, Mapping, Sequence
 from itertools import islice, chain
 from os import path
-from typing import Dict, List
+from typing import Any
 
 import pyarrow as pa
 from jinja2 import Template
@@ -45,6 +51,7 @@ from pyarrow.fs import FileSystem, LocalFileSystem, S3FileSystem, AwsDefaultS3Re
 from .. import source, sink
 from ... import CHUNK_SIZE, messages
 from ...data.iteration import chunker
+from ...typing_helper import FieldDefinition, Row, RowIterable
 from ...utilities.cmd_helper import LazyLoad
 from ..model import Entity, ETLServices
 
@@ -56,11 +63,35 @@ pq = LazyLoad("pyarrow.parquet")
 logger = logging.getLogger("ext_arrow")
 
 
-__all__ = []
+__all__ = [
+    "ArrowSchemaGenerator",
+    "ArrowServices",
+    "ParquetSink",
+    "ParquetSource",
+    "auto_write_parquet",
+    "build_table",
+    "clear_partition_data",
+    "infer_and_coerce_arrow_schema",
+    "infer_arrow_schema",
+    "make_arrow_schema",
+    "make_partition_path",
+    "write_chunked_datasets",
+    "write_parquet_dataset",
+    "write_parquet_file",
+]
 
 
-def make_decimal(t=None):
-    """create decimal value"""
+def make_decimal(t: FieldDefinition | None = None) -> pa.DataType:
+    """
+    Build a PyArrow decimal type from a canonical decimal definition.
+
+    Args:
+        t: Canonical decimal field definition containing optional
+            ``precision`` and ``scale`` keys.
+
+    Returns:
+        A ``pyarrow.Decimal128Type`` or ``pyarrow.Decimal256Type``.
+    """
     if not t:
         t = {
             "precision": 12,
@@ -74,32 +105,107 @@ def make_decimal(t=None):
         return pa.decimal256(precision, scale)
 
 
-ARROW_TYPEMAP = {
-    "float": lambda t: pa.float64(),
-    "double": lambda t: pa.float64(),
-    "integer": lambda t: pa.int32(),
-    "int8": lambda t: pa.int8(),
-    "int16": lambda t: pa.int16(),
-    "int32": lambda t: pa.int32(),
-    "int64": lambda t: pa.int64(),
-    "uint8": lambda t: pa.uint8(),
-    "uint16": lambda t: pa.uint16(),
-    "uint32": lambda t: pa.uint32(),
-    "uint64": lambda t: pa.uint64(),
-    "string": lambda t: pa.string(),
-    "boolean": lambda t: pa.bool_(),
-    "binary": lambda t: pa.binary(),
-    # "datetime":  pa.time32("s"),
-    "datetime": lambda t: pa.timestamp("us"),
-    "date": lambda t: pa.date32(),
-    "decimal": make_decimal,
+def render_decimal_type(definition: FieldDefinition) -> str:
+    """
+    Render Python source for a PyArrow decimal type constructor.
+
+    Args:
+        definition: Canonical decimal field definition.
+
+    Returns:
+        Python source code for the matching PyArrow decimal constructor.
+    """
+    precision = definition.get("precision", 12)
+    scale = definition.get("scale", 2)
+    if precision < 38:
+        return f"pa.decimal128({precision}, {scale})"
+    return f"pa.decimal256({precision}, {scale})"
+
+
+ARROW_TYPE_SPECS = {
+    "float": {
+        "runtime": lambda t: pa.float64(),
+        "render": lambda t: "pa.float64()",
+    },
+    "double": {
+        "runtime": lambda t: pa.float64(),
+        "render": lambda t: "pa.float64()",
+    },
+    "integer": {
+        "runtime": lambda t: pa.int32(),
+        "render": lambda t: "pa.int32()",
+    },
+    "int8": {
+        "runtime": lambda t: pa.int8(),
+        "render": lambda t: "pa.int8()",
+    },
+    "int16": {
+        "runtime": lambda t: pa.int16(),
+        "render": lambda t: "pa.int16()",
+    },
+    "int32": {
+        "runtime": lambda t: pa.int32(),
+        "render": lambda t: "pa.int32()",
+    },
+    "int64": {
+        "runtime": lambda t: pa.int64(),
+        "render": lambda t: "pa.int64()",
+    },
+    "uint8": {
+        "runtime": lambda t: pa.uint8(),
+        "render": lambda t: "pa.uint8()",
+    },
+    "uint16": {
+        "runtime": lambda t: pa.uint16(),
+        "render": lambda t: "pa.uint16()",
+    },
+    "uint32": {
+        "runtime": lambda t: pa.uint32(),
+        "render": lambda t: "pa.uint32()",
+    },
+    "uint64": {
+        "runtime": lambda t: pa.uint64(),
+        "render": lambda t: "pa.uint64()",
+    },
+    "string": {
+        "runtime": lambda t: pa.string(),
+        "render": lambda t: "pa.string()",
+    },
+    "boolean": {
+        "runtime": lambda t: pa.bool_(),
+        "render": lambda t: "pa.bool_()",
+    },
+    "binary": {
+        "runtime": lambda t: pa.binary(),
+        "render": lambda t: "pa.binary()",
+    },
+    "datetime": {
+        "runtime": lambda t: pa.timestamp("us"),
+        "render": lambda t: 'pa.timestamp("us")',
+    },
+    "date": {
+        "runtime": lambda t: pa.date32(),
+        "render": lambda t: "pa.date32()",
+    },
+    "decimal": {
+        "runtime": make_decimal,
+        "render": render_decimal_type,
+    },
 }
 
 
 class ArrowServices(ETLServices):
 
     def get_s3_fs(self, secret_name: str) -> S3FileSystem:
-        """instantiate Arrow S3 instance"""
+        """
+        Create a PyArrow S3 filesystem from a named model secret.
+
+        Args:
+            secret_name: Name of the secret in the loaded model.
+
+        Returns:
+            A configured ``pyarrow.fs.S3FileSystem`` instance.
+        """
         secret = self.model.get_secret(secret_name)
         region = secret.parameters.get("region", None)
         if region is None:
@@ -111,51 +217,73 @@ class ArrowServices(ETLServices):
             retry_strategy=AwsDefaultS3RetryStrategy(max_attempts=5)
         )
 
-    def get_arrow_schema(self, entity_name):
+    def get_arrow_schema(self, entity_name) -> pa.Schema:
         """
-        load arrow schema from model entity
+        Load and convert a model entity to a PyArrow schema.
+
+        Args:
+            entity_name: Name of the entity in the loaded model.
+
+        Returns:
+            The entity converted to ``pyarrow.Schema``.
         """
         schema = self.model.entities[entity_name]
         return make_arrow_schema(schema)
 
 
-str_template = """
+str_template = textwrap.dedent("""\
 import pyarrow as pa
-
 {% for entity, typemap in entities.items() %}
 
 # {{ entity }}
 schema_{{ entity }} = pa.schema(
     [
-        {% for field, props in typemap.schema.items() -%}
-          {% if "nullable" in props -%}
-            {% set nullable = ", " + str(props["nullable"]) -%}
-          {% else -%}
-            {% set nullable = "" -%}
-        {% endif -%}
-        pa.field("{{ field }}", pa.{{ tm[props["type"]] }}(){{ nullable }}),
-        {% endfor -%}
+{%- for field, props in typemap.schema.items() %}
+{%- set nullable = ", " + str(props["nullable"]) if "nullable" in props else "" %}
+        pa.field("{{ field }}", {{ render_type(props) }}{{ nullable }}),
+{%- endfor %}
     ]
 )
-{%- endfor %}
-
+{% endfor %}
 entity_map = {
 {%- for entity in entities.keys() %}
     "{{ entity }}": schema_{{ entity }},
 {%- endfor %}
 }
-"""
+""")
 
 
-def make_arrow_schema(cannonical_schema: Entity):
-    """create an Arrow schema from cannonical Entity"""
+def render_arrow_type(definition: FieldDefinition):
+    """
+    Render Python source for the PyArrow type of one canonical field.
+
+    Args:
+        definition: Canonical field definition.
+
+    Returns:
+        Python source code for the matching PyArrow type constructor.
+    """
+    type_name = definition["type"]
+    return ARROW_TYPE_SPECS[type_name]["render"](definition)
+
+
+def make_arrow_schema(cannonical_schema: Entity) -> pa.Schema:
+    """
+    Convert a canonical ``Entity`` schema to a ``pyarrow.Schema``.
+
+    Args:
+        cannonical_schema: Canonical entity definition.
+
+    Returns:
+        A ``pyarrow.Schema`` built from the entity fields.
+    """
     fields = []
     validator = cannonical_schema.as_entity_validator()
     for name, definition in validator.schema.items():
         fields.append(
             pa.field(
                 name,
-                ARROW_TYPEMAP[definition["type"]](definition)
+                ARROW_TYPE_SPECS[definition["type"]]["runtime"](definition)
             )
         )
     return pa.schema(fields)
@@ -163,69 +291,90 @@ def make_arrow_schema(cannonical_schema: Entity):
 
 class ArrowSchemaGenerator(object):
     """
-    Create .py file that define pyarrow schema fromm
-    cannonical entity schema (s).
+    Generate Python source that declares PyArrow schemas for entities.
     """
 
     def __init__(self, **entities):
         self.__entities = entities
-        self.type_map = {
-            k: self.str_name(v)
-            for k, v in
-            ARROW_TYPEMAP.items()
-        }
-
-    @staticmethod
-    def str_name(obj):
-        """appropriate string name for pyarrow object"""
-        sn = str(obj)
-        if sn == "float":
-            sn = f"{sn}{obj.bit_width}"
-        return sn
 
     @property
     def entities(self):
         """
-        dictionary of entities
+        Return the entity map used for schema generation.
+
+        Returns:
+            A mapping of entity names to entity validators or schemas.
         """
         return self.__entities
 
     def create_schema(self):
         """
-        Create python code to define pyarrow schema
+        Render Python source that defines the configured Arrow schemas.
+
+        Returns:
+            Python source code containing schema declarations and an entity map.
         """
         template = Template(str_template)
         return template.render(
             entities=self.entities,
-            tm=self.type_map,
+            render_type=render_arrow_type,
             str=str
         )
 
 
-def infer_arrow_schema(iterable, n=50, enforce=False):
+def infer_arrow_schema(iterable: RowIterable, n: int = 50) -> tuple[pa.Schema, Iterator[Row]]:
     """
-    infer schema from iterable
-    args:
-        * iterable: data input
-        * n: number of samples to infer schema
-        * enforce: enforce schema if True
+    Infer an Arrow schema from sampled rows without coercing row values.
 
-    returns:
-        * arrow schema
-        * a reconstructed iterable
+    Args:
+        iterable: Input row iterator.
+        n: Number of rows to sample for inference.
+
+    Returns:
+        A tuple of ``(schema, iterable)``, where ``schema`` is the inferred
+        ``pyarrow.Schema`` and the returned iterable yields the sampled rows
+        followed by the remaining input rows unchanged.
     """
     i = iter(iterable)
     buffer = list(islice(i, n))
     entity = Entity.from_iterable(buffer, p=1.0, k=n)
     schema = make_arrow_schema(entity)
-    if enforce is True:
-        return schema, entity(chain(buffer, i))
-    else:
-        return schema, chain(buffer, i)
+    return schema, chain(buffer, i)
+
+def infer_and_coerce_arrow_schema(
+    iterable: RowIterable, n: int = 50
+) -> tuple[pa.Schema, Iterator[Row]]:
+    """
+    Infer an Arrow schema and coerce row values to the inferred entity types.
+
+    Args:
+        iterable: Input row iterator.
+        n: Number of rows to sample for inference.
+
+    Returns:
+        A tuple of ``(schema, iterable)``, where ``schema`` is the inferred
+        ``pyarrow.Schema`` and the returned iterable yields rows coerced to the
+        inferred canonical entity.
+    """
+    i = iter(iterable)
+    buffer = list(islice(i, n))
+    entity = Entity.from_iterable(buffer, p=1.0, k=n)
+    schema = make_arrow_schema(entity)
+    return schema, entity(chain(buffer, i))
 
 
-def build_table(data, schema=None, micro_batch_size=CHUNK_SIZE) -> pa.Table:
-    """build pyarrow table"""
+def build_table(data: RowIterable, schema=None, micro_batch_size=CHUNK_SIZE) -> pa.Table:
+    """
+    Build a ``pyarrow.Table`` from row dictionaries in micro-batches.
+
+    Args:
+        data: Iterable of row dictionaries.
+        schema: Optional Arrow schema to enforce while building batches.
+        micro_batch_size: Number of rows to convert per record batch.
+
+    Returns:
+        A ``pyarrow.Table`` assembled from record batches.
+    """
 
     def iter_batch():
         for chunk in chunker(data, size=micro_batch_size):
@@ -241,23 +390,32 @@ def build_table(data, schema=None, micro_batch_size=CHUNK_SIZE) -> pa.Table:
 
 class ParquetSource(source.AbstractMultiReaderSource):
     """
-    Read parquet sources and convert to dict record format
-    using the pyarrow library with record batches.
+    Read parquet sources and yield row dictionaries via Arrow record batches.
 
-    Parameters:
-        - reader_list: list of reader objects
-        - field_names: extract only these fields
-        - chunk_size: number of rows per batch (default 64K)
-
+    Args:
+        reader_list: Reader objects that provide parquet input streams.
+        field_names: Optional field names to project from the parquet inputs.
+        chunk_size: Number of rows per Arrow batch.
     """
-    def __init__(self, reader_list, field_names=None, chunk_size=CHUNK_SIZE):
+    def __init__(
+        self,
+        reader_list,
+        field_names: Sequence[str] | None = None,
+        chunk_size: int = CHUNK_SIZE,
+    ):
         super().__init__(reader_list, field_names)
         self.chunk_size = chunk_size
 
     def iter_some_fields(self, field_names):
-        """convert parquet to dict records and yield per record
+        """
+        Yield dictionary rows from parquet files for selected columns only.
 
-        only return required records
+        Args:
+            field_names: Requested field names. The implementation uses
+                ``self.field_names`` configured on the source instance.
+
+        Yields:
+            Row dictionaries containing only the selected columns.
         """
         self.stats.start()
 
@@ -269,7 +427,7 @@ class ParquetSource(source.AbstractMultiReaderSource):
                     self.chunk_size, columns=self.field_names
                 ):
                     yield from batch.to_pylist()
-                    self.stats.increment(self.chunk_size)
+                    self.stats.increment(len(batch))
             else:
                 with o_reader.open() as in_file:
                     parq_file = pq.ParquetFile(in_file)
@@ -277,12 +435,17 @@ class ParquetSource(source.AbstractMultiReaderSource):
                         self.chunk_size, columns=self.field_names
                     ):
                         yield from batch.to_pylist()
-                        self.stats.increment(self.chunk_size)
+                        self.stats.increment(len(batch))
 
         self.stats.stop()
 
     def iter_all_fields(self):
-        """convert parquet to dict records and yield per record"""
+        """
+        Yield dictionary rows from parquet files for all columns.
+
+        Yields:
+            Row dictionaries for every column in the parquet inputs.
+        """
         self.stats.start()
 
         for o_reader in self.reader_list:
@@ -291,35 +454,59 @@ class ParquetSource(source.AbstractMultiReaderSource):
                 parq_file = pq.ParquetFile(o_reader)
                 for batch in parq_file.iter_batches(self.chunk_size):
                     yield from batch.to_pylist()
-                    self.stats.increment(self.chunk_size)
+                    self.stats.increment(len(batch))
             else:
                 with o_reader.open() as in_file:
                     parq_file = pq.ParquetFile(in_file)
                     for batch in parq_file.iter_batches(self.chunk_size):
                         yield from batch.to_pylist()
-                        self.stats.increment(self.chunk_size)
+                        self.stats.increment(len(batch))
 
         self.stats.stop()
 
 
 class ParquetSink(sink.AbstractSink):
     """
-    serialize dict records data to parquet
+    Write dictionary rows to parquet using PyArrow.
 
-    using the pyarrow library
+    When ``schema`` is omitted, the sink infers an Arrow schema from sampled
+    rows. When ``coerce=True``, rows are coerced to the inferred or supplied
+    canonical entity before conversion to Arrow record batches.
+
+    Args:
+        writer: Output writer object.
+        field_names: Unsupported field selection argument.
+        schema: Optional canonical ``Entity`` schema.
+        chunk_size: Number of rows to process per output batch.
+        compression: Parquet compression codec.
+        coerce: Coerce rows to the inferred or supplied schema before writing.
     """
-    def __init__(self, writer, field_names=None, schema=None,
-                 chunk_size=50_000, compression="snappy"):
+    def __init__(
+        self,
+        writer,
+        field_names: Sequence[str] | None = None,
+        schema: Entity | None = None,
+        chunk_size: int = 50_000,
+        compression: str = "snappy",
+        coerce: bool = False,
+    ):
         super().__init__()
         self.writer = writer
         self.chunk_size = chunk_size
         self.schema = schema
         self.compression = compression
+        self.coerce = coerce
         if field_names is not None:
             raise NotImplementedError("field_names not implemented")
 
-    def __write_all(self, writer, the_iterator):
-        """write data to parquet"""
+    def __write_all(self, writer, the_iterator: RowIterable):
+        """
+        Write all rows from an iterator to an open parquet output.
+
+        Args:
+            writer: Open output stream or writer handle.
+            the_iterator: Iterable of row dictionaries.
+        """
         table = self.__build_table(the_iterator, self.schema, self.chunk_size)
         pq.write_table(
             table,
@@ -327,30 +514,58 @@ class ParquetSink(sink.AbstractSink):
             compression=self.compression,
         )
 
-    def __build_table(self, data, schema, micro_batch_size) -> pa.Table:
-        """ build pyarrow table """
-        # the same code as the standalone build_table function
-        # but add code for incrementing counters
+    def __build_table(
+        self,
+        data: RowIterable,
+        schema: Entity | None,
+        micro_batch_size: int,
+    ) -> pa.Table:
+        """
+        Build a table for parquet output and update sink row statistics.
+
+        Args:
+            data: Iterable of row dictionaries.
+            schema: Optional canonical ``Entity`` schema.
+            micro_batch_size: Number of rows to convert per record batch.
+
+        Returns:
+            A ``pyarrow.Table`` ready to be written to parquet.
+        """
         _data = data
         if schema is None:
             logger.info("No schema provided, generating arrow schema from data")
-            _schema, _data = infer_arrow_schema(data, 1_000)
+            if self.coerce is True:
+                _schema, _data = infer_and_coerce_arrow_schema(data, 1_000)
+            else:
+                _schema, _data = infer_arrow_schema(data, 1_000)
         else:
             _schema = make_arrow_schema(schema)
+            if self.coerce is True:
+                _data = schema(_data)
 
         def iter_batch():
             for chunk in chunker(_data, size=micro_batch_size):
+                rows = list(chunk)
                 yield pa.RecordBatch.from_pylist(
-                    list(chunk),
+                    rows,
                     schema=_schema
                 )
-                self.stats.increment(micro_batch_size)
+                self.stats.increment(len(rows))
 
         return pa.Table.from_batches(
             iter_batch()
         )
 
-    def process(self, the_iterator):
+    def process(self, the_iterator: RowIterable):
+        """
+        Write rows from an iterator to parquet.
+
+        Args:
+            the_iterator: Iterable of row dictionaries.
+
+        Returns:
+            The sink instance.
+        """
         self.stats.start()
         if self.writer.is_open:
             self.__write_all(self.writer, the_iterator)
@@ -361,33 +576,44 @@ class ParquetSink(sink.AbstractSink):
         return self
 
 
-def auto_write_parquet(path: str, iterable, n=100):
+def auto_write_parquet(path: str, iterable: RowIterable, n: int = 100, coerce: bool = False):
     """
-    infer schema and write to parquet file
+    Infer a schema and write dictionary rows to a parquet file.
 
-    args:
-        - path: file path
-        - iterable: iterable of dicts
-        - n: number of records used to infer schema
+    Args:
+        path: Output parquet file path.
+        iterable: Iterable of row dictionaries.
+        n: Number of records used for schema inference.
+        coerce: Coerce row values to the inferred schema when ``True``.
+
+    Returns:
+        ``None``.
     """
-    schema, data = infer_arrow_schema(iterable, n)
+    if coerce is True:
+        schema, data = infer_and_coerce_arrow_schema(iterable, n)
+    else:
+        schema, data = infer_arrow_schema(iterable, n)
     table = build_table(data, schema)
     write_parquet_file(table, path)
 
 
-def write_parquet_file(table, path, fs=None, compression="snappy"):
-    """write pyarrow table to parquet file
+def write_parquet_file(
+    table: pa.Table,
+    path: str,
+    fs: FileSystem | None = None,
+    compression: str = "snappy",
+):
+    """
+    Write a ``pyarrow.Table`` to a parquet file.
 
-    convenience function to write a table to parquet with
-    sensible default options for ETL work.
+    Args:
+        table: Arrow table instance.
+        path: Output filesystem path.
+        fs: Optional Arrow filesystem instance.
+        compression: Parquet compression codec.
 
-    args:
-
-        - table: arrow Table instance
-        - path: filesystem path
-        - fs: Filesystem instance (e.g. Arrow S3FileSystem)
-        - compression: e.g. snappy
-
+    Returns:
+        ``None``.
     """
     logger.info(f"writing table of size {len(table)} to parquet")
     logger.info(f"writing parquet to path {path}")
@@ -401,24 +627,28 @@ def write_parquet_file(table, path, fs=None, compression="snappy"):
 
 
 def write_parquet_dataset(
-    table, path, partition_cols, fs=None,
-    compression="snappy", existing_data_behaviour="overwrite_or_ignore"
+    table: pa.Table,
+    path: str,
+    partition_cols: Sequence[str],
+    fs: FileSystem | None = None,
+    compression: str = "snappy",
+    existing_data_behaviour: str = "overwrite_or_ignore",
 ):
-    """write pyarrow table to parquet
+    """
+    Write a partitioned parquet dataset from an Arrow table.
 
-    convenience function to write a table to parquet with
-    sensible default options for ETL work.
+    Args:
+        table: Arrow table instance.
+        path: Root filesystem path for the dataset.
+        partition_cols: Column names used to partition the dataset.
+        fs: Optional Arrow filesystem instance.
+        compression: Parquet compression codec.
+        existing_data_behaviour: Behaviour when data already exists. Supported
+            values are ``overwrite_or_ignore``, ``error``, and
+            ``delete_matching``.
 
-    args:
-
-        - table: arrow Table instance
-        - path: filesystem path
-        - fs: Filesystem instance (e.g. Arrow S3FileSystem)
-        - compression: e.g. snappy
-        - existing_data_behaviour can be one of:
-            - overwrite_or_ignore
-            - error
-            - delete_matching
+    Returns:
+        ``None``.
     """
     logger.info(f"writing table of size {len(table)} to parquet")
     logger.debug(f"writing to path {path}")
@@ -434,13 +664,26 @@ def write_parquet_dataset(
     logger.debug("write completed")
 
 
-def make_partition_path(partition_cols: List[str], partition_map: Dict,
-                        base_path: str = None) -> str:
+def make_partition_path(
+    partition_cols: Sequence[str],
+    partition_map: Mapping[str, Any],
+    base_path: str | None = None,
+) -> str:
     """
-    calculate partition path based on keys and values
+    Build a partition path from partition column names and values.
 
-    Arguments:
-        * partition_cols: list of columns used for partitioning. e.g
+    Args:
+        partition_cols: Ordered list of partition column names.
+        partition_map: Mapping of partition column names to values.
+        base_path: Base filesystem path or URI prefix.
+
+    Returns:
+        The full partition path.
+
+    Raises:
+        ValueError: If ``base_path`` is ``None`` or the result is invalid.
+        KeyError: If a required partition column is missing from
+            ``partition_map``.
     """
     if base_path is None:
         raise ValueError("parameter base_path cannot be None'")
@@ -462,26 +705,23 @@ def make_partition_path(partition_cols: List[str], partition_map: Dict,
     return retval
 
 
-def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
-                         partition_map: Dict, base_path: str = None):
+def clear_partition_data(
+    f_system: FileSystem | None,
+    partition_cols: Sequence[str],
+    partition_map: Mapping[str, Any],
+    base_path: str | None = None,
+):
     """
-    Clear data for partition specified
+    Clear the contents of one partition directory.
 
-    Parameters
-    ----------
-    f_system: filesystem instance
-        FileSystem instance.  Must be a pyarrow.fs type
-        if None will use LocalFilesystem
-    partition_cols: List
-        list of partition columns e.b. ["month_id", "day_id"].  Required
-        to make sure that all partitions is specified
-    partition_map: Dict
-        dict containing keys an values
-    base_path: str
-        filesystem base path. e.g. 's3://bucket/folder'
+    Args:
+        f_system: Arrow filesystem instance. When ``None``, a local filesystem
+            is used.
+        partition_cols: Ordered list of required partition columns.
+        partition_map: Mapping of partition column names to values.
+        base_path: Base filesystem path or URI prefix.
 
-
-    Called as::
+    Example:
 
         from pyarrow.fs import LocalFileSystem
 
@@ -491,9 +731,12 @@ def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
         bp = "data/sales"
         clear_partition(fs, pc, dm, bp)
 
-    Note: both partition_cols and partition_map is required to ensure
-    data is not deleted accidentaly
+    Returns:
+        ``None``.
 
+    Note:
+        Both ``partition_cols`` and ``partition_map`` are required so that
+        partition deletion remains explicit and safe.
     """
     fs = f_system if f_system else LocalFileSystem()
     p_path = make_partition_path(partition_cols, partition_map, base_path)
@@ -505,26 +748,32 @@ def clear_partition_data(f_system: FileSystem, partition_cols: List[str],
 
 
 def write_chunked_datasets(
-    data, path, schema, partition_cols, fs=None,
-    chunk_size=1_000_000, compression="snappy",
-    existing_data_behaviour="overwrite_or_ignore"
+    data: RowIterable,
+    path: str,
+    schema: pa.Schema,
+    partition_cols: Sequence[str],
+    fs: FileSystem | None = None,
+    chunk_size: int = 1_000_000,
+    compression: str = "snappy",
+    existing_data_behaviour: str = "overwrite_or_ignore",
 ):
     """
-    Write chunks to parquet dataset
+    Write iterable row data to a partitioned parquet dataset in chunks.
 
-    Parameters:
-    table: pyarrow Table instance
-    path: str
-        filesystem path
-    fs: pyarrow.fs.FileSystem
-        Filesystem instance (e.g. Arrow S3FileSystem)
-    compression: str
-        e.g. snappy
-    existing_data_behaviour: str
-        can be one of:
-            - overwrite_or_ignore
-            - error
-            - delete_matching
+    Args:
+        data: Iterable of row dictionaries.
+        path: Root filesystem path for the dataset.
+        schema: Arrow schema used when building each chunk table.
+        partition_cols: Column names used for dataset partitioning.
+        fs: Optional Arrow filesystem instance.
+        chunk_size: Number of rows per chunk.
+        compression: Parquet compression codec.
+        existing_data_behaviour: Behaviour when data already exists. Supported
+            values are ``overwrite_or_ignore``, ``error``, and
+            ``delete_matching``.
+
+    Returns:
+        ``None``.
     """
     for chunk in chunker(data, chunk_size):
         table = build_table(chunk, schema=schema)
