@@ -23,15 +23,15 @@
 PyArrow schema, parquet, and dataset helpers for dkit ETL pipelines.
 
 =========== =============== =================================================
-July 2019   Cobus Nel       Initial version
-Sept 2022   Cobus Nel       Added:
+Jul 2019    Cobus Nel       Initial version
+Sep 2022    Cobus Nel       Added:
                             - schema create tools
                             - Parquet source and sinks
 May 2023    Cobus Nel       Added Unsigned int types
 Oct 2023    Cobus Nel       clear_partitions
                             write_dataset
 Feb 2025    Cobus Nel       Added ArrowServices
-Mar 2025    Cobus Nel       Refactor:
+Mar 2026    Cobus Nel       Refactor:
                             - typing
                             - tests
                             - logic errors
@@ -253,7 +253,7 @@ entity_map = {
 """)
 
 
-def render_arrow_type(definition: FieldDefinition):
+def _render_arrow_type(definition: FieldDefinition):
     """
     Render Python source for the PyArrow type of one canonical field.
 
@@ -317,7 +317,7 @@ class ArrowSchemaGenerator(object):
         template = Template(str_template)
         return template.render(
             entities=self.entities,
-            render_type=render_arrow_type,
+            render_type=_render_arrow_type,
             str=str
         )
 
@@ -337,9 +337,16 @@ def infer_arrow_schema(iterable: RowIterable, n: int = 50) -> tuple[pa.Schema, I
     """
     i = iter(iterable)
     buffer = list(islice(i, n))
-    entity = Entity.from_iterable(buffer, p=1.0, k=n)
+    entity = Entity.from_iterable(
+        buffer,
+        infer_strings=False,
+        strict_numbers=True,
+        p=1.0,
+        k=n
+    )
     schema = make_arrow_schema(entity)
     return schema, chain(buffer, i)
+
 
 def infer_and_coerce_arrow_schema(
     iterable: RowIterable, n: int = 50
@@ -358,7 +365,7 @@ def infer_and_coerce_arrow_schema(
     """
     i = iter(iterable)
     buffer = list(islice(i, n))
-    entity = Entity.from_iterable(buffer, p=1.0, k=n)
+    entity = Entity.from_iterable(buffer, infer_strings=True, p=1.0, k=n)
     schema = make_arrow_schema(entity)
     return schema, entity(chain(buffer, i))
 

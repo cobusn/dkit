@@ -207,17 +207,26 @@ class EntityValidator(cerberus.Validator):
             self._error(field, "Must be boolean.")
 
     @staticmethod
-    def dict_from_iterable(the_iterable, strict=False, p=1.0, stop=100):
+    def dict_from_iterable(the_iterable, infer_strings: bool = False,
+                           strict_numbers=False, p=1.0, stop=100):
         """
         infer dict_schema from iterable
 
         Args:
-            strict: remove commas from numbers when false
-            p: probability of evaluating a record
-            stop: stop after n rows
+            - the_iterable: the data
+            - infer_strings: attempt to infer data types of string values (e.g.
+            dates or numbers
+            - strict_numbers: remove commas from numbers when false
+            - p: probability of evaluating a record
+            - stop: stop after n rows
         """
-        sniffer = infer.InferSchema(strict)
-        sniffer(the_iterable, strict, p=p, stop=stop)
+        sniffer = infer.InferSchema(
+            infer_strings=infer_strings,
+            strict_numbers=strict_numbers,
+            p=p,
+            stop=stop
+        )
+        sniffer(the_iterable)
         dict_schema = collections.OrderedDict()
         for key, stats in sniffer.summary.items():
             node = {}

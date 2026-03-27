@@ -77,7 +77,8 @@ class Entity(containers.DictionaryEmulator):
         return {k: self[k] for k in sorted_keys}
 
     @classmethod
-    def from_iterable(cls, iter_src: source.AbstractSource, p: float, k: int):
+    def from_iterable(cls, iter_src: source.AbstractSource, infer_strings=False,
+                      strict_numbers=True, p: float = 1.0, k: int = 100):
         """
         Constructor that infer Entity schema from input iterable
 
@@ -89,7 +90,13 @@ class Entity(containers.DictionaryEmulator):
         Returns:
             * the schema as a dict
         """
-        cerberus_schema = schema.EntityValidator.dict_from_iterable(iter_src,  p=p, stop=k)
+        cerberus_schema = schema.EntityValidator.dict_from_iterable(
+            iter_src,
+            infer_strings=infer_strings,
+            strict_numbers=strict_numbers,
+            p=p,
+            stop=k
+        )
         return cls.from_cerberus(cerberus_schema)
 
     @classmethod

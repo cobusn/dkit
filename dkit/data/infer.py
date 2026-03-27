@@ -27,7 +27,6 @@ import decimal
 import datetime
 import re
 import statistics
-import dateutil.parser
 from itertools import islice
 from .iteration import iter_sample
 from typing import Dict, List, Iterable
@@ -155,7 +154,8 @@ class InferSchema(object):
     additional data is collected to describe the schema
 
     Arguments:
-        - strict: if
+        - strict: replace "," in numbers when False
+        - infer_strings: infer types in strings if True
     """
     __type_map = {
         None: "string",
@@ -169,12 +169,16 @@ class InferSchema(object):
         datetime.datetime: "datetime",
     }
 
-    def __init__(self, strict: bool = True):
+    def __init__(self, infer_strings: bool = False, strict_numbers: bool = True,
+                 p=1, stop=100):
         self.the_iterable = None
-        self.strict: bool = strict
+        self.strict_numbers = strict_numbers
+        self.infer_strings = infer_strings
+        self.p = p
+        self.stop = stop
         self.data: Dict[str, List[type]] = {}
-        """map data types to field name"""
 
+        """map data types to field name"""
         self.summary: Dict[str, TypeStats] = {}
         """
         map computed TypeStats to field name
@@ -182,21 +186,19 @@ class InferSchema(object):
         This attribute is only meaningful after __call__ have
         been called on a dataset
         """
-
         self.__num_rows: int = 0
 
     def __len__(self):
         """length of sample"""
         return self.__num_rows
 
-    def __collect_type_stats(self, the_iterable, strict, p=1.0, stop=100) \
-            -> Dict[str, List[type]]:
+    def __collect_type_stats(self, the_iterable) -> Dict[str, List[type]]:
         """collect type statistics for each field in data"""
         row_counter = 0
         data = collections.defaultdict(lambda: {})
-        for row in iter_sample(the_iterable, p, stop):
+        for row in iter_sample(the_iterable, self.p, self.stop):
             for key, value in row.items():
-                the_type = infer_type(value, strict)
+                the_type = infer_type(value, self.infer_strings, self.strict_numbers)
                 size = len(str(value))
                 data[key][row_counter] = Field(the_type, size)
                 row_counter += 1
@@ -234,7 +236,7 @@ class InferSchema(object):
             summary[key] = TypeStats(_type, _str_type, _dirty, _min, _max, _mean, _stdev)
         return summary
 
-    def __call__(self, the_iterable, strict=False,  p=1, stop=100) -> Dict[str, type]:
+    def __call__(self, the_iterable) -> Dict[str, type]:
         """
         Infer data types from the provided iterable
 
@@ -245,14 +247,14 @@ class InferSchema(object):
             stop:           stop after n rows
         """
         self.the_iterable = the_iterable
-        self.data = self.__collect_type_stats(the_iterable, strict, p=p, stop=stop)
+        self.data = self.__collect_type_stats(the_iterable)
         self.summary = self.__generate_summary()
         return {key: points.type for key, points in self.summary.items()}
 
 
-def infer_type(input, empty_str=None, strict=True):
+def infer_type(input, infer_strings: bool = True, strict_numbers=True, empty_str=str):
     """
-    provide data type for a supplied Python object
+    Attempt to determine the data type for a Python object
 
     if the input is not a string, it will return the data type if the object
     if the input is a string, then attempt to guess the datatype
@@ -265,17 +267,20 @@ def infer_type(input, empty_str=None, strict=True):
               determine-the-type-of-a-value-which-is-represented-as-string-in-python
     * https://stackoverflow.com/questions/10261141/determine-type-of-value-from-a-string-in-python
 
-    args:
+    Args:
         - input: the object under consideration
+        - infer_strings: attempt to determine the data type in strings if True
         - empty_str: type to produce for an empty string
         - strict: remove commas from numbers (e.g. 300,000)
     """
-
     if input is None:
         return None
 
     if type(input) is str:
         # if empty string return empty_str value
+        if not infer_strings:
+            return str
+
         if len(input) == 0:
             return empty_str
 
@@ -288,7 +293,7 @@ def infer_type(input, empty_str=None, strict=True):
             if input.lower() in ["true", "false", "yes", "no"]:
                 return bool
 
-            num_input = input.replace(',', "") if not strict else input
+            num_input = input.replace(',', "") if not strict_numbers else input
 
             # Integer
             try:
@@ -313,6 +318,8 @@ def infer_type(input, empty_str=None, strict=True):
             inferred_date_type = _infer_date_type(input)
             if inferred_date_type is not None:
                 return inferred_date_type
+
+            # finally
             return str
     else:
         return type(input)

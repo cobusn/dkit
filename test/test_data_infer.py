@@ -43,13 +43,13 @@ class TestInferType(common.TestBase):
         """
         tests = [1, '12', '34', '-3', '3', ' 39 ']
         for test in tests:
-            t = infer_type(test, strict=True)
+            t = infer_type(test, strict_numbers=True)
             self.assertEqual(t, int)
 
         # using strict
         tests = [1, '12', '34', '-3', '3', ' 300 ', '300,0']
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, int)
 
     def test_float(self):
@@ -58,7 +58,7 @@ class TestInferType(common.TestBase):
         """
         tests = [1.0, '-0.00001', '12.1', '34.1', '-3.5', '3E5', ' 300.0 ', ' 3,00.0 ', '300,0.4E4']
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, float)
 
     def test_str(self):
@@ -67,7 +67,7 @@ class TestInferType(common.TestBase):
         """
         tests = ["asdf", r"a@#%@", "a 2342", "A,2342", "1233ss"]
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, str)
 
     def test_date(self):
@@ -76,7 +76,7 @@ class TestInferType(common.TestBase):
         """
         tests = ["1 jan 2010", "5/5/2015", "5/5/05", "5-5-2015", "3 December 2016"]
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, datetime.date)
 
     def test_datetime(self):
@@ -89,7 +89,7 @@ class TestInferType(common.TestBase):
             "12:00",
         ]
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, datetime.datetime)
 
     def test_date_like_false_positives_remain_strings(self):
@@ -105,7 +105,7 @@ class TestInferType(common.TestBase):
             "Q1 2024",
         ]
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, str)
 
     def test_invalid_date_like_strings_remain_strings(self):
@@ -118,7 +118,7 @@ class TestInferType(common.TestBase):
             "2024-99-99 10:00:00",
         ]
         for test in tests:
-            t = infer_type(test, strict=False)
+            t = infer_type(test, strict_numbers=False)
             self.assertEqual(t, str)
 
 
