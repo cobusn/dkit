@@ -103,6 +103,7 @@ class SQLETL:
             raise ValueError("docstring does not appear to be valid SQL")
 
     def _extract(self, sql):
+        logging.debug(sql)
         conn = self.services.model.get_connection(self.connection)
         return list(
             self.services.run_query(conn, sql)

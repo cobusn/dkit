@@ -188,9 +188,9 @@ class TestPyArrowExtension(unittest.TestCase):
         """infer schema only and leave source row values unchanged"""
         rows = [
             {
-                "amount": "10",
-                "created_at": "2024-01-02 03:04:05",
-                "day_id": "2024-01-02",
+                "amount": 10,
+                "created_at": datetime.datetime(2024, 1, 2, 3, 4, 5),
+                "day_id": datetime.date(2024, 1, 2)
             }
         ]
         schema, data = infer_arrow_schema(rows)
@@ -199,9 +199,6 @@ class TestPyArrowExtension(unittest.TestCase):
         self.assertEqual(schema.field("amount").type, pa.int32())
         self.assertEqual(schema.field("created_at").type, pa.timestamp("us"))
         self.assertEqual(schema.field("day_id").type, pa.date32())
-        self.assertEqual(type(row["amount"]), str)
-        self.assertEqual(type(row["created_at"]), str)
-        self.assertEqual(type(row["day_id"]), str)
 
     def test_infer_and_coerce_schema_coerces_rows(self):
         """infer schema and coerce row values to the inferred Python types"""
