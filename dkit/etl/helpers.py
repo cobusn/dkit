@@ -33,7 +33,6 @@ import json
 import logging
 from abc import ABC, abstractmethod
 import re
-from jinja2 import Template
 from pyarrow.fs import FileSystem
 
 from ..data.iteration import chunker
@@ -64,11 +63,9 @@ def is_select_statement(sql_string):
     Returns:
         True if the string appears to be a SELECT statement, False otherwise.
     """
-    pattern = r"^\s*SELECT\s+.+\s+FROM\s+.+;?\s*"
-    pattern = r"(?i)\s*SELECT\s+.+?\s+FROM\s+.+?(?:\s*WHERE\s*.+)?"
-    match = re.match(pattern, sql_string, re.IGNORECASE)
-    # return bool(match)
-    return True
+    pattern = r"^\s*SELECT\s+.+?\s+FROM\s+.+?(?:\s+WHERE\s+.+?)?\s*;?\s*$"
+    match = re.match(pattern, sql_string, re.IGNORECASE | re.DOTALL)
+    return bool(match)
 
 
 class AbstractExtractor(ABC):
@@ -113,9 +110,11 @@ class SQLETL:
 
     def _render(self, sql: str, variables: dict):
         if variables:
-            return render_strict(sql, **variables)
+            _sql = render_strict(sql, **variables)
         else:
-            return sql
+            _sql = sql
+        logger.debug(_sql)
+        return _sql
 
     def extract(self, sql, params):
         """extract data"""
@@ -239,14 +238,26 @@ class TemplateSQLExtractor(AbstractExtractor):
             raise ValueError("only one of `query_name' or 'query_sql' must be defined")
 
     def make_sql(self, **parameters):
-        """create sql and render template"""
+        """
+        Create SQL by rendering the configured query template.
+
+        Args:
+            **parameters: named Template parameters
+
+        Raises:
+            jinja2.exceptions.UndefinedError: If a required template variable
+                is missing.
+            ValueError: If neither or both of ``query_name`` and ``query_sql``
+                are configured.
+        """
         if self.query_sql is not None:
-            sql = Template(self.query_sql).render(**parameters)
+            sql = render_strict(self.query_sql, **parameters)
         elif self.query_name is not None:
             query = self.services.model.queries[self.query_name]
             sql = query.template.render(**parameters)
         else:
             raise ValueError("only one of `query_name' or 'query_sql' must be defined")
+        logger.debug(sql)
         return sql
 
     def schema(self, table_name):
