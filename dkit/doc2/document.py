@@ -33,7 +33,6 @@ from dataclass_wizard import JSONWizard
 from jinja2 import Template
 
 from ..data import json_utils as ju
-from .md_to_doc import render_doc_format
 
 
 encoder = ju.JsonSerializer(
@@ -129,6 +128,9 @@ class Document:
 
     def add_template(self, template, **objects):
         """parse and add markdown"""
+        # will create circular import if this line is at the top..
+        from .md_to_doc import render_doc_format
+        #########################################################
         local = dict(self.jinja_objects)
         local.update(objects)
         rendered = Template(template).render(**local)

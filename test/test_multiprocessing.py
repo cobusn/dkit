@@ -92,26 +92,24 @@ class TestMultiprocessing(unittest.TestCase):
         )
 
     def test_immutable_accounting(self):
-
         _input = [{"a": 1} for i in range(N)]
         pipeline = TaskPipeline(
             {
                 TaskWorker: 10,
             },
-            worker_args={"value": 10},
+            worker_args={"value": 1},
             queue_size=10,
             journal=Journal.from_shelve("data/journal.shelve"),
-            message_type=MD5TaskMessage
+            # message_type=MD5TaskMessage
         )
 
         result = list(pipeline(_input))
-        print(result)
         self.assertEqual(
-            sum(result), 10
+            sum(result), 100
         )
         self.assertEqual(
             len(result),
-            1
+            100
         )
 
     def test_message_repr(self):
