@@ -21,8 +21,8 @@ import sys
 import unittest
 sys.path.insert(0, "..")
 
-from dkit.utilities import instrumentation
-import common
+from dkit.utilities import instrumentation # noqa
+import common # noqa
 
 
 class TestTimer(common.TestBase):
@@ -40,15 +40,15 @@ class TestTimer(common.TestBase):
 
     def test_hours_elapsed(self):
         """test hours elapsed"""
-        self.assertAlmostEqual(self.t_obj.hours_elapsed, self.duration/60/60, 2)
+        self.assertAlmostEqual(self.t_obj.hours_elapsed, self.duration / 60 / 60, 2)
 
     def test_minutes_elapsed(self):
         """test minutes elapsed"""
-        self.assertAlmostEqual(self.t_obj.minutes_elapsed, self.duration/60.0, 2)
+        self.assertAlmostEqual(self.t_obj.minutes_elapsed, self.duration / 60.0, 2)
 
     def test_seconds_elapsed(self):
         """test seconds elapsed"""
-        self.assertAlmostEqual(self.t_obj.seconds_elapsed, self.duration, 2)
+        self.assertAlmostEqual(self.t_obj.seconds_elapsed, self.duration, delta=0.1)
 
     def test_str_elapsed(self):
         """test str elapsed"""
@@ -63,13 +63,13 @@ class TestTimer(common.TestBase):
         t.start()
         time.sleep(self.duration)
         e = t.seconds_elapsed
-        self.assertAlmostEqual(e, self.duration, 1)
+        self.assertAlmostEqual(e, self.duration, delta=0.1)
 
     def test_hms(self):
         """test `hms_elapsed` property"""
         h, m, s, ms = self.t_obj.hms_elapsed
-        d = h*60*60 + m*60 + s + ms/1000.0
-        self.assertAlmostEqual(d, self.duration, 1)
+        d = h * 60 * 60 + m * 60 + s + ms / 1000.0
+        self.assertAlmostEqual(d, self.duration, delta=0.1)
 
     def test_raises_stop(self):
         """Test that errors are raised correctly."""

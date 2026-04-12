@@ -176,8 +176,8 @@ entities:
     fl: String(str_len=1)
     hwy: Integer()
     index: Integer()
-    manufacturer: String(str_len=10)
-    model: String(str_len=22)
+    manufacturer: String(str_len=9)
+    model: String(str_len=19)
     trans: String(str_len=10)
     year: Integer()
   mpg1:
