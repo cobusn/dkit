@@ -1,0 +1,5 @@
+operational:
+  server: acme.com
+  port: 8080
+service:
+  product: widget
