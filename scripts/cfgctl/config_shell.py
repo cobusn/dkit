@@ -17,6 +17,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Interactive shell utilities for editing JSON and YAML configuration files.
+
+This module provides file load/save helpers and the ``ConfigShell`` command
+interpreter used by ``cfgctl``. The shell exposes nested configuration data as
+filesystem-like paths so users can inspect, navigate, modify, encrypt, and save
+document content from an interactive prompt or through command dispatch.
+"""
 import json
 import yaml
 import shlex
@@ -32,6 +39,10 @@ except ImportError:
     readline = None
 
 __version__ = "26.4.1"
+__all__ = [
+    "__version__",
+    "ConfigShell",
+]
 
 
 def load_file(path):
