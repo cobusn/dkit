@@ -23,6 +23,7 @@ Execute ETL jobs
 """
 from . import module, options
 from dkit.etl.model import DOC_SECTION
+from dkit.doc2 import builder
 
 
 def value_by_priority(*values, default=None):
@@ -76,6 +77,10 @@ class BuildModule(module.MultiCommandModule):
             )
         )
 
+    def do_init(self):
+        """initialise a folder for a document project"""
+        builder.ProjectFolderInitializer(self.args.path)()
+
     def do_doc(self):
         """create pdf document from markdown file(s)"""
         from dkit.doc import builder
@@ -93,13 +98,16 @@ class BuildModule(module.MultiCommandModule):
 
     def do_report(self):
         """run report"""
-        from dkit.doc import builder
-        b = builder.ReportBuilder.from_file(self.args.report)
-        b.run()
+        b = builder.Builder.from_file(self.args.report)
+        b.build()
 
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser()
+
+        # init
+        parser_init = self.sub_parser.add_parser("init", help=self.do_init.__doc__)
+        parser_init.add_argument("path", help="path to init folder", default=".")
 
         # doc
         parser_doc = self.sub_parser.add_parser("doc", help=self.do_doc.__doc__)

@@ -33,6 +33,8 @@ packages=[
     "dkit.parsers",
     "dkit.plot",
     "dkit.resources",
+    "dkit.resources.src",
+    "dkit.resources.templates",
     "dkit.shell",
     "dkit.utilities",
     "lib_dk"

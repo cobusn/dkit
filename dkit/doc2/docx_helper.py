@@ -131,9 +131,3 @@ def add_hyperlink(paragraph, text, url):
     hyperlink.append(new_run._element)
     paragraph._p.append(hyperlink)
     return hyperlink
-
-
-document = docx.Document()
-p = document.add_paragraph('A plain paragraph having some ')
-add_hyperlink(p, 'Link to my site', "http://supersitedelamortquitue.fr")
-document.save('demo_hyperlink.docx')

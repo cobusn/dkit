@@ -355,30 +355,23 @@ def month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:
     )
 
 
-def short_month_day_id(date_time: datetime) -> Tuple[int, int]:
+def short_month_day_id(date_time: AnyDate) -> Tuple[int, int]:
     """calculate month_id and date_id
 
-    This function is timezone aware
+    Accepts both date and datetime objects. For timezone-aware datetimes,
+    the year/month/day are read as-is from the object — the caller is
+    responsible for ensuring the correct timezone before calling.
 
     args:
-        * date_time: datetime object
+        date_time: date or datetime object
 
     returns:
-        month_id: int in format YYYYMMDD
+        month_id: int in format YYYYMM01
         day_id: int in format YYYYMMDD
 
     """
-    month = datetime(
-        date_time.year, date_time.month, 1, tzinfo=date_time.tzinfo
-    )
-    day = datetime(
-        date_time.year, date_time.month, date_time.day,
-        tzinfo=date_time.tzinfo
-    )
-    return (
-        int(month.strftime("%Y%m%d")),
-        int(day.strftime("%Y%m%d"))
-    )
+    base = date_time.year * 10000 + date_time.month * 100
+    return base + 1, base + date_time.day
 
 
 def short_month_day_id_2(timestamp: int, time_zone) -> Tuple[int, int]:

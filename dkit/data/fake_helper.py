@@ -9,6 +9,7 @@ from faker.providers import BaseProvider
 from . import helpers
 from .. import DEFAULT_LOCALE
 from ..etl.model import Entity
+from ..utilities.time_helper import short_month_day_id
 import logging
 import numpy as np
 import decimal
@@ -186,10 +187,10 @@ def generate_data_rows(n=1000):
             "int16": np.random.randint(0, 1000),
             "int32": np.random.randint(0, 1000),
             "int64": np.random.randint(0, 1000),
-            #"int8": np.random.randint(0, 100, dtype=np.int8),
-            #"int16": np.random.randint(0, 10000, dtype=np.int16),
-            #"int32": np.random.randint(0, 1000, dtype=np.int32),
-            #"int64": np.random.randint(0, 1000, dtype=np.int64),
+            # "int8": np.random.randint(0, 100, dtype=np.int8),
+            # "int16": np.random.randint(0, 10000, dtype=np.int16),
+            # "int32": np.random.randint(0, 1000, dtype=np.int32),
+            # "int64": np.random.randint(0, 1000, dtype=np.int64),
             "string": fake.sentence(),
             "boolean": random.choice([True, False]),
             "binary": b"abcdefh1243",
@@ -234,3 +235,65 @@ def random_string(length: int = 25):
     """
     letters = string.ascii_letters
     return ''.join(random.choice(letters) for i in range(length))
+
+
+_SALES_REGIONS = ["North", "South", "East", "West", "Central"]
+
+_SALES_PRODUCTS = {
+    "Electronics": ["Laptop", "Tablet", "Monitor", "Keyboard", "Headphones"],
+    "Office Supplies": ["Paper", "Pens", "Stapler", "Folders", "Binders"],
+    "Furniture": ["Desk", "Chair", "Bookshelf", "Cabinet", "Lamp"],
+    "Software": ["Productivity Suite", "Antivirus", "Design Tool", "ERP License", "CRM License"],
+    "Networking": ["Router", "Switch", "Cable", "Access Point", "Firewall"],
+}
+
+
+def sales_transactions(n: int = 1000, start_date: str = "-2y", end_date: str = "now"):
+    """Generate fake sales transaction records.
+
+    Yields dicts with the following fields:
+
+    - month_id: integer month identifier derived from date
+    - date: transaction date
+    - region: sales region
+    - product_category: product category
+    - product: product name
+    - units: number of units sold
+    - unit_price: price per unit
+    - revenue: total revenue (units × unit_price)
+    - salesperson: name of salesperson
+
+    Args:
+        n: number of records to generate.
+        start_date: earliest transaction date as a faker relative date string.
+        end_date: latest transaction date as a faker relative date string.
+
+    Yields:
+        dict: one sales transaction record.
+
+    >>> rows = list(sales_transactions(10))
+    >>> len(rows)
+    10
+    >>> set(rows[0].keys()) == {"month_id", "date", "region", "product_category", "product", "units", "unit_price", "revenue", "salesperson"}
+    True
+    """
+    fake = Factory.create(locale=DEFAULT_LOCALE)
+    categories = list(_SALES_PRODUCTS.keys())
+    for _ in range(n):
+        category = random.choice(categories)
+        product = random.choice(_SALES_PRODUCTS[category])
+        units = random.randint(1, 100)
+        unit_price = round(random.uniform(5.0, 500.0), 2)
+        date_ = fake.date_between(start_date=start_date, end_date=end_date)
+        month_id, _ = short_month_day_id(date_)
+        yield {
+            "month_id": month_id,
+            "date": date_,
+            "region": random.choice(_SALES_REGIONS),
+            "product_category": category,
+            "product": product,
+            "units": units,
+            "unit_price": unit_price,
+            "revenue": round(units * unit_price, 2),
+            "salesperson": fake.name(),
+        }

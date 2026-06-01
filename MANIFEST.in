@@ -3,3 +3,4 @@ include dkit/resources/*.csv
 include dkit/resources/*.yaml
 include dkit/resources/*.ttf
 include dkit/resources/*.txt
+include dkit/resources/templates/*.md
