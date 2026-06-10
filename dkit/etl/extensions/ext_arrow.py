@@ -124,8 +124,8 @@ def render_decimal_type(definition: FieldDefinition) -> str:
 
 ARROW_TYPE_SPECS = {
     "float": {
-        "runtime": lambda t: pa.float64(),
-        "render": lambda t: "pa.float64()",
+        "runtime": lambda t: pa.float32(),
+        "render": lambda t: "pa.float32()",
     },
     "double": {
         "runtime": lambda t: pa.float64(),
