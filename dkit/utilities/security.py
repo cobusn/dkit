@@ -138,6 +138,34 @@ class AbstractEncryptor(ABC):
         return secrets.token_bytes(16)
 
     @classmethod
+    def from_legacy_password(cls, password: str):
+        """Derive a Fernet-compatible key from a plain text password.
+
+        The same ``password`` and ``salt`` combination always produces the
+        same key, so the salt must be stored alongside any encrypted data
+        to allow future decryption. Use ``generate_salt()`` to create a
+        suitable salt.
+
+        This is a legacy version of the function, use the new one instead
+
+        Args:
+            password: plain text password.
+            salt: 16-byte salt. Use ``generate_salt()`` to create one.
+
+        Returns:
+            A new encryptor instance initialised with the derived key.
+        """
+        salt = str(math.pi)[:17].encode()
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=4800,
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return cls(key.decode())
+
+    @classmethod
     def from_password(cls, password: str, salt: bytes) -> Self:
         """Derive a Fernet-compatible key from a plain text password.
 

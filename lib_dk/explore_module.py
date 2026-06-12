@@ -295,9 +295,10 @@ class ExploreModule(module.MultiCommandModule):
             folder = self.args.jsonl
             os.makedirs(self.args.jsonl, exist_ok=True)
             for table, data in sample.items():
-                fname = f"{folder}/{table}.jsonl"
+                fname = f"{table}.jsonl"
+                out_path = os.path.join(folder, fname)
                 logger.info(f"writing to {fname}")
-                with sink.load(fname) as outfile:
+                with sink.load(out_path) as outfile:
                     outfile.process(data)
 
     def do_view(self):
