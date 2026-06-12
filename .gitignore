@@ -135,3 +135,4 @@ examples/arrow_data/*
 test/dk_testdata/spark.py
 test/dk_testdata/tst.ini
 attic/*
+resume_*
