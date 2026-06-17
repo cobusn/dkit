@@ -103,7 +103,7 @@ class ConfigShell(Cmd):
     intro = "Config CLI. Type help or ? to list commands."
     prompt = "cfg:/ > "
 
-    def __init__(self, path:str, token: str=None):
+    def __init__(self, path: str, token: str = None):
         super().__init__()
         self.path = path
         self.raw = load_file(path)
@@ -301,6 +301,13 @@ class ConfigShell(Cmd):
         label = target or self._cwd_display()
         print(f"Copied {label}")
 
+    def _decode(self, value: str):
+        try:
+            fernet = Fernet(self.token)
+        except (TypeError, ValueError):
+            raise ValueError("Invalid token provided")
+        return fernet.decrypt(value.encode()).decode()
+
     def _encode(self, value: str):
         if not isinstance(value, str):
             raise ValueError(f"Cannot encode non-string value: {type(value).__name__}")
@@ -320,6 +327,18 @@ class ConfigShell(Cmd):
             elif len(args) == 2:
                 path, value = args
                 self._set_value(path, self._encode(value))
+            else:
+                raise TypeError("Usage: encode <path> [value]")
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Error: {e}")
+
+    def do_decode(self, arg):
+        """Decode value at specified path"""
+        args = shlex.split(arg, posix=False)
+        try:
+            if len(args) == 1:
+                path = args[0]
+                print(self._decode(self._get_value(path)))
             else:
                 raise TypeError("Usage: encode <path> [value]")
         except (KeyError, ValueError, TypeError) as e:
@@ -440,6 +459,9 @@ class ConfigShell(Cmd):
         """Exit the shell on end-of-file, warning if there are unsaved changes."""
         print()
         return self.do_exit(arg)
+
+    def complete_decode(self, text, line, begidx, endidx):
+        return self._complete_keys(text)
 
     def complete_encode(self, text, line, begidx, endidx):
         return self._complete_keys(text)
