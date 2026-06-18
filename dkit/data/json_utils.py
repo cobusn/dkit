@@ -294,6 +294,7 @@ class JsonSerializer(object):
             the_type = obj.pop('__type__')
         except Exception:
             return obj
+
         return self.__codecs[the_type].decode(obj)
 
     def dump(self, obj, fp, **kwargs):
