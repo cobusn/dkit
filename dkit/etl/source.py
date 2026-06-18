@@ -307,11 +307,7 @@ class JsonlSource(AbstractMultiReaderSource):
     def __init__(self, reader_list, chunk_size=1024*1024*5, field_names=None,
                  log_trigger=DEFAULT_LOG_TRIGGER, skip_lines=0, **kwargs):
         super().__init__(reader_list, field_names, log_trigger=log_trigger, **kwargs)
-        self.json = ju.JsonSerializer(
-            ju.DateCodec(),
-            ju.DateTimeCodec(),
-            encoder=json
-        )
+        self.json = ju.make_encoder()
         self.chunk_size = chunk_size
 
     def parse_chunk(self, in_file):
