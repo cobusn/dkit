@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """oax — OpenAPI Explorer. Interactive shell for exploring OpenAPI 3.x specs."""
 
-__version__ = "26.6.0"
+__version__ = "v26.06.1"
 
 import cmd
 import json
@@ -147,8 +147,13 @@ def load_spec(source: str) -> dict:
 
     if jsonref is not None:
         base_uri = source if urlparse(source).scheme in ("http", "https") else f"file://{os.path.abspath(source)}"
-        resolved = jsonref.replace_refs(raw, base_uri=base_uri, lazy_load=False)
-        return json.loads(json.dumps(resolved))
+        resolved = jsonref.replace_refs(
+            raw,
+            base_uri=base_uri,
+            lazy_load=False,
+            proxies=False,
+        )
+        return resolved
     return raw
 
 
