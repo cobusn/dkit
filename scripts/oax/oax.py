@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """oax — OpenAPI Explorer. Interactive shell for exploring OpenAPI 3.x specs."""
 
-__version__ = "v26.06.1"
-
 import cmd
 import json
 import os
+import re
+import shlex
+from pprint import pformat
 import sys
 import textwrap
 from urllib.parse import urlparse
@@ -33,6 +34,13 @@ try:
     RICH = True
 except ImportError:
     RICH = False
+
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
+__version__ = "26.6.3"
 
 
 # ---------------------------------------------------------------------------
@@ -77,10 +85,8 @@ def kv(key, value, indent=0):
 
 
 def make_table(columns, rows, title=None):
-    """Return a Rich Table or print a plain text table depending on settings."""
-    inst = OAX._instance
-    use_table = inst and inst.opt_format == "table"
-    if RICH and _is_color() and use_table:
+    """Return a Rich Table when available, otherwise print plain text."""
+    if RICH:
         t = Table(title=title, show_lines=False, header_style="bold magenta")
         for col in columns:
             t.add_column(col)
@@ -134,6 +140,13 @@ def _load_raw(source: str) -> dict:
 
 
 def load_spec(source: str) -> dict:
+    """Load and resolve an OpenAPI spec from a source."""
+    _, resolved = _load_spec_data(source)
+    return resolved
+
+
+def _load_spec_data(source: str):
+    """Return raw and resolved OpenAPI spec data for a source."""
     raw = _load_raw(source)
     version = str(raw.get("openapi", raw.get("swagger", "unknown")))
     if version.startswith("2."):
@@ -145,6 +158,7 @@ def load_spec(source: str) -> dict:
     if not version.startswith("3."):
         raise ValueError(f"Unsupported spec version: {version}. Only OpenAPI 3.x is supported.")
 
+    resolved = raw
     if jsonref is not None:
         base_uri = source if urlparse(source).scheme in ("http", "https") else f"file://{os.path.abspath(source)}"
         resolved = jsonref.replace_refs(
@@ -153,8 +167,7 @@ def load_spec(source: str) -> dict:
             lazy_load=False,
             proxies=False,
         )
-        return resolved
-    return raw
+    return raw, resolved
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +191,36 @@ def _find_op(spec, path, method):
     return _paths(spec).get(path, {}).get(method.lower())
 
 
+def _raw_operation(source, path, method, raw_spec=None):
+    """Return the raw operation from the original loaded source."""
+    if raw_spec is not None:
+        return _find_op(raw_spec, path, method)
+    if not source:
+        return None
+    raw = _load_raw(source)
+    return _find_op(raw, path, method)
+
+
+def _raw_spec_or_resolved(source, resolved_spec, raw_spec=None):
+    """Return raw spec data, falling back to resolved data if unavailable."""
+    if raw_spec is not None:
+        return raw_spec
+    if source:
+        try:
+            return _load_raw(source)
+        except Exception:
+            return resolved_spec
+    return resolved_spec
+
+
+def _json_search_blob(value):
+    """Return lower-case JSON text without failing on resolved reference cycles."""
+    try:
+        return json.dumps(value).lower()
+    except (TypeError, ValueError):
+        return ""
+
+
 def _schemas(spec):
     return spec.get("components", {}).get("schemas", {})
 
@@ -186,66 +229,330 @@ def _security_schemes(spec):
     return spec.get("components", {}).get("securitySchemes", {})
 
 
-def _resolve_schema(schema, indent=0, visited=None):
-    """Return a flat list of (indent, label, type, description) tuples."""
+def _unwrap_trivial_composition(schema):
+    """Collapse single-item composition wrappers into their item schema."""
+    current = schema
+    while isinstance(current, dict):
+        changed = False
+        for key in ("allOf", "oneOf", "anyOf"):
+            composed = current.get(key)
+            if isinstance(composed, list) and len(composed) == 1:
+                child = composed[0]
+                if isinstance(child, dict):
+                    current = child
+                    changed = True
+                    break
+        if not changed:
+            return current
+    return current
+
+
+def _unwrap_single_property_container(schema):
+    """Collapse object wrappers that only contain one property."""
+    current = _unwrap_trivial_composition(schema)
+    while isinstance(current, dict):
+        if current.get("type") != "object":
+            return current
+        properties = current.get("properties", {})
+        if len(properties) != 1:
+            return current
+        child = next(iter(properties.values()))
+        if not isinstance(child, dict):
+            return current
+        current = _unwrap_trivial_composition(child)
+    return current
+
+
+def _schema_details(schema):
+    """Return compact detail strings for a schema node."""
+    if not isinstance(schema, dict):
+        return []
+    details = []
+    format_value = schema.get("format")
+    if format_value:
+        details.append(f"format={format_value}")
+    if "example" in schema:
+        details.append(f"example={schema['example']!r}")
+    if "default" in schema:
+        details.append(f"default={schema['default']!r}")
+    enum_value = schema.get("enum")
+    if enum_value:
+        details.append(f"enum={enum_value!r}")
+    if schema.get("nullable"):
+        details.append("nullable")
+    if schema.get("readOnly"):
+        details.append("readOnly")
+    if schema.get("writeOnly"):
+        details.append("writeOnly")
+    for key in ("minimum", "maximum", "minLength", "maxLength", "pattern", "multipleOf", "minItems", "maxItems"):
+        if key in schema:
+            details.append(f"{key}={schema[key]!r}")
+    if schema.get("uniqueItems"):
+        details.append("uniqueItems")
+    return details
+
+
+def _schema_shape_summary(schema):
+    """Return a concise one-line summary of a schema shape."""
+    schema = _unwrap_trivial_composition(schema)
+    if not isinstance(schema, dict):
+        return "object"
+    ref = schema.get("$ref")
+    if ref:
+        return _ref_label(ref)
+    for key in ("allOf", "oneOf", "anyOf"):
+        composed = schema.get(key)
+        if isinstance(composed, list) and composed:
+            parts = [_schema_shape_summary(part) for part in composed[:3]]
+            suffix = "..." if len(composed) > 3 else ""
+            return f"{key}({', '.join(parts)}{suffix})"
+    if schema.get("type") == "array":
+        return f"array of {_schema_shape_summary(schema.get('items', {}))}"
+    if schema.get("type") == "object" or "properties" in schema:
+        props = list(schema.get("properties", {}).keys())
+        if not props:
+            return "object"
+        preview = ", ".join(props[:4])
+        if len(props) > 4:
+            preview += ", ..."
+        return f"object[{preview}]"
+    return schema.get("type", "object")
+
+
+def _schema_type_label(schema):
+    """Return a display label for a schema type column."""
+    schema = _unwrap_trivial_composition(schema)
+    if not isinstance(schema, dict):
+        return "object"
+    ref = schema.get("$ref")
+    if ref:
+        return _ref_label(ref)
+    return _schema_shape_summary(schema)
+
+
+def _schema_example(schema, spec=None, visited=None):
+    """Build a compact example value for a schema."""
+    schema = _unwrap_trivial_composition(schema)
+    if visited is None:
+        visited = set()
+    if not isinstance(schema, dict):
+        return None
+    schema_id = id(schema)
+    if schema_id in visited:
+        return None
+    visited.add(schema_id)
+
+    if "example" in schema:
+        return schema["example"]
+    if "default" in schema:
+        return schema["default"]
+    enum_value = schema.get("enum")
+    if enum_value:
+        return enum_value[0]
+
+    ref = schema.get("$ref")
+    if ref and spec is not None:
+        target = _schemas(spec).get(_ref_label(ref))
+        if target is not None:
+            return _schema_example(target, spec, visited)
+
+    schema_type = schema.get("type", "")
+    if schema_type == "object" or "properties" in schema:
+        result = {}
+        properties = schema.get("properties", {})
+        required = set(schema.get("required", []))
+        ordered = [name for name in properties if name in required]
+        ordered.extend([name for name in properties if name not in required])
+        for name in ordered:
+            child = _schema_example(properties.get(name, {}), spec, visited)
+            if child is not None:
+                result[name] = child
+        return result
+    if schema_type == "array":
+        item = _schema_example(schema.get("items", {}), spec, visited)
+        return [item] if item is not None else []
+    if schema_type == "boolean":
+        return True
+    if schema_type == "integer":
+        return 0
+    if schema_type == "number":
+        return 0
+    if schema_type == "string":
+        if schema.get("format") == "date-time":
+            return "2000-01-01 08:00:00"
+        if schema.get("format") == "date":
+            return "2000-01-01"
+        if schema.get("format") == "uuid":
+            return "00000000-0000-0000-0000-000000000000"
+        return "string"
+    return None
+
+
+def _resolve_schema(schema, indent=0, visited=None, compact=False, detail_depth=0):
+    """Return a flat list of schema rows."""
     if visited is None:
         visited = set()
     if not isinstance(schema, dict):
         return []
+    schema = _unwrap_trivial_composition(schema)
+    schema_id = id(schema)
+    if schema_id in visited:
+        return []
+    visited.add(schema_id)
     lines = []
     schema_type = schema.get("type", "")
     description = schema.get("description", "")
     required_fields = set(schema.get("required", []))
 
+    for key in ("allOf", "oneOf", "anyOf"):
+        composed = schema.get(key)
+        if isinstance(composed, list) and composed:
+            lines.append((indent, key, "", "", description))
+            for index, part in enumerate(composed, start=1):
+                if not isinstance(part, dict):
+                    lines.append((indent + 2, f"{key}[{index}]", str(part), "", ""))
+                    continue
+                ptype = _schema_type_label(part)
+                pdesc = part.get("description", "")
+                pdetails = ", ".join(_schema_details(part))
+                lines.append((indent + 2, f"{key}[{index}]", ptype, pdetails, pdesc))
+                if not compact or detail_depth > 0:
+                    lines.extend(
+                        _resolve_schema(
+                            part,
+                            indent + 4,
+                            visited,
+                            compact=compact,
+                            detail_depth=max(detail_depth - 1, 0),
+                        )
+                    )
+
     if schema_type == "object" or "properties" in schema:
         for prop, prop_schema in schema.get("properties", {}).items():
             req = "*" if prop in required_fields else ""
-            ptype = prop_schema.get("type", prop_schema.get("$ref", "object"))
+            ptype = _schema_type_label(prop_schema)
             pdesc = prop_schema.get("description", "")
-            lines.append((indent, f"{prop}{req}", ptype, pdesc))
-            if prop_schema.get("type") == "object" or "properties" in prop_schema:
-                lines.extend(_resolve_schema(prop_schema, indent + 2, visited))
-            elif prop_schema.get("type") == "array":
-                items = prop_schema.get("items", {})
-                lines.extend(_resolve_schema(items, indent + 2, visited))
+            pdetails = ", ".join(_schema_details(prop_schema))
+            lines.append((indent, f"{prop}{req}", ptype, pdetails, pdesc))
+            if not compact or detail_depth > 0:
+                if (
+                    prop_schema.get("type") == "object"
+                    or "properties" in prop_schema
+                    or any(k in prop_schema for k in ("allOf", "oneOf", "anyOf"))
+                ):
+                    lines.extend(
+                        _resolve_schema(
+                            prop_schema,
+                            indent + 2,
+                            visited,
+                            compact=compact,
+                            detail_depth=max(detail_depth - 1, 0),
+                        )
+                    )
+                elif prop_schema.get("type") == "array":
+                    items = prop_schema.get("items", {})
+                    lines.extend(
+                        _resolve_schema(
+                            items,
+                            indent + 2,
+                            visited,
+                            compact=compact,
+                            detail_depth=max(detail_depth - 1, 0),
+                        )
+                    )
     elif schema_type == "array":
-        items = schema.get("items", {})
-        lines.append((indent, "items", items.get("type", "object"), items.get("description", "")))
-        lines.extend(_resolve_schema(items, indent + 2, visited))
+        items = _unwrap_trivial_composition(schema.get("items", {}))
+        lines.append((indent, "items", _schema_type_label(items), ", ".join(_schema_details(items)), items.get("description", "")))
+        if not compact or detail_depth > 0:
+            lines.extend(
+                _resolve_schema(
+                    items,
+                    indent + 2,
+                    visited,
+                    compact=compact,
+                    detail_depth=max(detail_depth - 1, 0),
+                )
+            )
     return lines
 
 
-# ---------------------------------------------------------------------------
-# Code generation helpers
-# ---------------------------------------------------------------------------
-
-_OA_TYPE_MAP = {
-    "string": "str",
-    "integer": "int",
-    "number": "float",
-    "boolean": "bool",
-    "object": "Dict[str, Any]",
-    "array": "List[Any]",
-}
+def _request_body_schemas(op):
+    """Return request-body content types and schemas for an operation."""
+    rb = op.get("requestBody")
+    if not rb:
+        return None, []
+    schemas = []
+    for content_type, media in rb.get("content", {}).items():
+        schemas.append((content_type, media.get("schema", {})))
+    return rb, schemas
 
 
-def _py_type(schema: dict) -> str:
+def _collect_schema_refs(schema, refs=None):
+    """Collect referenced schema names from a raw schema tree."""
+    if refs is None:
+        refs = []
     if not isinstance(schema, dict):
-        return "Any"
-    oa_type = schema.get("type", "")
-    if oa_type == "array":
-        items = schema.get("items", {})
-        return f"List[{_py_type(items)}]"
-    if oa_type == "object" or "properties" in schema:
-        return "Dict[str, Any]"
-    return _OA_TYPE_MAP.get(oa_type, "Any")
+        return refs
+    ref = schema.get("$ref")
+    if ref:
+        refs.append(ref)
+    for key in ("properties", "items", "allOf", "oneOf", "anyOf"):
+        value = schema.get(key)
+        if isinstance(value, dict):
+            if key == "properties":
+                for child in value.values():
+                    _collect_schema_refs(child, refs)
+            else:
+                _collect_schema_refs(value, refs)
+        elif isinstance(value, list):
+            for child in value:
+                _collect_schema_refs(child, refs)
+    return refs
+
+
+def _ref_label(ref):
+    """Return the short label for a schema reference."""
+    if isinstance(ref, str) and ref.startswith("#/components/schemas/"):
+        return ref.rsplit("/", 1)[-1]
+    return str(ref)
+
+
+def _render_schema(schema, refs=None, compact=False):
+    """Render a schema as a property table."""
+    inst = OAX._instance
+    show_details = bool(inst and inst.opt_details)
+    display_schema = _unwrap_single_property_container(schema) if compact else schema
+    out(f"  Shape: {_schema_shape_summary(display_schema)}")
+    if refs:
+        labels = ", ".join(_ref_label(ref) for ref in refs)
+        out(f"  References: {labels}")
+    detail_depth = 1 if compact and show_details else 0
+    lines = _resolve_schema(display_schema, compact=compact, detail_depth=detail_depth)
+    if lines:
+        if show_details:
+            rows = [(" " * ind + name, typ, details, desc) for ind, name, typ, details, desc in lines]
+            make_table(["Property *=required", "Type", "Details", "Description"], rows)
+        else:
+            rows = [(" " * ind + name, typ, desc) for ind, name, typ, details, desc in lines]
+            make_table(["Property *=required", "Type", "Description"], rows)
+    else:
+        out(f"  Type: {display_schema.get('type', 'object')}")
 
 
 def _model_name(name: str) -> str:
-    return "".join(part.capitalize() for part in name.replace("-", "_").split("_"))
+    parts = re.split(r"[_\-]+", name)
+    converted = []
+    for part in parts:
+        if not part:
+            continue
+        if any(ch.isupper() for ch in part[1:]):
+            converted.append(part)
+        else:
+            converted.append(part[:1].upper() + part[1:].lower())
+    return "".join(converted)
 
 
-def _generate_pydantic_model(name: str, schema: dict) -> list[str]:
+def _generate_pydantic_model(name: str, schema: dict, name_map: dict[int, str], spec: dict) -> list[str]:
     """Return lines of Python source for a Pydantic model."""
     lines = [f"class {_model_name(name)}(BaseModel):"]
     properties = schema.get("properties", {})
@@ -254,7 +561,7 @@ def _generate_pydantic_model(name: str, schema: dict) -> list[str]:
         lines.append("    pass")
         return lines
     for prop, prop_schema in properties.items():
-        py_type = _py_type(prop_schema)
+        py_type = _schema_python_type(prop_schema, name_map, spec)
         safe_name = prop.replace("-", "_")
         if prop in required:
             lines.append(f"    {safe_name}: {py_type}")
@@ -269,146 +576,95 @@ def _generate_pydantic_model(name: str, schema: dict) -> list[str]:
 
 def _collect_models(schema: dict, name: str, spec: dict) -> dict[str, dict]:
     """Walk a schema and collect named object schemas worth generating as models."""
-    models = {}
-    if not isinstance(schema, dict):
-        return models
-    if schema.get("type") == "object" or "properties" in schema:
-        models[name] = schema
-        for prop, prop_schema in schema.get("properties", {}).items():
-            models.update(_collect_models(prop_schema, _model_name(f"{name}_{prop}"), spec))
-    elif schema.get("type") == "array":
-        items = schema.get("items", {})
-        models.update(_collect_models(items, name, spec))
+    models, _ = _collect_model_artifacts(schema, name, spec)
     return models
 
 
-def generate_codegen(spec: dict, path: str, method: str) -> str:
-    op = _find_op(spec, path, method)
-    if op is None:
-        return ""
+def _collect_model_artifacts(schema: dict, name: str, spec: dict, models=None, name_map=None):
+    """Collect model definitions and a schema-id to model-name mapping."""
+    if models is None:
+        models = {}
+    if name_map is None:
+        name_map = {}
+    if not isinstance(schema, dict):
+        return models, name_map
+    schema = _unwrap_trivial_composition(schema)
+    if not isinstance(schema, dict):
+        return models, name_map
+    ref = schema.get("$ref")
+    if ref and spec is not None:
+        target = _schemas(spec).get(_ref_label(ref))
+        if target is not None:
+            return _collect_model_artifacts(target, name, spec, models, name_map)
+    schema_type = schema.get("type", "")
+    if schema_type == "object" or "properties" in schema:
+        models[name] = schema
+        name_map[id(schema)] = _model_name(name)
+        for prop, prop_schema in schema.get("properties", {}).items():
+            _collect_model_artifacts(prop_schema, f"{name}_{prop}", spec, models, name_map)
+    elif schema_type == "array":
+        items = schema.get("items", {})
+        _collect_model_artifacts(items, name, spec, models, name_map)
+    return models, name_map
 
-    servers = spec.get("servers", [{}])
-    base_url = servers[0].get("url", "https://api.example.com").rstrip("/")
 
-    params = op.get("parameters", [])
-    path_params = [p for p in params if p.get("in") == "path"]
-    query_params = [p for p in params if p.get("in") == "query"]
-    header_params = [p for p in params if p.get("in") == "header"]
+def _schema_python_type(schema: dict, name_map=None, spec: dict | None = None) -> str:
+    """Return the Python type annotation for an OpenAPI schema node."""
+    if not isinstance(schema, dict):
+        return "Any"
+    schema = _unwrap_trivial_composition(schema)
+    if not isinstance(schema, dict):
+        return "Any"
+    ref = schema.get("$ref")
+    if ref:
+        if spec is not None and name_map is not None:
+            target = _schemas(spec).get(_ref_label(ref))
+            if target is not None and id(target) in name_map:
+                return name_map[id(target)]
+        return _model_name(_ref_label(ref))
+    schema_type = schema.get("type", "")
+    if schema_type == "array":
+        return f"List[{_schema_python_type(schema.get('items', {}), name_map, spec)}]"
+    if schema_type == "object" or "properties" in schema:
+        if name_map is not None and id(schema) in name_map:
+            return name_map[id(schema)]
+        return "Dict[str, Any]"
+    return {
+        "string": "str",
+        "integer": "int",
+        "number": "float",
+        "boolean": "bool",
+    }.get(schema_type, "Any")
 
-    rb = op.get("requestBody")
-    body_schema = None
-    body_content_type = "application/json"
-    if rb:
-        for ct, media in rb.get("content", {}).items():
-            body_schema = media.get("schema", {})
-            body_content_type = ct
-            break
 
-    # Collect models
-    all_models: dict[str, dict] = {}
-    if body_schema:
-        all_models.update(_collect_models(body_schema, "RequestBody", spec))
+def _schema_model_source(name: str, schema: dict, spec: dict, include_example=False) -> str:
+    """Generate a Pydantic model module for a component schema."""
+    models, name_map = _collect_model_artifacts(schema, name, spec)
+    if not models:
+        models = {name: schema}
+        name_map = {id(schema): _model_name(name)}
 
-    success_schema = None
-    for code, resp in op.get("responses", {}).items():
-        if code.startswith("2"):
-            for ct, media in resp.get("content", {}).items():
-                success_schema = media.get("schema", {})
-                break
-            break
-    if success_schema:
-        all_models.update(_collect_models(success_schema, "Response", spec))
-
-    # Build function signature parts
-    func_name = op.get("operationId", f"{method}_{path.strip('/').replace('/', '_').replace('{','').replace('}','')}")
-    func_name = func_name.replace("-", "_")
-
-    sig_parts = []
-    for p in path_params:
-        pname = p.get("name", "param").replace("-", "_")
-        sig_parts.append(f"{pname}: {_py_type(p.get('schema', {}))}")
-    for p in query_params:
-        pname = p.get("name", "param").replace("-", "_")
-        py_t = _py_type(p.get("schema", {}))
-        if p.get("required"):
-            sig_parts.append(f"{pname}: {py_t}")
-        else:
-            sig_parts.append(f"{pname}: Optional[{py_t}] = None")
-    for p in header_params:
-        pname = p.get("name", "header").replace("-", "_")
-        sig_parts.append(f"{pname}: Optional[str] = None")
-    if body_schema:
-        body_model = _model_name("RequestBody") if all_models.get("RequestBody") else "Dict[str, Any]"
-        sig_parts.append(f"body: {body_model}")
-
-    return_type = "Any"
-    if success_schema:
-        if all_models.get("Response"):
-            return_type = _model_name("Response")
-        else:
-            return_type = _py_type(success_schema)
-
-    # Assemble output lines
     lines = []
     lines.append("from __future__ import annotations")
+    lines.append("from pprint import pformat")
     lines.append("from typing import Any, Dict, List, Optional")
-    lines.append("import requests")
     lines.append("from pydantic import BaseModel")
     lines.append("")
 
-    for mname, mschema in all_models.items():
-        lines.extend(_generate_pydantic_model(mname, mschema))
+    for mname, mschema in models.items():
+        lines.extend(_generate_pydantic_model(mname, mschema, name_map, spec))
         lines.append("")
 
-    sig = f"def {func_name}({', '.join(sig_parts)}) -> {return_type}:"
-    lines.append(sig)
+    if include_example:
+        model_class = _model_name(name)
+        example = _schema_example(schema, spec)
+        if example is not None:
+            lines.append(f"{model_class}_EXAMPLE = {model_class}.model_validate(")
+            for line in pformat(example, sort_dicts=False, width=88).splitlines():
+                lines.append(f"    {line}")
+            lines.append(")")
 
-    # URL
-    url_expr = f'"{base_url}{path}"'
-    if path_params:
-        fmt_args = ", ".join(f'{p.get("name","p")}={p.get("name","p").replace("-","_")}' for p in path_params)
-        url_expr = f'"{base_url}{path}".format({fmt_args})'
-    lines.append(f"    url = {url_expr}")
-
-    # Query params dict
-    if query_params:
-        lines.append("    params = {")
-        for p in query_params:
-            pname = p.get("name", "param")
-            lines.append(f'        "{pname}": {pname.replace("-","_")},')
-        lines.append("    }")
-    else:
-        lines.append("    params: Dict[str, Any] = {}")
-
-    # Headers dict
-    if header_params:
-        lines.append("    headers = {")
-        for p in header_params:
-            pname = p.get("name", "header")
-            lines.append(f'        "{pname}": {pname.replace("-","_")},')
-        lines.append("    }")
-    else:
-        lines.append("    headers: Dict[str, Any] = {}")
-
-    # Request call
-    call_args = ["url", "params=params", "headers=headers"]
-    if body_schema:
-        if "application/json" in body_content_type:
-            call_args.append("json=body.model_dump(exclude_none=True)")
-        else:
-            call_args.append("data=body.model_dump(exclude_none=True)")
-    lines.append(f"    response = requests.{method.lower()}({', '.join(call_args)})")
-    lines.append("    response.raise_for_status()")
-
-    # Return
-    if return_type == "Any":
-        lines.append("    return response.json()")
-    elif return_type == _model_name("Response"):
-        lines.append(f"    return {return_type}.model_validate(response.json())")
-    else:
-        lines.append("    return response.json()")
-
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip()
 
 
 # ---------------------------------------------------------------------------
@@ -424,11 +680,12 @@ class OAX(cmd.Cmd):
         super().__init__()
         OAX._instance = self
         self.spec = None
+        self.raw_spec = None
         self.source = None
         self.history_list = []
         self.opt_verbose = False
+        self.opt_details = False
         self.opt_color = True
-        self.opt_format = "table"
         try:
             import readline
             # Remove '/' and '{' from delimiters so path completion works on full paths like /foo/{id}
@@ -467,11 +724,16 @@ class OAX(cmd.Cmd):
     def _tags_list(self):
         if self.spec is None:
             return []
-        tags = set()
+        tags = {t["name"] for t in self.spec.get("tags", []) if isinstance(t, dict) and t.get("name")}
         for _, _, op in _operations(self.spec):
             for t in op.get("tags", []):
                 tags.add(t)
         return sorted(tags)
+
+    def _strip_wrapping_quotes(self, value):
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+            return value[1:-1]
+        return value
 
     def _split_path_method(self, arg, require_method=True):
         parts = arg.split()
@@ -531,6 +793,12 @@ class OAX(cmd.Cmd):
     def complete_refs(self, text, line, begidx, endidx):
         return [s for s in self._schemas_list() if s.startswith(text)]
 
+    def complete_example(self, text, line, begidx, endidx):
+        return [s for s in self._schemas_list() if s.startswith(text)]
+
+    def complete_model(self, text, line, begidx, endidx):
+        return [s for s in self._schemas_list() if s.startswith(text)]
+
     def complete_tag(self, text, line, begidx, endidx):
         return [t for t in self._tags_list() if t.startswith(text)]
 
@@ -561,7 +829,9 @@ class OAX(cmd.Cmd):
             return
         out(f"Loading {source} ...")
         try:
-            self.spec = load_spec(source)
+            raw, resolved = _load_spec_data(source)
+            self.raw_spec = raw
+            self.spec = resolved
             self.source = source
             title = self.spec.get("info", {}).get("title", "Untitled")
             version = self.spec.get("info", {}).get("version", "?")
@@ -665,15 +935,26 @@ class OAX(cmd.Cmd):
             kv("Description", op.get("description", ""))
         kv("Tags", ", ".join(op.get("tags", [])))
         params = op.get("parameters", [])
+        raw_op = _raw_operation(self.source, path, method, self.raw_spec)
         if params:
             out("\nParameters:")
             rows = [(p.get("name",""), p.get("in",""), p.get("schema",{}).get("type",""), "yes" if p.get("required") else "no", p.get("description","")) for p in params]
             make_table(["Name", "In", "Type", "Required", "Description"], rows)
-        if "requestBody" in op:
-            rb = op["requestBody"]
+        rb, schemas = _request_body_schemas(op)
+        if rb:
             out(f"\nRequest Body (required={rb.get('required', False)}):")
-            for ct, media in rb.get("content", {}).items():
+            raw_content = {}
+            if raw_op:
+                raw_content = raw_op.get("requestBody", {}).get("content", {})
+            for ct, schema in schemas:
+                refs = _collect_schema_refs(
+                    raw_content.get(ct, {}).get("schema", {})
+                )
                 out(f"  Content-Type: {ct}")
+                if refs:
+                    out(f"  Schema: {', '.join(_ref_label(ref) for ref in refs)}")
+                else:
+                    out(f"  Schema: {schema.get('type', 'object')}")
         out("\nResponses:")
         rows = [(code, resp.get("description","")) for code, resp in op.get("responses",{}).items()]
         make_table(["Code", "Description"], rows)
@@ -694,7 +975,7 @@ class OAX(cmd.Cmd):
         """tag <name>  List all operations with the given tag."""
         if not self._require_spec():
             return
-        name = arg.strip()
+        name = self._strip_wrapping_quotes(arg.strip())
         if not name:
             err("Usage: tag <name>")
             return
@@ -720,16 +1001,56 @@ class OAX(cmd.Cmd):
             return
         self._record_history(path, method)
         params = op.get("parameters", [])
-        if not params:
+        rb, schemas = _request_body_schemas(op)
+        raw_op = _raw_operation(self.source, path, method, self.raw_spec)
+        if not params and not rb:
             out("No parameters defined.")
             return
-        rows = [
-            (p.get("name",""), p.get("in",""), p.get("schema",{}).get("type",""),
-             "yes" if p.get("required") else "no",
-             p.get("description","") if self.opt_verbose else p.get("description","")[:60])
-            for p in params
-        ]
-        make_table(["Name", "In", "Type", "Required", "Description"], rows, title=f"Params: {method.upper()} {path}")
+        if params:
+            if self.opt_details:
+                rows = [
+                    (
+                        p.get("name", ""),
+                        p.get("in", ""),
+                        p.get("schema", {}).get("type", ""),
+                        ", ".join(_schema_details(p.get("schema", {}))),
+                        "yes" if p.get("required") else "no",
+                        p.get("description", "") if self.opt_verbose else p.get("description", "")[:60],
+                    )
+                    for p in params
+                ]
+                make_table(
+                    ["Name", "In", "Type", "Details", "Required", "Description"],
+                    rows,
+                    title=f"Params: {method.upper()} {path}",
+                )
+            else:
+                rows = [
+                    (
+                        p.get("name", ""),
+                        p.get("in", ""),
+                        p.get("schema", {}).get("type", ""),
+                        "yes" if p.get("required") else "no",
+                        p.get("description", "") if self.opt_verbose else p.get("description", "")[:60],
+                    )
+                    for p in params
+                ]
+                make_table(
+                    ["Name", "In", "Type", "Required", "Description"],
+                    rows,
+                    title=f"Params: {method.upper()} {path}",
+                )
+        if rb:
+            out(f"\nRequest Body (required={rb.get('required', False)}):")
+            raw_content = {}
+            if raw_op:
+                raw_content = raw_op.get("requestBody", {}).get("content", {})
+            for ct, schema in schemas:
+                refs = _collect_schema_refs(
+                    raw_content.get(ct, {}).get("schema", {})
+                )
+                out(f"  Content-Type: {ct}")
+                _render_schema(schema, refs, compact=True)
 
     def do_body(self, arg):
         """body <path> <method>  Show the request body schema."""
@@ -743,21 +1064,20 @@ class OAX(cmd.Cmd):
             err(f"Operation not found: {method.upper()} {path}")
             return
         self._record_history(path, method)
-        rb = op.get("requestBody")
+        rb, schemas = _request_body_schemas(op)
         if not rb:
             out("No request body defined.")
             return
         header(f"Request Body: {method.upper()} {path}")
         kv("Required", rb.get("required", False))
-        for ct, media in rb.get("content", {}).items():
+        raw_op = _raw_operation(self.source, path, method, self.raw_spec)
+        raw_content = {}
+        if raw_op:
+            raw_content = raw_op.get("requestBody", {}).get("content", {})
+        for ct, schema in schemas:
+            refs = _collect_schema_refs(raw_content.get(ct, {}).get("schema", {}))
             out(f"\nContent-Type: {ct}")
-            schema = media.get("schema", {})
-            lines = _resolve_schema(schema)
-            if lines:
-                rows = [(" " * ind + name, typ, desc) for ind, name, typ, desc in lines]
-                make_table(["Property *=required", "Type", "Description"], rows)
-            else:
-                out(f"  Type: {schema.get('type', 'object')}")
+            _render_schema(schema, refs, compact=True)
 
     def do_responses(self, arg):
         """responses <path> <method>  List response codes for an operation."""
@@ -798,15 +1118,38 @@ class OAX(cmd.Cmd):
             return
         header(f"Response {code}: {method.upper()} {path}")
         kv("Description", resp.get("description",""))
+        raw_op = _raw_operation(self.source, path, method, self.raw_spec)
+        raw_content = {}
+        if raw_op:
+            raw_content = raw_op.get("responses", {}).get(code, {}).get("content", {})
         for ct, media in resp.get("content", {}).items():
             out(f"\nContent-Type: {ct}")
             schema = media.get("schema", {})
-            lines = _resolve_schema(schema)
-            if lines:
-                rows = [(" " * ind + name, typ, desc) for ind, name, typ, desc in lines]
-                make_table(["Property *=required", "Type", "Description"], rows)
-            else:
-                out(f"  Type: {schema.get('type','object')}")
+            refs = _collect_schema_refs(raw_content.get(ct, {}).get("schema", {}))
+            _render_schema(schema, refs, compact=True)
+
+    def do_example(self, arg):
+        """example <schema>  Show a synthesized JSON example for a component schema."""
+        if not self._require_spec():
+            return
+        name = arg.strip()
+        if not name:
+            err("Usage: example <schema>")
+            return
+        schema = _schemas(self.spec).get(name)
+        if schema is None:
+            err(f"Schema not found: {name}")
+            return
+        example = _schema_example(schema, self.spec)
+        if example is None:
+            out("No example could be synthesized.")
+            return
+        header(f"Example: {name}")
+        rendered = json.dumps(example, indent=2, ensure_ascii=False)
+        if RICH:
+            console.print(Syntax(rendered, "json", theme="monokai"))
+        else:
+            print(rendered)
 
     def do_schemas(self, arg):
         """schemas  List all component schemas."""
@@ -832,15 +1175,9 @@ class OAX(cmd.Cmd):
             err(f"Schema not found: {name}")
             return
         header(f"Schema: {name}")
-        kv("Type", schema.get("type","object"))
         if self.opt_verbose and schema.get("description"):
             kv("Description", schema["description"])
-        lines = _resolve_schema(schema)
-        if lines:
-            rows = [(" " * ind + prop, typ, desc) for ind, prop, typ, desc in lines]
-            make_table(["Property *=required", "Type", "Description"], rows)
-        else:
-            out("(no properties)")
+        _render_schema(schema, compact=True)
 
     def do_refs(self, arg):
         """refs <name>  Find all operations and schemas that reference the named schema."""
@@ -852,7 +1189,7 @@ class OAX(cmd.Cmd):
             return
         ref_token = f'"$ref": "' # after jsonref resolution, $refs are gone — search original
         target = f"#/components/schemas/{name}"
-        raw = _load_raw(self.source)
+        raw = self.raw_spec if self.raw_spec is not None else _load_raw(self.source)
         raw_str = json.dumps(raw)
         if target not in raw_str:
             out(f"No references found to: {name}")
@@ -918,28 +1255,43 @@ class OAX(cmd.Cmd):
                 kv(f"  {scheme}", ", ".join(scopes) if scopes else "(no scopes)")
 
     def do_search(self, arg):
-        """search <term>  Full-text search across paths, summaries, descriptions, and schema names."""
+        """search <term>  Full-text search across paths, operation data, schemas, and schema metadata."""
         if not self._require_spec():
             return
         term = arg.strip().lower()
         if not term:
             err("Usage: search <term>")
             return
+        search_spec = _raw_spec_or_resolved(
+            self.source,
+            self.spec,
+            self.raw_spec,
+        )
         rows = []
-        for path, method, op in _operations(self.spec):
-            if (term in path.lower()
-                    or term in op.get("summary","").lower()
-                    or term in op.get("description","").lower()
-                    or term in op.get("operationId","").lower()):
-                rows.append(("operation", f"{method.upper()} {path}", op.get("summary","")))
-        for name in _schemas(self.spec):
-            if term in name.lower():
+        for path, method, op in _operations(search_spec):
+            op_blob = _json_search_blob(op)
+            summary = op.get("summary", "")
+            description = op.get("description", "")
+            operation_id = op.get("operationId", "")
+            if (
+                term in path.lower()
+                or term in summary.lower()
+                or term in description.lower()
+                or term in operation_id.lower()
+                or term in op_blob
+            ):
+                rows.append(("operation", f"{method.upper()} {path}", summary))
+        for name, schema in _schemas(search_spec).items():
+            schema_blob = _json_search_blob(schema)
+            if term in name.lower() or term in schema_blob:
                 rows.append(("schema", name, ""))
-        for name, scheme in _security_schemes(self.spec).items():
-            if term in name.lower():
+        for name, scheme in _security_schemes(search_spec).items():
+            scheme_blob = _json_search_blob(scheme)
+            if term in name.lower() or term in scheme_blob:
                 rows.append(("security", name, scheme.get("type","")))
         if rows:
-            make_table(["Category", "Match", "Summary"], rows, title=f'Search: "{arg.strip()}"')
+            title = f'Search: "{arg.strip()}"'
+            make_table(["Category", "Match", "Summary"], rows, title=title)
         else:
             out(f"No results for: {arg.strip()}")
 
@@ -995,26 +1347,88 @@ class OAX(cmd.Cmd):
         else:
             print(cmd_str)
 
-    def complete_codegen(self, text, line, begidx, endidx):
-        return self._complete_path_method(text, line, begidx, endidx)
-
-    def do_codegen(self, arg):
-        """codegen <path> <method>  Generate a Python requests + Pydantic snippet for an operation."""
+    def do_model(self, arg):
+        """model <schema> [--example] [--example-only] [--json] [--copy] [--file <path>]  Export a Pydantic model for a schema."""
         if not self._require_spec():
             return
-        path, method = self._split_path_method(arg)
-        if path is None:
+        try:
+            parts = shlex.split(arg)
+        except ValueError as exc:
+            err(str(exc))
             return
-        if _find_op(self.spec, path, method) is None:
-            err(f"Operation not found: {method.upper()} {path}")
+        if not parts:
+            err("Usage: model <schema> [--example] [--example-only] [--json] [--copy] [--file <path>]")
             return
-        self._record_history(path, method)
-        code = generate_codegen(self.spec, path, method)
-        header(f"codegen: {method.upper()} {path}")
-        if RICH and _is_color():
-            console.print(Syntax(code, "python", theme="monokai", line_numbers=True))
+        name = parts.pop(0)
+        include_example = False
+        example_only = False
+        json_output = False
+        copy_to_clipboard = False
+        file_path = None
+        idx = 0
+        while idx < len(parts):
+            token = parts[idx]
+            if token in ("--example", "-e"):
+                include_example = True
+            elif token == "--example-only":
+                include_example = True
+                example_only = True
+            elif token == "--json":
+                json_output = True
+            elif token == "--copy":
+                copy_to_clipboard = True
+            elif token == "--file":
+                idx += 1
+                if idx >= len(parts):
+                    err("model: --file requires a path")
+                    return
+                file_path = parts[idx]
+            else:
+                err(f"Unknown option: {token}")
+                err("Usage: model <schema> [--example] [--example-only] [--json] [--copy] [--file <path>]")
+                return
+            idx += 1
+
+        schema = _schemas(self.spec).get(name)
+        if schema is None:
+            err(f"Schema not found: {name}")
+            return
+
+        if example_only:
+            example = _schema_example(schema, self.spec)
+            if example is None:
+                out("No example could be synthesized.")
+                return
+            if json_output:
+                rendered = json.dumps(example, indent=2, ensure_ascii=False)
+            else:
+                rendered = pformat(example, sort_dicts=False, width=88)
         else:
-            print(code)
+            if json_output:
+                err("--json is only supported with --example-only")
+                return
+            rendered = _schema_model_source(name, schema, self.spec, include_example=include_example)
+        if file_path:
+            with open(file_path, "w", encoding="utf-8") as handle:
+                handle.write(rendered + "\n")
+            if example_only:
+                out(f"wrote example to: {file_path}")
+            else:
+                out(f"wrote model to: {file_path}")
+            return
+        if copy_to_clipboard:
+            if pyperclip is None:
+                err("pyperclip is not installed; clipboard export is unavailable")
+                return
+            pyperclip.copy(rendered + "\n")
+            out("example copied to clipboard" if example_only else "model copied to clipboard")
+            return
+
+        header(f"{'example' if example_only else 'model'}: {name}")
+        if RICH and _is_color():
+            console.print(Syntax(rendered, "python", theme="monokai", line_numbers=True))
+        else:
+            print(rendered)
 
     def do_history(self, arg):
         """history  Show recently visited operations."""
@@ -1025,11 +1439,11 @@ class OAX(cmd.Cmd):
         make_table(["#", "Method", "Path"], rows, title="History")
 
     def do_set(self, arg):
-        """set <option> <value>  Toggle display options (verbose, color, format)."""
+        """set <option> <value>  Toggle display options (verbose, color, details)."""
         parts = arg.split()
         if len(parts) != 2:
             err("Usage: set <option> <value>")
-            out("Options: verbose on|off  /  color on|off  /  format table|plain")
+            out("Options: verbose on|off  /  color on|off  /  details on|off")
             return
         option, value = parts[0].lower(), parts[1].lower()
         if option == "verbose":
@@ -1047,15 +1461,15 @@ class OAX(cmd.Cmd):
                 return
             self.opt_color = value == "on"
             out(f"color = {value}")
-        elif option == "format":
-            if value not in ("table","plain"):
-                err("format: expected 'table' or 'plain'")
+        elif option == "details":
+            if value not in ("on","off"):
+                err("details: expected 'on' or 'off'")
                 return
-            self.opt_format = value
-            out(f"format = {value}")
+            self.opt_details = value == "on"
+            out(f"details = {value}")
         else:
             err(f"Unknown option: {option}")
-            out("Options: verbose on|off  /  color on|off  /  format table|plain")
+            out("Options: verbose on|off  /  color on|off  /  details on|off")
 
     def do_quit(self, arg):
         """quit  Exit oax."""
@@ -1083,6 +1497,11 @@ def main():
     parser = argparse.ArgumentParser(
         prog="oax",
         description="oax — Interactive OpenAPI 3.x Explorer"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     parser.add_argument("source", nargs="?", help="URL or file path to an OpenAPI spec")
     args = parser.parse_args()
