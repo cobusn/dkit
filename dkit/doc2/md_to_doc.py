@@ -40,7 +40,7 @@ class DocRenderer(BaseRenderer):
         return out
 
     def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> str:
-        ls = list(self.iter_tokens(tokens, state))
+        ls = [t for t in self.iter_tokens(tokens, state) if t is not None]
         return ls
 
     def render_children(self, token: Dict[str, Any], state: BlockState) -> str:
@@ -51,7 +51,7 @@ class DocRenderer(BaseRenderer):
         return doc.SoftBreak()
 
     def blank_line(self, token: Dict[str, Any], state: BlockState) -> str:
-        return doc.LineBreak()
+        return None
 
     def text(self, token: Dict[str, Any], state: BlockState) -> str:
         return doc.Str(cast(str, token["raw"]))
