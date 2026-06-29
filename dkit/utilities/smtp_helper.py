@@ -23,13 +23,13 @@ SMTP Helper classes
 ===================
 
 A message class specialized to handle MIME encoded email messages.
-This Module can be used to create a MIME message that have serveral
+This Module can be used to create a MIME message that have several
 files attached to the mail.
 
 This module defines the following classes:
 
 - `SmtpMessage()`, a MIME encoded message
-- `ConfiguredSmtpMessage()`, configure itself from provided Config instance
+- `SmtpClient()`, sends an SmtpMessage via a configured SMTP server
 
 """
 
@@ -38,41 +38,99 @@ from email.mime.text import MIMEText
 from email import encoders
 from email.mime.multipart import MIMEMultipart
 from email.utils import COMMASPACE, formatdate
+import logging
 import os
 import smtplib
 from pydantic import BaseModel
-# Default smtp timeout of 10 seconds.
+
+logger = logging.getLogger(__name__)
+
+# Default smtp timeout of 300 seconds (5 minutes).
 DEFAULT_SMTP_TIMEOUT = 300
 
 
 class SmtpMessage:
-    """
-    SMTP Message
+    """MIME-encoded email message.
 
-    This class encapsulates an email message
+    Attach files by appending paths to the `files` list after construction.
+    When `html_body` is supplied the message is sent as multipart/alternative
+    with a plain-text fallback, which is the recommended format for HTML mail.
     """
+
+    class Config(BaseModel):
+        """Pydantic config schema, suitable for loading from a config file.
+
+        Example:
+            cfg = SmtpMessage.Config.model_validate(yaml_dict)
+            msg = SmtpMessage(**cfg.model_dump())
+        """
+
+        subject: str
+        sender: str
+        recipients: list[str]
+        cc: list[str] = []
+        body: str = ""
+        body_type: str = "plain"
+        html_body: str | None = None
+        files: list[str] = []
 
     def __init__(self, subject: str, sender: str, recipients: list[str],
-                 cc: list[str] = None, body: str = "",
-                 body_type: str = "text"):
+                 cc: list[str] | None = None, body: str = "",
+                 body_type: str = "plain", html_body: str | None = None):
+        """Initialise an SMTP message.
+
+        Args:
+            subject: Email subject line.
+            sender: RFC 5321 envelope sender address.
+            recipients: List of primary recipient addresses.
+            cc: Optional list of CC addresses.
+            body: Plain-text message body.
+            body_type: MIME subtype for the plain body (default: "plain").
+            html_body: Optional HTML body. When set, the message is assembled
+                as multipart/alternative containing both the plain and HTML
+                parts so that clients without HTML support fall back gracefully.
+        """
         self.subject = subject
         self.sender = sender
         self.recipients = recipients
         self.cc = cc if cc else []
         self.body = body
         self.body_type = body_type
+        self.html_body = html_body
         self.files = []
 
+    def _build_body_part(self):
+        """Construct the body MIME part.
+
+        Returns:
+            A MIMEMultipart("alternative") when html_body is set, a pre-built
+            MIMEMultipart when body is already a MIMEMultipart instance, or a
+            plain MIMEText for string bodies.
+        """
+        if self.html_body is not None:
+            logger.debug("building multipart/alternative body with plain and html parts")
+            alternative = MIMEMultipart("alternative")
+            alternative.attach(MIMEText(self.body, "plain"))
+            alternative.attach(MIMEText(self.html_body, "html"))
+            return alternative
+        if isinstance(self.body, MIMEMultipart):
+            logger.debug("using pre-built MIMEMultipart body")
+            return self.body
+        logger.debug("building plain text body")
+        return MIMEText(self.body, self.body_type)
+
     def get_mime_content(self):
-        """Return the MIME text for the message."""
-        if self.body.__class__.__name__ == "MIMEMultipart":
-            msg = self.body
+        """Assemble and return the complete MIME message as a string.
+
+        Returns:
+            A fully-formed RFC 2822 message string ready for transmission.
+        """
+        if self.files:
+            logger.debug("building multipart message with %d attachment(s)", len(self.files))
+            msg = MIMEMultipart("mixed")
+            msg.attach(self._build_body_part())
         else:
-            if isinstance(self.body, str):
-                msg = MIMEText(self.body)
-            else:
-                msg = MIMEMultipart()
-                msg.attach(MIMEText(self.body, self.body_type))
+            msg = self._build_body_part()
 
         msg['From'] = self.sender
         msg['To'] = COMMASPACE.join(self.recipients)
@@ -82,31 +140,36 @@ class SmtpMessage:
         msg['Subject'] = self.subject
 
         for filename in self.files:
-            handle = open(filename, 'rb')
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(handle.read())
+            logger.debug("attaching file: %s", filename)
+            with open(filename, 'rb') as handle:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(handle.read())
             encoders.encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment; filename="%s"'
-                            % os.path.basename(filename))
+            part.add_header(
+                'Content-Disposition',
+                f'attachment; filename="{os.path.basename(filename)}"'
+            )
             msg.attach(part)
-            handle.close()
 
         return msg.as_string()
 
 
 class SmtpClient:
+    """SMTP client that delivers SmtpMessage instances via a configured server."""
 
     class Config(BaseModel):
-        """Used to instantiate e.g. from config file"""
+        """Pydantic config schema, suitable for loading from a config file."""
+
         server: str
-        username: str = None
-        password: str = None
+        username: str | None = None
+        password: str | None = None
         port: int = 25
         authenticate: bool = False
         use_tls: bool = False
         smtp_debug_level: int = 0
 
-    def __init__(self, server, port: int = 25, username: str = None, password: str = None,
+    def __init__(self, server: str, port: int = 25,
+                 username: str | None = None, password: str | None = None,
                  authenticate: bool = False, use_tls: bool = False,
                  smtp_debug_level: int = 0,
                  timeout: int = DEFAULT_SMTP_TIMEOUT, **kwargs):
@@ -114,26 +177,33 @@ class SmtpClient:
         self.port = port
         self.username = username
         self.password = password
-        self.authenticate = False
+        self.authenticate = authenticate
         self.use_tls = use_tls
         self.smtp_debug_level = smtp_debug_level
         self.timeout = timeout
 
     def send(self, message: SmtpMessage):
-        """Send the email"""
-        smtp = smtplib.SMTP(self.server, self.port, timeout=self.timeout)
+        """Send the email.
+
+        Args:
+            message: The SmtpMessage to transmit.
+        """
+        logger.debug("connecting to smtp server %s:%d", self.server, self.port)
         recipients = message.recipients + message.cc
-        if self.use_tls:
-            if smtp.has_extn("STARTTLS"):
-                smtp.starttls()
-                smtp.ehlo()
+        with smtplib.SMTP(self.server, self.port, timeout=self.timeout) as smtp:
+            if self.use_tls:
+                if smtp.has_extn("STARTTLS"):
+                    logger.debug("starting tls")
+                    smtp.starttls()
+                    smtp.ehlo()
                 if self.authenticate:
+                    logger.debug("authenticating as %s", self.username)
                     smtp.login(self.username, self.password)
-            else:
-                if self.authenticate:
-                    smtp.login(self.username, self.password)
-        else:
-            if self.authenticate:
+            elif self.authenticate:
+                logger.debug("authenticating as %s", self.username)
                 smtp.login(self.username, self.password)
-        smtp.sendmail(message.sender, recipients, message.get_mime_content())
-        smtp.close()
+            smtp.sendmail(message.sender, recipients, message.get_mime_content())
+        logger.info(
+            "sent message '%s' from %s to %s",
+            message.subject, message.sender, COMMASPACE.join(recipients)
+        )
