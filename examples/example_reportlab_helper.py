@@ -5,6 +5,7 @@ from lorem_text import lorem
 from dkit.doc2 import document as doc
 from dkit.doc2.rl_renderer import RLRenderer
 from dkit.doc2.docx_renderer import DocxRenderer
+from dkit.doc2.html_renderer import HtmlRenderer
 from dkit.etl import source
 
 
@@ -174,4 +175,5 @@ And a matplotlib plot:
 pdf_doc.add_template(md_table, data=Data())
 
 RLRenderer(pdf_doc, allow_soft_breaks=False).render("test.pdf")
-DocxRenderer(pdf_doc).render("test.docx")
+# DocxRenderer(pdf_doc).render("test.docx")
+HtmlRenderer(pdf_doc).render("test.html")
