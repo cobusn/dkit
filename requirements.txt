@@ -21,7 +21,7 @@ python-snappy
 pyyaml
 reportlab
 requests
-sqlalchemy>=1.4.46,<2.0
+sqlalchemy>=2.0,<3.0
 squarify
 tabulate
 tdigest

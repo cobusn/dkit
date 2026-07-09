@@ -216,7 +216,7 @@ class SQLAlchemyAccessor(object):
         self.conn = conn
         logger.debug("connecting to database")
         self.engine = self.make_engine(conn, echo)
-        self.metadata = self.sqlalchemy.MetaData(bind=self.engine)
+        self.metadata = self.sqlalchemy.MetaData()
         self.__inspect = None
 
     def make_engine(self, conn: Dict, echo: bool):
@@ -507,7 +507,7 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
         for i, (_name, type_map) in enumerate(entities.items()):
             retval += f"\n\n--\n-- {_name}\n--\n"
             _model = self.create_model(type_map.schema)
-            _statement = _select([_Table(_name, _metadata, *_model)])
+            _statement = _select(_Table(_name, _metadata, *_model))
             retval += str(_statement.compile(dialect=_dialect)).strip() + ";"
         return retval + "\n"
 
@@ -593,20 +593,20 @@ class SQLAlchemyAbstractSource(source.AbstractRowSource):
 
     def iter_results(self, selector):
         self.stats.start()
-        conn = self.accessor.engine.connect().\
-            execution_options(stream_results=True)
-        try:
-            result = conn.execute(selector)
-            chunk = result.fetchmany(self.chunk_size)
-            while len(chunk) > 0:
-                yield from (dict(row._mapping.items()) for row in chunk)
-                self.stats.increment(len(chunk))
+        with self.accessor.engine.connect().execution_options(
+            stream_results=True
+        ) as conn:
+            try:
+                result = conn.execute(selector)
                 chunk = result.fetchmany(self.chunk_size)
-        except self.sqlalchemy.exc.ResourceClosedError:
-            logger.info("query did not return any rows")
-        finally:
-            logger.info("closing sql connection")
-            conn.close()
+                while len(chunk) > 0:
+                    yield from (dict(row._mapping.items()) for row in chunk)
+                    self.stats.increment(len(chunk))
+                    chunk = result.fetchmany(self.chunk_size)
+            except self.sqlalchemy.exc.ResourceClosedError:
+                logger.info("query did not return any rows")
+            finally:
+                logger.info("closing sql connection")
         self.stats.stop()
 
 
@@ -634,11 +634,11 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
         the_table = self.sqlalchemy.Table(
             self.table_name,
             self.accessor.metadata,
-            autoload=True
+            autoload_with=self.accessor.engine,
         )
         where_clause = self.sqlalchemy.sql.text(self.where_clause)
         fields = [getattr(the_table.c, n) for n in field_names]
-        s = self.sqlalchemy.select(fields, whereclause=where_clause)
+        s = self.sqlalchemy.select(*fields).where(where_clause)
         if self.limit:
             s = s.limit(self.limit)
         yield from self.iter_results(s)
@@ -647,10 +647,10 @@ class SQLAlchemyTableSource(SQLAlchemyAbstractSource):
         the_table = self.sqlalchemy.Table(
             self.table_name,
             self.accessor.metadata,
-            autoload=True
+            autoload_with=self.accessor.engine,
         )
         where_clause = self.sqlalchemy.sql.text(self.where_clause)
-        s = self.sqlalchemy.select([the_table], whereclause=where_clause)
+        s = self.sqlalchemy.select(the_table).where(where_clause)
         if self.limit:
             s = s.limit(self.limit)
         yield from self.iter_results(s)
@@ -748,19 +748,19 @@ class SQLAlchemySink(sink.AbstractSink):
         """
         Insert into database
         """
-        the_table = self.sqlalchemy.Table(self.table_name, self.accessor.metadata, autoload=True)
-        conn = self.accessor.engine.connect()
-
+        the_table = self.sqlalchemy.Table(
+            self.table_name,
+            self.accessor.metadata,
+            autoload_with=self.accessor.engine,
+        )
         stats = self.stats.start()
-        for chunk in iteration.chunker(the_iterable, self.commit_rate):
-            ins_chunk = list(chunk)
-            conn.execute(
-                the_table.insert(),
-                ins_chunk
-            )
-            stats.increment(len(ins_chunk))
+        with self.accessor.engine.connect() as conn:
+            for chunk in iteration.chunker(the_iterable, self.commit_rate):
+                ins_chunk = list(chunk)
+                conn.execute(the_table.insert(), ins_chunk)
+                conn.commit()
+                stats.increment(len(ins_chunk))
         self.stats.stop()
-        conn.close()
         return self
 
 
