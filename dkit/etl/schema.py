@@ -18,23 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """
-Classes and utilities for manage ment of data model schemas
-
-This module relies and extends the Cerberus python library
+Classes and utilities for management of data model schemas.
 """
 
 import collections
-
-import cerberus
-from dkit.data import infer
-from dateutil import parser
 import decimal
+from typing import Literal, Optional
 
+from dateutil import parser
+from pydantic import BaseModel, ConfigDict
 
-class ModelFactory(object):
-
-    def __init__(self, default_str_len=255):
-        self.default_str_len = default_str_len
+from dkit.data import infer
 
 
 def parse_decimal(value):
@@ -72,22 +66,68 @@ def parse_int(value):
         return None
 
 
-decimal_type = cerberus.TypeDefinition('decimal', (decimal.Decimal,), ())
+FieldType = Literal[
+    "string", "binary",
+    "int8", "int16", "int32", "int64",
+    "uint8", "uint16", "uint32", "uint64",
+    "integer", "boolean", "decimal",
+    "float", "double",
+    "date", "datetime", "time",
+]
 
 
-class EntityValidator(cerberus.Validator):
+class FieldSchema(BaseModel):
+    """Pydantic model for a single entity field definition.
+
+    Attributes:
+        type: field data type name
+        str_len: maximum string length (string fields only)
+        scale: decimal scale
+        precision: decimal precision
+        primary_key: marks field as primary key
+        unique: enforce uniqueness constraint
+        index: create an index on this field
+        computed: field is computed rather than stored
     """
-    Custom Cerberus Schema Validator
 
-    Additional defined properties are:
+    model_config = ConfigDict(extra="ignore")
+
+    type: FieldType
+    str_len: Optional[int] = None
+    scale: Optional[int] = None
+    precision: Optional[int] = None
+    primary_key: Optional[bool] = None
+    unique: Optional[bool] = None
+    index: Optional[bool] = None
+    computed: Optional[bool] = None
+
+
+class ModelFactory(object):
+
+    def __init__(self, default_str_len=255):
+        self.default_str_len = default_str_len
+
+
+class EntityValidator:
+    """
+    Entity schema validator.
+
+    Validates field schema definitions using Pydantic and provides
+    type coercion utilities.
+
+    Supported field properties:
         - str_len
+        - scale / precision
         - primary_key
+        - unique
         - index
+        - computed
 
+    Args:
+        schema_dict: dict mapping field names to field property dicts,
+            e.g. {"name": {"type": "string", "str_len": 20}}
     """
-    # map model types to python types
-    types_mapping = cerberus.Validator.types_mapping.copy()
-    types_mapping['decimal'] = decimal_type
+
     map_python = {
         "boolean": parse_bool,
         "integer": parse_int,
@@ -98,8 +138,8 @@ class EntityValidator(cerberus.Validator):
         "decimal": parse_decimal,
         "binary": bytes,
     }
-    # This list is just a reminder of what types are
-    # defined, it is used by `dk schema show_types`
+
+    # used by `dk schema show_types`
     type_description = {
         "string": "string",
         "binary": "sequence of 8bit bytes",
@@ -121,104 +161,45 @@ class EntityValidator(cerberus.Validator):
         "time": "datetime.time",
     }
 
-    def _validate_str_len(self, strlen, field, value):
+    def __init__(self, schema_dict):
+        self._fields = {
+            k: FieldSchema.model_validate(v)
+            for k, v in schema_dict.items()
+        }
+        self._schema = schema_dict
+
+    @property
+    def schema(self):
+        """Raw field schema dict."""
+        return self._schema
+
+    def validate(self, row):
+        """Check that all row keys are known schema fields.
+
+        Args:
+            row: dict of field name to value
+
+        Returns:
+            True if all keys are present in schema, False otherwise
         """
-        {'type': 'integer'}
-        """
-        if not isinstance(strlen, int):
-            self._error(field, "Must be integer value")
-
-    def _validate_scale(self, scale, field, value):
-        """
-        {'type': 'integer'}
-        """
-        if not isinstance(scale, int):
-            self._error(field, "Must be integer value")
-
-    def _validate_precision(self, precision, field, value):
-        """
-        {'type': 'integer'}
-        """
-        if not isinstance(precision, int):
-            self._error(field, "Must be integer value")
-
-    def _validate_computed(self, computed, field, value):
-        """
-         {'type': 'boolean'}
-        """
-        if computed and not isinstance(computed, bool):
-            self._error(field, "Must be boolean.")
-
-    def _validate_primary_key(self, primarykey, field, value):
-        """
-         {'type': 'boolean'}
-        """
-        if primarykey and not isinstance(primarykey, bool):
-            self._error(field, "Must be boolean.")
-
-    def _validate_type_int8(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_int16(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_int32(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_int64(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_uint8(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_uint16(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_uint32(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_uint64(self, field, value):
-        if not isinstance(value, int):
-            self._error(field, "Is not an integer instance")
-
-    def _validate_type_double(self, field, value):
-        if not isinstance(value, float):
-            self._error(field, "Is not a floating point instance")
-
-    def _validate_unique(self, _unique, field, value):
-        """
-         {'type': 'boolean'}
-        """
-        if _unique and not isinstance(_unique, bool):
-            self._error(field, "Must be boolean.")
-
-    def _validate_index(self, _index, field, value):
-        """
-         {'type': 'boolean'}
-        """
-        if _index and not isinstance(_index, bool):
-            self._error(field, "Must be boolean.")
+        return all(k in self._fields for k in row)
 
     @staticmethod
     def dict_from_iterable(the_iterable, infer_strings: bool = False,
                            strict_numbers=False, p=1.0, stop=100):
         """
-        infer dict_schema from iterable
+        Infer field schema dict from iterable.
 
         Args:
-            - the_iterable: the data
-            - infer_strings: attempt to infer data types of string values (e.g.
-            dates or numbers
-            - strict_numbers: remove commas from numbers when false
-            - p: probability of evaluating a record
-            - stop: stop after n rows
+            the_iterable: the data
+            infer_strings: attempt to infer data types of string values
+                (e.g. dates or numbers)
+            strict_numbers: remove commas from numbers when false
+            p: probability of evaluating a record
+            stop: stop after n rows
+
+        Returns:
+            OrderedDict mapping field names to field property dicts
         """
         sniffer = infer.InferSchema(
             infer_strings=infer_strings,
@@ -234,12 +215,18 @@ class EntityValidator(cerberus.Validator):
             if stats.type == str:
                 node["str_len"] = stats.max
             dict_schema[key] = node
-
         return dict_schema
 
     @classmethod
     def from_iterable(cls, the_iterable, strict=False):
         """
-        infer dict_schema from iterable
+        Infer schema from iterable and return an EntityValidator instance.
+
+        Args:
+            the_iterable: source data
+            strict: passed to dict_from_iterable as infer_strings
+
+        Returns:
+            EntityValidator instance
         """
         return cls(cls.dict_from_iterable(the_iterable, strict))

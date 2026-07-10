@@ -91,12 +91,65 @@ class TestSecret(TestMapBase):
 
 class TestEntity(TestMapBase):
 
+    FIELD_DICT = {
+        "_id":    {"type": "integer", "primary_key": True},
+        "name":   {"type": "string", "str_len": 20},
+        "surname": {"type": "string"},
+        "age":    {"type": "integer"},
+        "parent": {"type": "integer", "index": True},
+    }
+
     def test_coerce(self):
         m = ModelManager.from_file("data/mtcars.yml")
         e = m.entities["mtcars"]
         with source.load("data/mtcars.csv") as in_src:
             transformed = list(e(in_src))
         self.assertTrue(isinstance(transformed[0]["carb"], int))
+
+    def test_from_dict(self):
+        e = Entity.from_dict(self.FIELD_DICT)
+        self.assertIsInstance(e, Entity)
+        decoded = Entity.decode(e.store)
+        self.assertEqual(decoded["_id"]["type"], "integer")
+        self.assertEqual(decoded["name"]["str_len"], 20)
+
+    def test_from_cerberus_alias(self):
+        """from_cerberus must remain a working alias for from_dict."""
+        e1 = Entity.from_dict(self.FIELD_DICT)
+        e2 = Entity.from_cerberus(self.FIELD_DICT)
+        self.assertEqual(e1.store, e2.store)
+
+    def test_as_entity_validator_schema_structure(self):
+        e = Entity.from_dict(self.FIELD_DICT)
+        v = e.as_entity_validator()
+        self.assertIn("_id", v.schema)
+        self.assertEqual(v.schema["_id"]["type"], "integer")
+        self.assertTrue(v.schema["_id"]["primary_key"])
+        self.assertEqual(v.schema["name"]["str_len"], 20)
+
+    def test_sorted_dict_pk_first(self):
+        e = Entity.from_dict(self.FIELD_DICT)
+        keys = list(e.sorted_dict.keys())
+        self.assertEqual(keys[0], "_id")
+
+    def test_iter_validate_yields_all_rows(self):
+        e = Entity.from_dict(self.FIELD_DICT)
+        rows = [
+            {"_id": 1, "name": "Alice", "surname": "Smith", "age": 30, "parent": 0},
+            {"_id": 2, "name": "Bob",   "surname": "Jones", "age": 25, "parent": 1},
+        ]
+        result = list(e.iter_validate(rows))
+        self.assertEqual(len(result), 2)
+
+    def test_from_iterable_infers_fields(self):
+        rows = [
+            {"id": 1, "label": "foo", "value": 1.5},
+            {"id": 2, "label": "bar", "value": 2.5},
+        ]
+        e = Entity.from_iterable(rows)
+        self.assertIn("id", e.store)
+        self.assertIn("label", e.store)
+        self.assertIn("value", e.store)
 
 
 class TestQuery(TestMapBase):

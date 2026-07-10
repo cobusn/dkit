@@ -63,7 +63,7 @@ T = TypeVar('T', bound='ETLServices')
 
 class Entity(containers.DictionaryEmulator):
     """
-    Serialise Cerberus based entity model
+    Serialise entity field schema in shorthand string encoding.
     """
     @property
     def sorted_dict(self):
@@ -97,7 +97,7 @@ class Entity(containers.DictionaryEmulator):
             p=p,
             stop=k
         )
-        return cls.from_cerberus(cerberus_schema)
+        return cls.from_dict(cerberus_schema)
 
     @classmethod
     def from_encoded_dict(cls, encoded_dict):
@@ -113,24 +113,33 @@ class Entity(containers.DictionaryEmulator):
         return retval
 
     @classmethod
-    def from_cerberus(cls, cerberus_dict):
+    def from_dict(cls, field_dict):
         """
-        constructor that create new shorthand instance from
-        Cerberus formatted schema dictionary
+        Constructor that creates a new shorthand instance from a
+        field schema dictionary.
 
         Arguments:
-            cerberus_dictionary: Cerberus object
+            field_dict: dict mapping field names to field property dicts
+                e.g. {"name": {"type": "string", "str_len": 20}}
 
         Returns:
             Entity instance
         """
         retval = cls()
-        retval.store = cls.encode(cerberus_dict)
+        retval.store = cls.encode(field_dict)
         return retval
+
+    @classmethod
+    def from_cerberus(cls, cerberus_dict):
+        """Deprecated alias for from_dict."""
+        return cls.from_dict(cerberus_dict)
 
     def as_entity_validator(self):
         """
-        Create a Cerberus SchemaValidator instance from self
+        Create an EntityValidator instance from self.
+
+        Returns:
+            EntityValidator instance
         """
         d = self.as_dict()
         decoded = self.decode(d)

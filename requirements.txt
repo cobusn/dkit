@@ -2,6 +2,7 @@ premailer
 cffi>=1.4.0
 boltons
 cerberus
+curses_components
 collections_extended
 cryptography
 cython

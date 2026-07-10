@@ -1,18 +1,20 @@
 # Busy
-* upgrade to mistune 2
 * improve test coverage
 
 # Next
-* Upgrade to sqlalchemy 2
 * add float_32 and float_64 for explicit types
-* Handle Dicts and List data types 
 * validations on parsing Decimal(precision=X, scale=Y), will currently parse
   without defaults or errors;
-* AWS S3 integration (s3fs..)
 * support for autolink in Reportlab Renderer
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 
+# Done
+* Upgrade to sqlalchemy 2
+* upgrade to mistune 2
+
 # Backlog 
+* AWS S3 integration (s3fs..) [e.g dk r etl s3://bucket/products.parquet -0 products.xlsx]
+* Handle Dicts and List data types 
 * type guesser guesses numpy ints as string (should it generate an error)
 * fix python/cannonical type conversion (e.g. python float must be double)
 * refactor etl.writer

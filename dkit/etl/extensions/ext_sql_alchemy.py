@@ -555,22 +555,25 @@ class SQLAlchemyModelFactory(schema.ModelFactory):
             _dialect = None
         return _metadata, _dialect
 
-    def create_model(self, validator):
+    def create_model(self, field_dict):
         """
-        create model from schema instance
+        Create SQLAlchemy column list from a field schema dict or
+        EntityValidator instance.
 
         Args:
-            validator: schema validator
+            field_dict: dict mapping field names to field property dicts,
+                or an EntityValidator instance
         """
-        schema = validator.schema
+        if hasattr(field_dict, "schema"):
+            field_dict = field_dict.schema
         mapping = []
-        for key, rules in schema.items():
+        for key, rules in field_dict.items():
             the_type = rules["type"]
             primary_key = True if "primary_key" in rules else False
             indexed = True if "index" in rules else False
             if the_type == "string":
                 try:
-                    strlen = schema[key]["str_len"]
+                    strlen = field_dict[key]["str_len"]
                 except Exception:
                     strlen = self.default_str_len
                 col_type = self.schema_map[the_type](strlen)
