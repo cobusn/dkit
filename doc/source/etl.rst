@@ -213,7 +213,7 @@ pyarrow extension
    :undoc-members:
    :inherited-members:
 
-.. autofunction:: dkit.etl.extensions.ext_arrow.clear_partition
+.. autofunction:: dkit.etl.extensions.ext_arrow.clear_partition_data
 .. autofunction:: dkit.etl.extensions.ext_arrow.write_parquet_file
 
 Extensions
@@ -357,7 +357,7 @@ SQLAlchemySelectSource
    :inherited-members:
 
 SQLAlchemyTemplateSource
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. image:: ../images/SQLAlchemyTemplateSource.svg
 	:align: center
 

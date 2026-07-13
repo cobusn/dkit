@@ -1,7 +1,9 @@
-# Busy
+# Ongoing 
 * improve test coverage
 
 # Next
+* refactor EDA (Exploratory Data Analysis)
+* remove dataclass_wizard dependency
 * add float_32 and float_64 for explicit types
 * validations on parsing Decimal(precision=X, scale=Y), will currently parse
   without defaults or errors;
@@ -10,7 +12,8 @@
 
 # Done
 * Upgrade to sqlalchemy 2
-* upgrade to mistune 2
+* Upgrade to mistune 2
+* Update README 
 
 # Backlog 
 * AWS S3 integration (s3fs..) [e.g dk r etl s3://bucket/products.parquet -0 products.xlsx]

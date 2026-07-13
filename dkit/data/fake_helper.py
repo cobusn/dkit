@@ -204,12 +204,12 @@ def za_id_number(person):
     """
     Generate a South African ID number based on person
 
-    the person records require the following fields:
+    the person records require the following fields::
 
-       {
+        {
             "birthday": datetime,
             "gender": "male|female"
-       }
+        }
 
     """
     a = person["birthday"].strftime("%y%m%d")

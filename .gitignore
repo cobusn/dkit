@@ -136,3 +136,8 @@ test/dk_testdata/spark.py
 test/dk_testdata/tst.ini
 attic/*
 resume_*
+examples/*.out
+doc/images/*.dot
+doc/images/*.svg
+examples/example_*.plot
+examples/example_*.svg

@@ -1,6 +1,5 @@
 ipython
 tables
-sphinxcontrib-napoleon
 tqdm
 sphinx
 coverage

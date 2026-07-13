@@ -31,6 +31,7 @@ from dkit.etl.extensions import ext_tables, ext_sql_alchemy, ext_bxr
 from dkit.etl.writer import FileWriter, Bz2Writer
 from dkit.etl import schema, sink
 from dkit.etl.transform import CoerceTransform
+from dkit.parsers.uri_parser import parse
 FIELD_NAMES = ["id", "name", "company", "ip", "birthday", "year", "score"]
 NROWS = 500
 
@@ -129,7 +130,7 @@ def write_sqlite(the_data, the_schema):
     print("Writing sqlite3 database")
     if os.path.exists("input_files/sample.db"):
         os.unlink("input_files/sample.db")
-    accessor = ext_sql_alchemy.SQLAlchemyAccessor("sqlite:///input_files/sample.db")
+    accessor = ext_sql_alchemy.SQLAlchemyAccessor(parse("sqlite:///input_files/sample.db"))
     accessor.create_table("data", the_schema)
     print(the_schema)
     ext_sql_alchemy.SQLAlchemySink(accessor, "data").process(
@@ -163,5 +164,8 @@ if __name__ == "__main__":
     stream.close()
 
     write_pkl(the_data, the_schema)
-    write_hdf5(the_data, the_schema)
+    try:
+        write_hdf5(the_data, the_schema)
+    except ModuleNotFoundError:
+        print("Skipping hdf5 (tables module not installed)")
     write_sqlite(the_data, the_schema)

@@ -51,7 +51,7 @@ class TestDataHelper(common.TestBase):
         rs = random_string(100)
         p1 = helpers.get_partition(rs)
         p2 = helpers.get_partition(rs)
-        self.assertEquals(p1, p2)
+        self.assertEqual(p1, p2)
 
     def test_partition_distribution(self):
         """test distribution of partitions"""

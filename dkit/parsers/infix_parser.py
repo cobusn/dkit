@@ -192,7 +192,7 @@ class InfixParser(object):
             self._f1_map.update(functions)
 
         self._f2_map = {
-            "randint": lambda x, y: float(randint(x, y)),
+            "randint": lambda x, y: float(randint(int(x), int(y))),
             "uniform": uniform,
             "replace_na": replace_na,
             "strftime": lambda d, f: d.strftime(f),

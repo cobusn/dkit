@@ -24,7 +24,7 @@ import pickle
 import yaml
 sys.path.insert(0, "..")
 from dkit.data.map_db import ObjectMapDB, FileObjectMapDB
-from test_entity_map import TestClass
+from test_entity_map import SampleObject
 
 
 class TestEntityMapDB(unittest.TestCase):
@@ -32,8 +32,8 @@ class TestEntityMapDB(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db = ObjectMapDB(schema={"items": TestClass})
-        cls.test_instance = TestClass(1, 2)
+        cls.db = ObjectMapDB(schema={"items": SampleObject})
+        cls.test_instance = SampleObject(1, 2)
 
     def test_add_get(self):
         """
@@ -57,7 +57,7 @@ class TestEntityMapDB(unittest.TestCase):
 
     def test_serialize_json(self):
         """serialize to json"""
-        json_db = FileObjectMapDB(schema={"items": TestClass})
+        json_db = FileObjectMapDB(schema={"items": SampleObject})
         json_db.items["one"] = self.test_instance
         json_db.save("data/entity_map.json")
         json_db.load("data/entity_map.json")
@@ -65,7 +65,7 @@ class TestEntityMapDB(unittest.TestCase):
 
     def test_serialize_yaml(self):
         """serialize to yaml"""
-        json_db = FileObjectMapDB(schema={"items": TestClass}, codec=yaml)
+        json_db = FileObjectMapDB(schema={"items": SampleObject}, codec=yaml)
         json_db.items["one"] = self.test_instance
         json_db.save("data/entity_map.yaml")
         json_db.load("data/entity_map.yaml")
@@ -73,7 +73,7 @@ class TestEntityMapDB(unittest.TestCase):
 
     def test_serialize_pickle(self):
         """serialize to yaml"""
-        json_db = FileObjectMapDB(schema={"items": TestClass}, codec=pickle, binary=True)
+        json_db = FileObjectMapDB(schema={"items": SampleObject}, codec=pickle, binary=True)
         json_db.items["one"] = self.test_instance
         json_db.save("data/entity_map.pickle")
         json_db.load("data/entity_map.pickle")
@@ -81,7 +81,7 @@ class TestEntityMapDB(unittest.TestCase):
 
     def test_blank_file(self):
         """blank object if file does not exist"""
-        json_db = FileObjectMapDB(schema={"items": TestClass})
+        json_db = FileObjectMapDB(schema={"items": SampleObject})
         json_db.load("data/none.json")
         self.assertEqual(len(json_db.items), 0)
 

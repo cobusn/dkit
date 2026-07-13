@@ -83,8 +83,9 @@ class TestSecret(TestMapBase):
 
     def test_a_load(self):
         self.add_secret()
+        self.m.save("data/test_save.yml")
         m = ModelManager.from_file("data/test_save.yml")
-        self .assertEqual(
+        self.assertEqual(
             self.m.get_secret("se1"), m.get_secret("se1")
         )
 

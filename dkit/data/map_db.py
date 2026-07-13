@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 from abc import ABC
+from typing import Type
 import yaml
 import dataclasses
 
@@ -46,7 +47,7 @@ class ObjectMap(DictionaryEmulator):
 
     Objects are serialized each time they are accessed and stored as dicts internally.
     """
-    def __init__(self, kind: type, container: "EntityMapDB" = None, meta: dict = None):
+    def __init__(self, kind: Type, container: "EntityMapDB" = None, meta: dict = None):
         if not hasattr(kind, "as_dict"):
             raise AttributeError(messages.MSG_0010.format(kind.__name__, "as_dict"))
         if not hasattr(kind, "on_set"):

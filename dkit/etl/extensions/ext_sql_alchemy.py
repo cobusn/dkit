@@ -892,7 +892,7 @@ class SQLServices(model.ETLServices):
         Arguments:
             - connection: connection name
             - n: number of records to sample
-            - *tables: list of tables, all if not specified
+            - ``*tables``: list of tables, all if not specified
 
         Returns:
             - Dictionary table names as key and records as value

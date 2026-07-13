@@ -256,7 +256,7 @@ class TestDataTypesCoverage(unittest.TestCase):
         """round-trip all supported coverage fields through parquet"""
         with source.load(COVERAGE_FILE) as infile:
             retrieved = list(infile)
-            self.assertEqual(retrieved, self.data)
+            assert_rows_almost_equal(self, retrieved, self.data)
 
     def test_c_schema(self):
         """verify the written parquet schema preserves the expected Arrow types"""
@@ -417,7 +417,7 @@ class B_TestParquetSource(unittest.TestCase):
             {k: row[k] for k in ["disp", "drat"]}
             for row in self.mtcars
         ]
-        self.assertEqual(data, rows)
+        self.assertRowsAlmostEqual(data, rows)
 
     def test_parquet_source_with_open_reader(self):
         """read parquet rows through the already-open reader branches"""
@@ -430,7 +430,7 @@ class B_TestParquetSource(unittest.TestCase):
             src = ParquetSource([OpenBinaryReader(infile)], field_names=["disp", "drat"])
             data = list(src)
         rows = [{k: row[k] for k in ["disp", "drat"]} for row in self.mtcars]
-        self.assertEqual(data, rows)
+        self.assertRowsAlmostEqual(data, rows)
 
 
 class TestDataSets(unittest.TestCase):

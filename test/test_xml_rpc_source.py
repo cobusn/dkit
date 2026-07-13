@@ -44,19 +44,23 @@ class TestCase(unittest.TestCase):
     def setUpClass(cls):
         class RequestHandler(SimpleXMLRPCRequestHandler):
             rpc_paths = ('/RPC2',)
-        cls.server = SimpleXMLRPCServer(("localhost", 8001), requestHandler=RequestHandler)
+        SimpleXMLRPCServer.allow_reuse_address = True
+        cls.server = SimpleXMLRPCServer(("localhost", 8321), requestHandler=RequestHandler)
         cls.server.register_function(get_list, "get_list")
         cls.server.register_function(adder, "add")
         cls.server.register_function(get_iterable, "get_iterable")
-        cls.xml_server_thread = threading.Thread(target=cls.server.serve_forever).start()
+        cls.xml_server_thread = threading.Thread(target=cls.server.serve_forever)
+        cls.xml_server_thread.start()
 
     @classmethod
     def tearDownClass(cls):
         cls.server.shutdown()
+        cls.server.server_close()
+        cls.xml_server_thread.join()
         super(TestCase, cls).tearDownClass()
 
     def setUp(self):
-        self.o = XmlRpcSource("http://localhost:8001", "get_iterable", [])
+        self.o = XmlRpcSource("http://localhost:8321", "get_iterable", [])
 
     def test_1(self):
         """

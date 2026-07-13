@@ -22,7 +22,6 @@
 Exploratory Data Analysis
 """
 from typing import Iterable, Dict, Any
-from matplotlib import cm
 from matplotlib.colors import hex2color
 from abc import ABC
 import datetime
@@ -77,7 +76,7 @@ class StructureMap(ABC):
         self._normalizer = Normalizer(max_, min_)
         uniq = self.unique
         cats = uniq if uniq < 256 else 256
-        self._color_map = cm.get_cmap(self._color_map_name, cats)
+        self._color_map = plt.get_cmap(self._color_map_name).resampled(cats)
         self._null_color = (0.0, 0.0, 0.0, 1)
 
     @property

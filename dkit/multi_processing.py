@@ -24,15 +24,17 @@ Utilities to assist with running multiprocessing applications.
 This library provides for two types of multiprocessing applications:
 
     * **list oriented** pipelines where operations are completed on lists
-    of similar objects
+      of similar objects
     * **task oriented** pipelines where a task is performed based on the
-    parameters of each entry and the result stored in the `result` property
+      parameters of each entry and the result stored in the ``result``
+      property
 
 """
 import sys
 import logging
 import multiprocessing
 import queue
+import dbm.gnu
 import shelve
 import threading
 from abc import ABC, abstractmethod
@@ -188,7 +190,7 @@ class Journal(object):
     @classmethod
     def from_shelve(cls, file_name):
         """constructor from shelve file"""
-        db = shelve.open(file_name)
+        db = shelve.Shelf(dbm.gnu.open(file_name, "c"))
         return cls(db)
 
     def __contains__(self, message):
@@ -457,13 +459,6 @@ class TaskPipeline(AbstractPipeline):
         * queue_timeout: queue timeout duration
         * log_trigger: update on this trigger
         * message_type: kind of worker messages
-
-    def __init__(self, workers: Dict[Worker, int], worker_args: Dict = None,
-                 chunk_size=100, queue_size: int = 100, journal: Journal = None,
-                 queue_timeout=0.5, log_trigger=10_000,
-                 message_type=UIDTaskMessage):
-        super().__init__(workers, message_type, worker_args, queue_size, journal,
-                         chunk_size, queue_timeout, log_trigger)
     """
     def __init__(self, workers: Dict[Worker, int], *args, **kwargs):
         super().__init__(workers, message_type=UIDTaskMessage, *args, **kwargs)

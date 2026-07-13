@@ -29,7 +29,7 @@ import re
 import statistics
 from itertools import islice
 from .iteration import iter_sample
-from typing import Dict, List, Iterable
+from typing import Dict, List, Iterable, Type
 
 __all__ = [
     "ExtractSchemaInline",
@@ -176,7 +176,7 @@ class InferSchema(object):
         self.infer_strings = infer_strings
         self.p = p
         self.stop = stop
-        self.data: Dict[str, List[type]] = {}
+        self.data: Dict[str, List[Type]] = {}
 
         """map data types to field name"""
         self.summary: Dict[str, TypeStats] = {}
@@ -192,7 +192,7 @@ class InferSchema(object):
         """length of sample"""
         return self.__num_rows
 
-    def __collect_type_stats(self, the_iterable) -> Dict[str, List[type]]:
+    def __collect_type_stats(self, the_iterable) -> Dict[str, List[Type]]:
         """collect type statistics for each field in data"""
         row_counter = 0
         data = collections.defaultdict(lambda: {})
@@ -236,7 +236,7 @@ class InferSchema(object):
             summary[key] = TypeStats(_type, _str_type, _dirty, _min, _max, _mean, _stdev)
         return summary
 
-    def __call__(self, the_iterable) -> Dict[str, type]:
+    def __call__(self, the_iterable) -> Dict[str, Type]:
         """
         Infer data types from the provided iterable
 

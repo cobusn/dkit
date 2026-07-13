@@ -5,7 +5,7 @@ PYTHON=python3
 TAG := $(shell $(PYTHON) -c 'import dkit; print(dkit.__version__)')
 # export SPHINXBUILD=/cygdrive/c/Anaconda/envs/py36/Scripts/sphinx-build
 
-.PHONY: test clean
+.PHONY: test testdata clean doc
 
 all: build
 
@@ -13,11 +13,24 @@ docker: Dockerfile Makefile
 	docker build -t dkit:latest .
 	docker tag dkit:latest dkit:$(TAG)
 
-test:
+test/input_files/sample.jsonl:
+	cd test && $(PYTHON) create_data.py
+
+testdata: test/input_files/sample.jsonl
+
+test: test/input_files/sample.jsonl
 	cd test && \
 		pytest --cov=dkit --cov=lib_dk &&\
 		coverage html &&\
 		coverage report
+
+doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
+	cd doc/images && make
+	cd examples && make cleanfiles
+	cd examples && make
+	cd doc && make html \
+		&& cd .. \
+		&& cp -r doc/build/* html
 
 build:
 	$(PYTHON) -m build
@@ -29,7 +42,7 @@ wheel:
 	$(PYTHON) -m build --wheel
 
 install:
-	pip install --user .
+	pip install .
 
 clean:
 	rm -rf build dist *.egg-info

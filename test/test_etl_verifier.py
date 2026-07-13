@@ -15,18 +15,34 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
+import glob
+import os
 import unittest
 import random
 import sys; sys.path.insert(0, "..")
 
 from dkit.etl import verifier
 
+DB_PATH = "output/verifier.db"
+
 
 class TestVerifier(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.v = verifier.ShelveVerifier("output/verifier.db", lambda x: x, flag="n")
+        for f in glob.glob(f"{DB_PATH}*"):
+            os.unlink(f)
+        cls.v = verifier.ShelveVerifier(DB_PATH, lambda x: x, flag="n")
+        cls.alpha = [i for i in "abcdefghijklmnopqrstuvwxyz"]
+        cls.num = [i for i in '1234567890']
+        cls.alphanum = cls.alpha + cls.num
+        random.shuffle(cls.alphanum)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.v.db.close()
+        for f in glob.glob(f"{DB_PATH}*"):
+            os.unlink(f)
         cls.alpha = [i for i in "abcdefghijklmnopqrstuvwxyz"]
         cls.num = [i for i in '1234567890']
         cls.alphanum = cls.alpha + cls.num

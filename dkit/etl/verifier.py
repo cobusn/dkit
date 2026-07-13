@@ -21,6 +21,7 @@
 """
 Verify if data have been processed.
 """
+import dbm.gnu
 import shelve
 import time
 import logging
@@ -48,11 +49,12 @@ class ShelveVerifier(object):
     def __init__(self, file_name: str, getter, flag="c"):
         self.file_name = file_name
         self.getter = getter
-        self.db = shelve.open(file_name, flag=flag)
+        self.db = shelve.Shelf(dbm.gnu.open(file_name, flag))
         self.stats = instrumentation.CounterLogger(self.__class__.__name__).start()
 
     def __del__(self):
-        self.db.close()
+        if hasattr(self, "db"):
+            self.db.close()
 
     def test(self, item, getter=None):
         get_key = getter if getter else self.getter

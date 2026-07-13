@@ -30,7 +30,7 @@ from dkit.data.map_db import ObjectMap, Object
 
 
 @dataclass
-class TestClass(Object):
+class SampleObject(Object):
     a: int
     b: int
 
@@ -43,8 +43,8 @@ class TestEntityMap(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.om = ObjectMap(TestClass, None)
-        cls.test_instance = TestClass(1, 2)
+        cls.om = ObjectMap(SampleObject, None)
+        cls.test_instance = SampleObject(1, 2)
 
     def test_add_get(self):
         self.om["one"] = self.test_instance

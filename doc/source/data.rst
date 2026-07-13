@@ -422,13 +422,13 @@ Supporting Classes
     :members:
     :undoc-members:
 
-InferTypes
-----------
+InferSchema
+-----------
 
-.. image:: ../images/InferTypes.svg
+.. image:: ../images/InferSchema.svg
    :align: center
 
-.. autoclass:: dkit.data.infer.InferTypes
+.. autoclass:: dkit.data.infer.InferSchema
    :members:
    :undoc-members:
    :special-members: __call__, __len__
