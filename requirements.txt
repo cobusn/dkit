@@ -10,7 +10,7 @@ inflect
 jinja2
 lz4
 matplotlib
-mistune
+mistune>=3.3.0
 openpyxl
 pdfrw
 pyarrow
