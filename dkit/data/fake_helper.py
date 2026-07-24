@@ -253,6 +253,7 @@ def sales_transactions(n: int = 1000, start_date: str = "-2y", end_date: str = "
 
     Yields dicts with the following fields:
 
+    - id: unique identifier
     - month_id: integer month identifier derived from date
     - date: transaction date
     - region: sales region
@@ -279,7 +280,7 @@ def sales_transactions(n: int = 1000, start_date: str = "-2y", end_date: str = "
     """
     fake = Factory.create(locale=DEFAULT_LOCALE)
     categories = list(_SALES_PRODUCTS.keys())
-    for _ in range(n):
+    for k in range(n):
         category = random.choice(categories)
         product = random.choice(_SALES_PRODUCTS[category])
         units = random.randint(1, 100)
@@ -287,6 +288,7 @@ def sales_transactions(n: int = 1000, start_date: str = "-2y", end_date: str = "
         date_ = fake.date_between(start_date=start_date, end_date=end_date)
         month_id, _ = short_month_day_id(date_)
         yield {
+            "id": k,
             "month_id": month_id,
             "date": date_,
             "region": random.choice(_SALES_REGIONS),

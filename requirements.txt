@@ -6,6 +6,7 @@ curses_components
 collections_extended
 cryptography
 cython
+filelock
 inflect
 jinja2
 lz4

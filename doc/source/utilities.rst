@@ -179,6 +179,29 @@ functions
 .. autofunction:: dkit.utilities.introspection.get_routine_names
 .. autofunction:: dkit.utilities.introspection.is_list
 
+job_tracker
+===========
+.. automodule:: dkit.utilities.job_tracker
+
+JobTracker
+----------
+.. autoclass:: dkit.utilities.job_tracker.JobTracker
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+MultiProcessJobTracker
+-----------------------
+.. autoclass:: dkit.utilities.job_tracker.MultiProcessJobTracker
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+This example illustrates use of JobTracker:
+
+    .. include:: ../../examples/example_job_tracker.py
+        :literal:
+
 
 * :ref:`genindex`
 * :ref:`modindex`
