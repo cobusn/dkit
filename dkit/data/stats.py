@@ -29,52 +29,18 @@
 Statistical utilities
 
 """
+from __future__ import annotations
 import sys
 import cython
 from dkit.algorithms import tdigest
 import math
-from boltons.statsutils import Stats
-from decimal import Decimal
 from ..utilities.cmd_helper import LazyLoad
 
 numpy = LazyLoad("numpy")
 
 
-def quantile_bins(values, n_quantiles=10, strict=False):
-    """compute n quantile bins
-
-    args:
-        * values: iterator of numeric values
-        * n_quantiles: how many bins
-        * strict: generate ValueError if too many similar values for bins
-
-    returns:
-        list of values: [(left, right, count), ...]
-
-    """
-    stats = Stats(values)
-    step = Decimal(1)/Decimal(n_quantiles)
-    q_list = []
-    q = step
-    last = None
-    for i in range(n_quantiles):
-        this = stats.get_quantile(q)
-        if this == last:
-            if strict:
-                raise ValueError("Too many similar value for bins")
-            else:
-                if q_list[-1][1] == this:
-                    prev = q_list.pop()
-                    last = prev[0]
-        else:
-            q_list.append((last, this, q))
-            last = this
-        q += step
-    q_list[-1] = (q_list[-1][0], None, q_list[-1][2])
-    return q_list
-
-
-class AbstractAccumulator(object):
+@cython.cclass
+class AbstractAccumulator:
     """base class for accumulators"""
 
     def as_map(self):
@@ -129,7 +95,7 @@ class AbstractAccumulator(object):
         s = ""
         s += f"Observations:       {self.observations:d}\n"
         s += f"Minimum:            {self.min:f}\n"
-        s += f"Maxmimum:           {self.max:f}\n"
+        s += f"Maximum:            {self.max:f}\n"
         s += f"Mean:               {self.mean:f}\n"
         s += f"Median:             {self.median:f}\n"
         s += f"Standard deviation: {self.stdev:f}\n"
@@ -229,10 +195,18 @@ class BufferAccumulator(AbstractAccumulator):
         self.buffer_.append(value)
 
     def merge(self, other):
-        self.buffer.extend(other)
+        self.buffer_.extend(other)
         return self
 
 
+def _rebuild_accumulator(state):
+    """helper for Accumulator.__reduce__"""
+    obj = Accumulator.__new__(Accumulator)
+    obj.__setstate__(state)
+    return obj
+
+
+@cython.cclass
 class Accumulator(AbstractAccumulator):
     """
     Statistics collector.
@@ -257,7 +231,7 @@ class Accumulator(AbstractAccumulator):
     >>> print(a)
     Observations:       10
     Minimum:            0.000000
-    Maxmimum:           9.000000
+    Maximum:            9.000000
     Mean:               4.500000
     Median:             4.500000
     Standard deviation: 3.027650
@@ -268,36 +242,62 @@ class Accumulator(AbstractAccumulator):
     Refer to additional examples, below
 
     """
-    def __init__(self, values=[], precision: int = 5):
+    precision: cython.int = cython.declare(cython.int, visibility="public")
+    _min: cython.double
+    _max: cython.double
+    _observations: cython.long
+    _mean: cython.double
+    _std: cython.double
+    _tdigest: object = cython.declare(object, visibility="public")
+
+    def __init__(self, values=None, precision: int = 5):
         """
         Constructor
         """
-        self.precision: int = precision
-        self._min: float = sys.float_info.max
-        self._max: float = -sys.float_info.max
-        self._observations: cython.long = 0
-        self._mean: float = None
-        self._std: float = None
+        self.precision = precision
+        self._min = sys.float_info.max
+        self._max = -sys.float_info.max
+        self._observations = 0
+        self._mean = 0.0
+        self._std = 0.0
         self._tdigest = tdigest.TDigest()
-        self.consume(values)
+        self.consume(values if values is not None else [])
 
-    def __add__(self, o):
-        """merge two instances"""
-        a1 = self.from_dict(self.as_dict())
+    def __add__(self, o: Accumulator):
+        """merge two instances
 
+        Uses Chan's parallel formula to combine the sum of squared
+        deviations (``_std``, i.e. Welford's M2) held by each instance.
+        The merged instance takes the higher of the two operands'
+        ``precision`` values.
+        Refer to:
+            * https://www.johndcook.com/blog/skewness_kurtosis.html
+            * Chan et al., "Updating Formulae and a Pairwise Algorithm
+              for Computing Sample Variances" (1979)
+        """
+        a1: Accumulator
         n1 = self.observations
         n2 = o.observations
+        precision = max(self.precision, o.precision)
 
         if n1 == 0 and n2 == 0:
+            a1 = self.from_dict(self.as_dict())
+            a1.precision = precision
             return a1
         if n1 == 0:
-            return o.from_dict(o.as_dict())
+            a1 = o.from_dict(o.as_dict())
+            a1.precision = precision
+            return a1
         if n2 == 0:
+            a1 = self.from_dict(self.as_dict())
+            a1.precision = precision
             return a1
 
-        a1._mean = (self._observations * self._mean + o._observations * o.mean) / \
-            (n1 + n2)
-        a1._std = math.sqrt((((n1-1)*(a1._std ** 2)) + ((n2-1)*(o._std ** 2)))/(n1+n2-2))
+        a1 = self.from_dict(self.as_dict())
+        a1.precision = precision
+        delta = o._mean - self._mean
+        a1._mean = self._mean + delta * n2 / (n1 + n2)
+        a1._std = self._std + o._std + delta ** 2 * n1 * n2 / (n1 + n2)
         a1._min = min(self._min, o._min)
         a1._max = max(self._max, o._max)
         a1._observations = n1 + n2
@@ -307,15 +307,22 @@ class Accumulator(AbstractAccumulator):
     def as_dict(self):
         """dict representation for serialisation
 
-        the t_digest cannot be pickled
+        the t_digest cannot be pickled directly, so its centroids are
+        extracted into a plain dict instead
         """
-        rv = dict(self.__dict__)
-        rv["digest"] = rv.pop("_tdigest").as_dict()
-        return rv
+        return {
+            "precision": self.precision,
+            "_min": self._min,
+            "_max": self._max,
+            "_observations": self._observations,
+            "_mean": self._mean,
+            "_std": self._std,
+            "digest": self._tdigest.as_dict(),
+        }
 
     @classmethod
     def from_dict(cls, data):
-        rv = cls(precision=data["precision"])
+        rv: Accumulator = cls(precision=data["precision"])
         rv._min = data["_min"]
         rv._max = data["_max"]
         rv._observations = data["_observations"]
@@ -323,6 +330,29 @@ class Accumulator(AbstractAccumulator):
         rv._std = data["_std"]
         rv._tdigest = tdigest.TDigest.from_dict(data["digest"])
         return rv
+
+    def __getstate__(self):
+        """support pickling despite the unpicklable cffi t-digest handle"""
+        return self.as_dict()
+
+    def __setstate__(self, state):
+        """restore state produced by __getstate__"""
+        self.precision = state["precision"]
+        self._min = state["_min"]
+        self._max = state["_max"]
+        self._observations = state["_observations"]
+        self._mean = state["_mean"]
+        self._std = state["_std"]
+        self._tdigest = tdigest.TDigest.from_dict(state["digest"])
+
+    def __reduce__(self):
+        """
+        pickle support
+
+        cython generates its own __reduce__ for extension types that
+        bypasses __getstate__/__setstate__, so it is overridden explicitly
+        """
+        return (_rebuild_accumulator, (self.__getstate__(),))
 
     @property
     def mean(self):
@@ -356,6 +386,8 @@ class Accumulator(AbstractAccumulator):
         """
         maximum value
         """
+        if self._observations == 0:
+            raise ValueError("no observations")
         return self._max
 
     @property
@@ -368,6 +400,8 @@ class Accumulator(AbstractAccumulator):
         """
         minimum value
         """
+        if self._observations == 0:
+            raise ValueError("no observations")
         return self._min
 
     @property
@@ -399,18 +433,19 @@ class Accumulator(AbstractAccumulator):
         else:
             return 0
 
-    def push(self, value, strict=False):
+    def push(self, value):
         """
         Feed a value to the Collector.
 
         Args:
-            - value: add value added to counters
-            - strict: ignore None values if not strict
+            - value: value added to counters; None values are ignored
 
         Refer to:
             * https://www.johndcook.com/blog/standard_deviation/
             * Donald M Knuth, The art of Computer Programming Vol II, 3rd Ed,  P232
         """
+        _value: cython.double
+        new_mean: cython.double
         try:
             _value = float(value)
         except TypeError as e:
@@ -425,7 +460,7 @@ class Accumulator(AbstractAccumulator):
         self._observations += 1
 
         # Variance
-        if self._mean is not None:
+        if self._observations > 1:
             new_mean = self._mean + (_value-self._mean) / float(self._observations)
             self._std = self._std + (_value-self._mean)*(_value-new_mean)
             self._mean = new_mean

@@ -22,6 +22,8 @@
 #  6 Nov 2018 Cobus Nel       added BufferAccumulator
 # =========== =============== =================================================
 
+import pickle
+import statistics
 import numpy as np
 import unittest
 import random
@@ -144,6 +146,12 @@ class TestBufferAccumulator(AccumulatorTestAbstract):
             acc = abs(1 - self.a[i].stdev / np.std(self.values[i]))
             self.assertLessEqual(acc, self.accuracy)
 
+    def test_merge(self):
+        """test merging additional values into the buffer via merge()"""
+        a = BufferAccumulator([1, 2, 3])
+        a.merge([4, 5, 6])
+        self.assertEqual(sorted(a.buffer_), [1, 2, 3, 4, 5, 6])
+
 
 class TestAccumulator(AccumulatorTestAbstract):
 
@@ -160,12 +168,115 @@ class TestAccumulator(AccumulatorTestAbstract):
             c = sum([i.count for i in hist.bins])
             self.assertEqual(c, self.n)
 
-    def test_merge(self):
-        a = Accumulator(i for i in range(1000))
-        b = Accumulator(i for i in range(1000))
+    def test_merge_equal_distributions(self):
+        """merging two accumulators with the same underlying distribution"""
+        data = list(range(1000))
+        a = Accumulator(data)
+        b = Accumulator(data)
         c = a + b
-        print(a.as_map())
-        print(c.as_map())
+        combined = data + data
+        self.assertEqual(c.observations, 2000)
+        self.assertAlmostEqual(c.mean, statistics.mean(combined), self.s)
+        acc = abs(1 - c.variance / statistics.variance(combined))
+        self.assertLessEqual(acc, self.accuracy)
+        acc = abs(1 - c.stdev / statistics.stdev(combined))
+        self.assertLessEqual(acc, self.accuracy)
+
+    def test_merge_different_distributions(self):
+        """
+        merging accumulators with different means and sizes exercises
+        the cross term in the parallel variance formula
+        """
+        data_a = [0.0] * 100
+        data_b = [100.0] * 200
+        a = Accumulator(data_a)
+        b = Accumulator(data_b)
+        c = a + b
+        combined = data_a + data_b
+        self.assertEqual(c.observations, len(combined))
+        self.assertAlmostEqual(c.mean, statistics.mean(combined), self.s)
+        acc = abs(1 - c.variance / statistics.variance(combined))
+        self.assertLessEqual(acc, self.accuracy)
+        acc = abs(1 - c.stdev / statistics.stdev(combined))
+        self.assertLessEqual(acc, self.accuracy)
+        self.assertEqual(c.min, min(combined))
+        self.assertEqual(c.max, max(combined))
+
+    def test_merge_precision_takes_max(self):
+        """merged instance uses the higher of the two precisions"""
+        a = Accumulator([1, 2, 3], precision=2)
+        b = Accumulator([4, 5, 6], precision=5)
+        c = a + b
+        d = b + a
+        self.assertEqual(c.precision, 5)
+        self.assertEqual(d.precision, 5)
+
+    def test_merge_with_empty(self):
+        """merging with an empty accumulator should be a no-op"""
+        data = [1, 2, 3, 4, 5]
+        a = Accumulator(data)
+        empty = Accumulator()
+        c = a + empty
+        d = empty + a
+        self.assertEqual(c.observations, len(data))
+        self.assertAlmostEqual(c.mean, a.mean, self.s)
+        self.assertAlmostEqual(c.stdev, a.stdev, self.s)
+        self.assertEqual(d.observations, len(data))
+        self.assertAlmostEqual(d.mean, a.mean, self.s)
+        self.assertAlmostEqual(d.stdev, a.stdev, self.s)
+
+    def test_single_observation(self):
+        """a single observation must not raise and stdev/variance are 0"""
+        a = Accumulator()
+        a.push(5.0)
+        self.assertEqual(a.observations, 1)
+        self.assertEqual(a.mean, 5.0)
+        self.assertEqual(a.variance, 0)
+        self.assertEqual(a.stdev, 0.0)
+
+    def test_empty_min_max_raise(self):
+        """min/max on an empty accumulator must raise, not return a
+        sentinel value"""
+        a = Accumulator()
+        with self.assertRaises(ValueError):
+            a.min
+        with self.assertRaises(ValueError):
+            a.max
+
+    def test_empty_mean_variance(self):
+        """mean/variance on an empty accumulator are defined as 0"""
+        a = Accumulator()
+        self.assertEqual(a.mean, 0.0)
+        self.assertEqual(a.variance, 0)
+        self.assertEqual(a.stdev, 0.0)
+
+    def test_as_dict_round_trip(self):
+        """as_dict/from_dict must preserve observable statistics"""
+        data = [i for i in range(500)]
+        a = Accumulator(data, precision=5)
+        b = Accumulator.from_dict(a.as_dict())
+        self.assertEqual(b.observations, a.observations)
+        self.assertEqual(b.mean, a.mean)
+        self.assertEqual(b.stdev, a.stdev)
+        self.assertEqual(b.min, a.min)
+        self.assertEqual(b.max, a.max)
+        self.assertEqual(b.quantile(0.5), a.quantile(0.5))
+
+    def test_pickle_round_trip(self):
+        """Accumulator must be directly picklable despite the cffi
+        t-digest handle"""
+        data = [i for i in range(500)]
+        a = Accumulator(data, precision=5)
+        b = pickle.loads(pickle.dumps(a))
+        self.assertEqual(b.observations, a.observations)
+        self.assertEqual(b.mean, a.mean)
+        self.assertEqual(b.stdev, a.stdev)
+        self.assertEqual(b.min, a.min)
+        self.assertEqual(b.max, a.max)
+        self.assertEqual(b.quantile(0.5), a.quantile(0.5))
+        # restored instance must remain usable, e.g. for further merging
+        c = b + Accumulator([1, 2, 3])
+        self.assertEqual(c.observations, a.observations + 3)
 
 
 if __name__ == "__main__":
