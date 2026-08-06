@@ -7,6 +7,9 @@ test/plots/*
 *.xlsx
 # C extensions
 *.so
+dkit/data/*.c
+dkit/utilities/*.c
+tdigest/_tdigest.c
 
 # Distribution / packaging
 .Python

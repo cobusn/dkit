@@ -25,10 +25,10 @@ test: test/input_files/sample.jsonl
 		coverage report
 
 doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
-	cd doc/images && make
-	cd examples && make cleanfiles
-	cd examples && make
-	cd doc && make html \
+	+cd doc/images && $(MAKE)
+	+cd examples && $(MAKE) cleanfiles
+	+cd examples && $(MAKE)
+	+cd doc && $(MAKE) html \
 		&& cd .. \
 		&& cp -r doc/build/* html
 
@@ -51,6 +51,10 @@ clean:
 	rm -f MANIFEST
 	rm -f dkit/data/*.c
 	rm -f dkit/utilities/*.c
+	rm -f tdigest/*.c
+	rm -f dkit/data/*.so
+	rm -f dkit/utilities/*.so
+	rm -f tdigest/*.so
 	rm -f dkit/{doc,data,utilities}/*.pyc
 	rm -f {dkit,test}/*.pyc
 	rm -rf test/cover
