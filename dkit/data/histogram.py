@@ -31,10 +31,33 @@ from .containers import SortedCollection
 from .stats import Accumulator
 import warnings
 import tabulate
-
-from boltons.statsutils import Stats
+import numpy
 
 __all__ = ["Histogram", "binner"]
+
+
+def _histogram_counts(data, bins=None, bin_digits=1):
+    """compute (left, count) fixed-width histogram bins plus data max
+
+    args:
+        * data: list of numeric values
+        * bins: number of bins, or None to auto-select via the
+          Freedman-Diaconis rule
+        * bin_digits: number of digits used to round down bin boundaries
+
+    returns:
+        * tuple of (list of (left, count) pairs, max value)
+    """
+    counts, edges = numpy.histogram(data, bins=bins if bins else "fd")
+    factor = 10 ** bin_digits
+    rounded_edges = [math.floor(e * factor) / factor for e in edges[:-1]]
+    bin_counts = []
+    for left, count in zip(rounded_edges, counts):
+        if bin_counts and bin_counts[-1][0] == left:
+            bin_counts[-1] = (left, bin_counts[-1][1] + int(count))
+        else:
+            bin_counts.append((left, int(count)))
+    return bin_counts, float(edges[-1])
 
 
 def binner(data, value_field, bins: int = None, bin_digits: int = 1):
@@ -52,9 +75,9 @@ def binner(data, value_field, bins: int = None, bin_digits: int = 1):
         * list of dicts in format {"left": value, "count": value}
 
     """
-    stats = Stats(i[value_field] for i in data)
-    bins_ = stats.get_histogram_counts(bins=bins, bin_digits=bin_digits)
-    return [{"left": i[0], "count": i[1]} for i in bins_]
+    values = [i[value_field] for i in data]
+    bin_counts, _ = _histogram_counts(values, bins=bins, bin_digits=bin_digits)
+    return [{"left": left, "count": count} for left, count in bin_counts]
 
 
 @dataclass
@@ -117,17 +140,17 @@ class Histogram(object):
     @classmethod
     def from_data(cls, data, bins: int = None, precision=1) -> "Histogram":
         """
-        Use boltons.statsutils.Stats class to instantiate Histogram
+        Use fixed-width Freedman-Diaconis binning to instantiate Histogram
         """
-        stats = Stats(data)
-        bins_ = stats.get_histogram_counts(bins=bins, bin_digits=precision)
+        values = list(data)
+        bins_, max_value = _histogram_counts(values, bins=bins, bin_digits=precision)
         bin_list = []
         for i in range(len(bins_)-1):
             left, count = bins_[i]
             right = bins_[i+1][0]
             bin_list.append(Bin(left, right, count))
         last = bins_[-1]
-        bin_list.append(Bin(last[0], stats.max, last[1]))
+        bin_list.append(Bin(last[0], max_value, last[1]))
         return cls(bin_list)
 
     @classmethod
