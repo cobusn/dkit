@@ -35,11 +35,47 @@ import sys
 import typing
 import uuid
 from collections import deque
+from decimal import Decimal
 from itertools import chain, islice, tee
 from typing import Iterable
 from tabulate import tabulate
 from collections_extended import RangeMap
-from .stats import quantile_bins
+from ..utilities.cmd_helper import LazyLoad
+
+numpy = LazyLoad("numpy")
+
+
+def quantile_bins(values, n_quantiles=10, strict=False):
+    """compute n quantile bins
+
+    args:
+        * values: iterator of numeric values
+        * n_quantiles: how many bins
+        * strict: generate ValueError if too many similar values for bins
+
+    returns:
+        list of values: [(left, right, count), ...]
+
+    """
+    data = list(values)
+    step = Decimal(1) / Decimal(n_quantiles)
+    boundaries = []
+    q = step
+    for i in range(n_quantiles):
+        this = float(numpy.quantile(data, float(q)))
+        if boundaries and this == boundaries[-1][0]:
+            if strict:
+                raise ValueError("Too many similar value for bins")
+        else:
+            boundaries.append((this, q))
+        q += step
+    q_list = []
+    last = None
+    for this, q in boundaries:
+        q_list.append((last, this, q))
+        last = this
+    q_list[-1] = (q_list[-1][0], None, q_list[-1][2])
+    return q_list
 
 
 __all__ = [
@@ -55,6 +91,7 @@ __all__ = [
     "iter_take",
     "last_n",
     "long_range",
+    "quantile_bins",
     "take",
 ]
 
