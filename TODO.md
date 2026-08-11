@@ -2,6 +2,7 @@
 * improve test coverage
 
 # Next
+* remove ConfiguredApplication boilerplate
 * complete unittests for dk
 * fix Float and Integer defaults (Should be Int64 and Float64) for extensions
 * file locking for JSONDB
