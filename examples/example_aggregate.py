@@ -24,4 +24,5 @@ a = agg.Aggregate() \
     + agg.Quantile("cost", .95) \
     + agg.OrderBy("month_id", "day_id").reverse()
 
+
 print(tabulate.tabulate(list(a(sample_data))[:20], headers="keys"))

@@ -24,6 +24,9 @@ Contents:
    plot.rst
    utilities.rst
    decorators.rst
+   doc2.rst
+   algorithms.rst
+   shell.rst
    cli.rst
 
 Indices and tables

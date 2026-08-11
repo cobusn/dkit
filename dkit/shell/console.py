@@ -9,10 +9,9 @@ class suppress_output(object):
     A context manager for doing a "deep suppression" of stdout and stderr in
     Python, i.e. will suppress all print, even if the print originates in a
     compiled C/Fortran sub-function.
-       This will not suppress raised exceptions, since exceptions are printed
+    This will not suppress raised exceptions, since exceptions are printed
     to stderr just before a script exits, and after the context manager has
     exited (at least, I think that is why it lets exceptions through).
-
     '''
     def __init__(self):
         # Open a pair of null files
@@ -38,9 +37,8 @@ class ArgumentParser(argparse.ArgumentParser):
     """
     Change default behaviour of argparse:
 
-    * instead of exiting, Raise an Exception instead that
-    will be handled by the shell.
-
+    * instead of exiting, raise an Exception instead that
+      will be handled by the shell.
     * disable built in help
     """
     def __init__(self, *kwds, **kwargs):

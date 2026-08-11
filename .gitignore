@@ -144,3 +144,7 @@ doc/images/*.dot
 doc/images/*.svg
 examples/example_*.plot
 examples/example_*.svg
+AGENTS.md
+CLAUDE.md
+_resume/*
+_*/*

@@ -2,6 +2,9 @@
 * improve test coverage
 
 # Next
+* complete unittests for dk
+* fix Float and Integer defaults (Should be Int64 and Float64) for extensions
+* file locking for JSONDB
 * refactor EDA (Exploratory Data Analysis)
 * remove dataclass_wizard dependency
 * add float_32 and float_64 for explicit types
