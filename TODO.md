@@ -2,31 +2,38 @@
 * improve test coverage
 
 # Next
+* properly integrate the CSS components and examples
+* deprecate the old base.py classes
+* plot2: deprecate the old plot and ggplot interfaces, create a more modern
+  plot2 that is helpers to quickly generate plots instead of crafting from
+  scratch. Use Matplotlib only
+  * Hierarchical treemap replacement using `squarify`
+* fix Float and Integer defaults (Should be Int64 and Float64) for extensions
 * remove ConfiguredApplication boilerplate
 * complete unittests for dk
-* fix Float and Integer defaults (Should be Int64 and Float64) for extensions
 * file locking for JSONDB
 * refactor EDA (Exploratory Data Analysis)
 * remove dataclass_wizard dependency
-* add float_32 and float_64 for explicit types
-* validations on parsing Decimal(precision=X, scale=Y), will currently parse
-  without defaults or errors;
-* support for autolink in Reportlab Renderer
+* data model
+  * add float_32 and float_64 for explicit types
+  * validations on parsing Decimal(precision=X, scale=Y), will currently parse
+    without defaults or errors;
+* doc2 
+  * support for autolink in Reportlab Renderer
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
+* support for Python 3.14
 
 # Done
 * Upgrade to sqlalchemy 2
 * Upgrade to mistune 2
 * Update README 
+* factor out Cerberus for a more modern replacement
 
-# Backlog 
+# Someday / Maybe 
 * AWS S3 integration (s3fs..) [e.g dk r etl s3://bucket/products.parquet -0 products.xlsx]
 * Handle Dicts and List data types 
 * type guesser guesses numpy ints as string (should it generate an error)
-* fix python/cannonical type conversion (e.g. python float must be double)
 * refactor etl.writer
-* factor out Cerberus for a more modern replacement
-* update for Python 3.10
 * optimise imports
 * reportlab: document structure added to pdf 
 * table of contents for Reportlab documents

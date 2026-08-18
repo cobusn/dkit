@@ -24,8 +24,7 @@ test: test/input_files/sample.jsonl
 		coverage html &&\
 		coverage report
 
-doc: examples/*.py doc/images/Makefile doc/source/*.rst Makefile
-	+cd doc/images && $(MAKE)
+doc: examples/*.py doc/source/*.rst Makefile
 	+cd examples && $(MAKE) cleanfiles
 	+cd examples && $(MAKE)
 	+cd doc && $(MAKE) html \

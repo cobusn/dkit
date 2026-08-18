@@ -32,6 +32,36 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
 
+# Render graphviz diagrams (including inheritance diagrams) as SVG rather
+# than the PNG default, so they stay crisp at any zoom level instead of
+# pixelating on complex, larger diagrams.
+graphviz_output_format = 'svg'
+
+# Styling for inheritance diagrams: rounded, softly-filled nodes, hollow
+# "empty" arrowheads for the conventional UML is-a notation, and extra
+# node/rank spacing so denser hierarchies stay readable.
+inheritance_graph_attrs = {
+    'rankdir': 'LR',
+    'nodesep': 0.35,
+    'ranksep': 0.6,
+    'bgcolor': 'transparent',
+}
+inheritance_node_attrs = {
+    'shape': 'box',
+    'style': '"rounded,filled"',
+    'fillcolor': '"#eef2fa"',
+    'color': '"#4c72b0"',
+    'fontcolor': '"#1a1a1a"',
+    'fontsize': 11,
+    'fontname': '"Helvetica,Arial,sans-serif"',
+    'height': 0.3,
+}
+inheritance_edge_attrs = {
+    'arrowhead': 'empty',
+    'color': '"#4c72b0"',
+    'penwidth': 0.8,
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -27,8 +27,7 @@ Counter
 
 Class Diagram
 ~~~~~~~~~~~~~
-.. image:: ../images/Counter.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.instrumentation.Counter
 
 Members
 ~~~~~~~
@@ -41,8 +40,7 @@ CounterLogger
 
 Class Diagram
 ~~~~~~~~~~~~~
-.. image:: ../images/CounterLogger.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.instrumentation.CounterLogger
 
 Members
 ~~~~~~~
@@ -52,13 +50,14 @@ Members
 
 Exceptions
 ~~~~~~~~~~
+.. inheritance-diagram:: dkit.utilities.instrumentation.TimerException
+
 .. autoclass:: dkit.utilities.instrumentation.TimerException
 
 Timer
 -----
 
-.. image:: ../images/Timer.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.instrumentation.Timer
 
 .. autoclass:: dkit.utilities.instrumentation.Timer
    :members:
@@ -71,8 +70,7 @@ security
 Fernet
 -------
 
-.. image:: ../images/Fernet.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.security.Fernet
 
 .. autoclass:: dkit.utilities.security.Fernet
    :members:
@@ -82,8 +80,7 @@ Fernet
 Vigenere
 --------
 
-.. image:: ../images/Vigenere.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.security.Vigenere
 
 .. autoclass:: dkit.utilities.security.Vigenere
    :members:
@@ -93,8 +90,7 @@ Vigenere
 Pie
 ---
 
-.. image:: ../images/Pie.svg
-	:align: center
+.. inheritance-diagram:: dkit.utilities.security.Pie
 
 .. autoclass:: dkit.utilities.security.Pie
    :members:
@@ -138,8 +134,7 @@ classes
 
 ClassDocumenter
 ~~~~~~~~~~~~~~~
-.. image:: ../images/ClassDocumenter.svg
-   :align: center
+.. inheritance-diagram:: dkit.utilities.introspection.ClassDocumenter
 
 .. autoclass:: dkit.utilities.introspection.ClassDocumenter
    :members:
@@ -148,8 +143,7 @@ ClassDocumenter
 
 FunctionDocumenter
 ~~~~~~~~~~~~~~~~~~
-.. image:: ../images/FunctionDocumenter.svg
-   :align: center
+.. inheritance-diagram:: dkit.utilities.introspection.FunctionDocumenter
 
 .. autoclass:: dkit.utilities.introspection.FunctionDocumenter
    :members:
@@ -159,8 +153,7 @@ FunctionDocumenter
 ModuleDocumenter
 ~~~~~~~~~~~~~~~~
 
-.. image:: ../images/ModuleDocumenter.svg
-   :align: center
+.. inheritance-diagram:: dkit.utilities.introspection.ModuleDocumenter
 
 .. autoclass:: dkit.utilities.introspection.ModuleDocumenter
    :members:
@@ -185,6 +178,9 @@ job_tracker
 
 JobTracker
 ----------
+.. inheritance-diagram:: dkit.utilities.job_tracker.JobTracker
+   :private-bases:
+
 .. autoclass:: dkit.utilities.job_tracker.JobTracker
    :members:
    :undoc-members:
@@ -192,6 +188,9 @@ JobTracker
 
 MultiProcessJobTracker
 -----------------------
+.. inheritance-diagram:: dkit.utilities.job_tracker.MultiProcessJobTracker
+   :private-bases:
+
 .. autoclass:: dkit.utilities.job_tracker.MultiProcessJobTracker
    :members:
    :undoc-members:

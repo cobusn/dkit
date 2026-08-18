@@ -13,8 +13,7 @@ model
 Connection
 ----------
 
-.. image:: ../images/Connection.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Connection
 
 .. autoclass:: dkit.etl.model.Connection
    :members:
@@ -22,8 +21,7 @@ Connection
 Endpoint
 --------
 
-.. image:: ../images/Endpoint.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Endpoint
 
 .. autoclass:: dkit.etl.model.Endpoint
    :members:
@@ -31,8 +29,7 @@ Endpoint
 Entity
 ------
 
-.. image:: ../images/Entity.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Entity
 
 .. autoclass:: dkit.etl.model.Entity
     :members:
@@ -42,8 +39,7 @@ Entity
 Query
 -----
 
-.. image:: ../images/Query.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Query
 
 .. autoclass:: dkit.etl.model.Query
    :members:
@@ -51,8 +47,7 @@ Query
 Relation
 --------
 
-.. image:: ../images/Relation.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Relation
 
 .. autoclass:: dkit.etl.model.Relation
    :members:
@@ -60,8 +55,7 @@ Relation
 Transform
 ---------
 
-.. image:: ../images/Transform.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.Transform
 
 .. autoclass:: dkit.etl.model.Transform
     :members:
@@ -71,8 +65,7 @@ Transform
 ModelManager
 ------------
 
-.. image:: ../images/ModelManager.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.ModelManager
 
 .. autoclass:: dkit.etl.model.ModelManager
    :members:
@@ -81,8 +74,7 @@ ModelManager
 ETLServices
 -------------
 
-.. image:: ../images/ETLServices.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.model.ETLServices
 
 .. autoclass:: dkit.etl.model.ETLServices
    :members:
@@ -96,8 +88,7 @@ schema
 EntityValidator
 ----------------
 
-.. image:: ../images/EntityValidator.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.schema.EntityValidator
 
 .. autoclass:: dkit.etl.schema.EntityValidator
    :members:
@@ -124,8 +115,7 @@ functions
 AbstractSource
 --------------
 
-.. image:: ../images/AbstractSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.source.AbstractSource
 
 .. autoclass:: dkit.etl.source.AbstractSource
    :members:
@@ -136,8 +126,7 @@ AbstractSource
 FileListingSource
 -----------------
 
-.. image:: ../images/FileListingSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.source.FileListingSource
 
 .. autoclass:: dkit.etl.source.FileListingSource
    :members:
@@ -147,8 +136,7 @@ FileListingSource
 AbstractMultiReaderSource
 -------------------------
 
-.. image:: ../images/AbstractMultiReaderSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.source.AbstractMultiReaderSource
 
 .. autoclass:: dkit.etl.source.AbstractMultiReaderSource
    :members:
@@ -158,12 +146,9 @@ AbstractMultiReaderSource
 CsvDictSource
 -------------
 
+.. inheritance-diagram:: dkit.etl.source.CsvDictSource
+
 .. autoclass:: dkit.etl.source.CsvDictSource
-
-. image:: ../images/CsvDictSource.svg
-	:align: center
-
-. autoclass:: dkit.etl.source.CsvDictSource
    :members:
    :undoc-members:
    :inherited-members:
@@ -171,8 +156,7 @@ CsvDictSource
 JsonlSource
 -----------
 
-.. image:: ../images/JsonlSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.source.JsonlSource
 
 .. autoclass:: dkit.etl.source.JsonlSource
    :members:
@@ -182,8 +166,7 @@ JsonlSource
 PickleSource
 ------------
 
-.. image:: ../images/PickleSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.source.PickleSource
 
 .. autoclass:: dkit.etl.source.PickleSource
    :members:
@@ -195,6 +178,8 @@ Transforms
 
 .. automodule:: dkit.etl.transform
 
+
+.. inheritance-diagram:: dkit.etl.transform.FormulaTransform
 
 .. autoclass:: dkit.etl.transform.FormulaTransform
    :members:
@@ -225,6 +210,8 @@ HDFS
 
 HDFSReader
 ~~~~~~~~~~
+.. inheritance-diagram:: dkit.etl.extensions.ext_hdfs.HDFSReader
+
 .. autoclass:: dkit.etl.extensions.ext_hdfs.HDFSReader
    :members:
    :undoc-members:
@@ -232,6 +219,8 @@ HDFSReader
 
 HDFSWriter
 ~~~~~~~~~~
+.. inheritance-diagram:: dkit.etl.extensions.ext_hdfs.HDFSWriter
+
 .. autoclass:: dkit.etl.extensions.ext_hdfs.HDFSWriter
    :members:
    :undoc-members:
@@ -242,8 +231,7 @@ PyTables
 
 PyTablesAccessor
 ~~~~~~~~~~~~~~~~~~
-.. image:: ../images/PyTablesAccessor.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesAccessor
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesAccessor
    :members:
@@ -252,8 +240,7 @@ PyTablesAccessor
 
 PyTablesModelFactory
 ~~~~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/PyTablesModelFactory.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesModelFactory
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesModelFactory
    :members:
@@ -262,8 +249,7 @@ PyTablesModelFactory
 
 PyTablesSource
 ~~~~~~~~~~~~~~
-.. image:: ../images/PyTablesSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesSource
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesSource
    :members:
@@ -272,8 +258,7 @@ PyTablesSource
 
 PyTablesSink
 ~~~~~~~~~~~~
-.. image:: ../images/PyTablesSink.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesSink
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesSink
    :members:
@@ -282,8 +267,7 @@ PyTablesSink
 
 PyTablesReflector
 ~~~~~~~~~~~~~~~~~
-.. image:: ../images/PyTablesReflector.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesReflector
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesReflector
    :members:
@@ -292,8 +276,7 @@ PyTablesReflector
 
 PyTablesServices
 ~~~~~~~~~~~~~~~~
-.. image:: ../images/PyTablesServices.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesServices
 
 .. autoclass:: dkit.etl.extensions.ext_tables.PyTablesServices
    :members:
@@ -318,8 +301,7 @@ Produces:
 
 SQLAlchemyAccessor
 ~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemyAccessor.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyAccessor
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyAccessor
    :members:
@@ -328,8 +310,7 @@ SQLAlchemyAccessor
 
 SQLAlchemyModelFactory
 ~~~~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemyModelFactory.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyModelFactory
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyModelFactory
    :members:
@@ -338,8 +319,7 @@ SQLAlchemyModelFactory
 
 SQLAlchemyTableSource
 ~~~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemyTableSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTableSource
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTableSource
    :members:
@@ -348,8 +328,7 @@ SQLAlchemyTableSource
 
 SQLAlchemySelectSource
 ~~~~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemySelectSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySelectSource
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySelectSource
    :members:
@@ -358,8 +337,7 @@ SQLAlchemySelectSource
 
 SQLAlchemyTemplateSource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemyTemplateSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTemplateSource
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTemplateSource
    :members:
@@ -368,8 +346,7 @@ SQLAlchemyTemplateSource
 
 SQLAlchemySink
 ~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemySink.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySink
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySink
    :members:
@@ -378,8 +355,7 @@ SQLAlchemySink
 
 SQLAlchemaReflector
 ~~~~~~~~~~~~~~~~~~~
-.. image:: ../images/SQLAlchemyReflector.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyReflector
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyReflector
    :members:
@@ -388,6 +364,8 @@ SQLAlchemaReflector
 
 SQLServices
 ~~~~~~~~~~~
+
+.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLServices
 
 .. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLServices
    :members:
@@ -399,8 +377,7 @@ XML
 
 XmlSource
 ~~~~~~~~~
-.. image:: ../images/XmlSource.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.extensions.ext_xml.XmlSource
 
 .. autoclass:: dkit.etl.extensions.ext_xml.XmlSource
    :members:
@@ -417,8 +394,7 @@ Verifier
 ShelveVerifier
 --------------
 
-.. image:: ../images/ShelveVerifier.svg
-	:align: center
+.. inheritance-diagram:: dkit.etl.verifier.ShelveVerifier
 
 .. autoclass:: dkit.etl.verifier.ShelveVerifier
    :members:
