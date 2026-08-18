@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jsonl-tabulate"
+version = "26.6.1"
+description = "Tabulate JSONL from stdin or files."
+requires-python = ">=3.10"
+dependencies = [
+    "tabulate>=0.9",
+]
+
+[project.scripts]
+jsonl-tabulate = "jsonl_tabulate:main"
+
+[tool.setuptools]
+py-modules = ["jsonl_tabulate"]
