@@ -22,8 +22,6 @@ from .. import NA_VALUE
 import pickle
 from hashlib import md5
 import xxhash
-import random
-import string
 
 BOOL_MAPPING = {
     1:    True,
@@ -125,6 +123,6 @@ def get_partition(input_string: str, num_partitions: int = 10, hash=xxhash.xxh32
     """
     if num_partitions <= 0:
         raise ValueError("Number of partitions must be positive.")
-    hash_value = hash(input_string).intdigest()
+    hash_value = hash(input_string.encode("utf-8")).intdigest()
     partition_index = hash_value % num_partitions
     return partition_index
