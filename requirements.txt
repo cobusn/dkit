@@ -1,16 +1,16 @@
 premailer
 cffi>=1.4.0
-boltons
 cerberus
 curses_components
 collections_extended
 cryptography
 cython
+filelock
 inflect
 jinja2
 lz4
 matplotlib
-mistune
+mistune>=3.3.0
 openpyxl
 pdfrw
 pyarrow
@@ -25,7 +25,6 @@ requests
 sqlalchemy>=2.0,<3.0
 squarify
 tabulate
-tdigest
 xxhash
 zstandard
 python-docx

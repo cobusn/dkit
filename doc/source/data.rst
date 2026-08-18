@@ -10,8 +10,7 @@ aggregation
 
 .. automodule:: dkit.data.aggregation
 
-.. image:: ../images/classes_aggregation.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.aggregation
 
 Example
 -------
@@ -29,8 +28,7 @@ And produce this output:
 Aggregate
 ---------
 
-.. image:: ../images/Aggregate.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.aggregation.Aggregate
 
 .. autoclass:: dkit.data.aggregation.Aggregate
    :members:
@@ -39,8 +37,7 @@ Aggregate
 GroupBy
 -------
 
-.. image:: ../images/GroupBy.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.aggregation.GroupBy
 
 .. autoclass:: dkit.data.aggregation.GroupBy
    :members:
@@ -49,8 +46,7 @@ GroupBy
 Count
 -----
 
-.. image:: ../images/Count.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.aggregation.Count
 
 .. autoclass:: dkit.data.aggregation.Count
    :members:
@@ -117,8 +113,7 @@ containers
 AttrDict
 --------
 
-.. image:: ../images/AttrDict.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.containers.AttrDict
 
 .. autoclass:: dkit.data.containers.AttrDict
    :members:
@@ -127,8 +122,7 @@ AttrDict
 DictonaryEmulator
 -----------------
 
-.. image:: ../images/DictionaryEmulator.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.containers.DictionaryEmulator
 
 .. autoclass:: dkit.data.containers.DictionaryEmulator
    :members:
@@ -138,8 +132,7 @@ DictonaryEmulator
 SortedCollection
 ----------------
 
-.. image:: ../images/SortedCollection.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers.SortedCollection
 
 .. autoclass:: dkit.data.containers.SortedCollection
    :members:
@@ -149,8 +142,8 @@ SortedCollection
 _Shelve
 -------
 
-.. image:: ../images/_Shelve.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers._Shelve
+   :private-bases:
 
 .. autoclass:: dkit.data.containers._Shelve
    :members:
@@ -160,8 +153,7 @@ _Shelve
 FlexShelve
 ----------
 
-.. image:: ../images/FlexShelve.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers.FlexShelve
 
 .. autoclass:: dkit.data.containers.FlexShelve
    :members:
@@ -171,8 +163,7 @@ FlexShelve
 FastFlexShelve
 --------------
 
-.. image:: ../images/FastFlexShelve.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers.FastFlexShelve
 
 .. autoclass:: dkit.data.containers.FastFlexShelve
    :members:
@@ -182,8 +173,7 @@ FastFlexShelve
 FlexBSDDBShelve
 ---------------
 
-.. image:: ../images/FlexBSDDBShelve.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers.FlexBSDDBShelve
 
 .. autoclass:: dkit.data.containers.FlexBSDDBShelve
    :members:
@@ -194,8 +184,7 @@ FlexBSDDBShelve
 OrderedSet
 ----------
 
-.. image:: ../images/OrderedSet.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.containers.OrderedSet
 
 .. autoclass:: dkit.data.containers.OrderedSet
    :members:
@@ -232,8 +221,7 @@ match_filter
 ExpressionFilter
 ----------------
 
-.. image:: ../images/ExpressionFilter.svg
-    :align: center
+.. inheritance-diagram:: dkit.data.filters.ExpressionFilter
 
 .. autoclass:: dkit.data.filters.ExpressionFilter
 
@@ -248,8 +236,7 @@ Proxy
 
 .. autoclass:: dkit.data.filters.Proxy
 
-.. image:: ../images/Proxy.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.filters.Proxy
 
 histogram
 =========
@@ -268,15 +255,13 @@ Bin
 ---
 .. autoclass:: dkit.data.histogram.Bin
 
-.. image:: ../images/Bin.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.histogram.Bin
 
 Histogram
 ---------
 .. autoclass:: dkit.data.histogram.Histogram
 
-.. image:: ../images/Histogram.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.histogram.Histogram
 
 map_db
 ======
@@ -286,8 +271,7 @@ map_db
 Object
 ------
 
-.. image:: ../images/Object.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.map_db.Object
 
 .. autoclass:: dkit.data.map_db.Object
    :members:
@@ -309,8 +293,7 @@ And produce this output:
 ObjectMap
 ---------
 
-.. image:: ../images/ObjectMap.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.map_db.ObjectMap
 
 .. autoclass:: dkit.data.map_db.ObjectMap
    :members:
@@ -320,8 +303,7 @@ ObjectMap
 ObjectMapDB
 -----------
 
-.. image:: ../images/ObjectMapDB.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.map_db.ObjectMapDB
 
 .. autoclass:: dkit.data.map_db.ObjectMapDB
    :members:
@@ -331,8 +313,7 @@ ObjectMapDB
 FileLoaderMixin
 ---------------
 
-.. image:: ../images/FileLoaderMixin.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.map_db.FileLoaderMixin
 
 .. autoclass:: dkit.data.map_db.FileLoaderMixin
    :members:
@@ -342,8 +323,7 @@ FileLoaderMixin
 FileObjectMapDB
 ---------------
 
-.. image:: ../images/FileObjectMapDB.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.map_db.FileObjectMapDB
 
 .. autoclass:: dkit.data.map_db.FileObjectMapDB
    :members:
@@ -367,8 +347,7 @@ aggregates
 ReducePivot
 -----------
 
-.. image:: ../images/ReducePivot.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.manipulate.ReducePivot
 
 .. autoclass:: dkit.data.manipulate.ReducePivot
    :members:
@@ -380,8 +359,7 @@ merge
 
 Pivot
 -----
-.. image:: ../images/Pivot.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.manipulate.Pivot
 
 .. autoclass:: dkit.data.manipulate.Pivot
    :members:
@@ -390,8 +368,7 @@ Pivot
 Substitute
 ----------
 
-.. image:: ../images/Substitute.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.manipulate.Substitute
 
 .. autoclass:: dkit.data.manipulate.Substitute
    :members:
@@ -425,8 +402,7 @@ Supporting Classes
 InferSchema
 -----------
 
-.. image:: ../images/InferSchema.svg
-   :align: center
+.. inheritance-diagram:: dkit.data.infer.InferSchema
 
 .. autoclass:: dkit.data.infer.InferSchema
    :members:
@@ -445,8 +421,7 @@ matching
 DictMatcher
 -----------
 
-.. image:: ../images/DictMatcher.svg
-    :align: center
+.. inheritance-diagram:: dkit.data.matching.DictMatcher
 
 .. autoclass:: dkit.data.matching.DictMatcher
    :members:
@@ -456,8 +431,7 @@ DictMatcher
 FieldSpec
 ---------
 
-.. image:: ../images/FieldSpec.svg
-    :align: center
+.. inheritance-diagram:: dkit.data.matching.FieldSpec
 
 .. autoclass:: dkit.data.matching.FieldSpec
    :members:
@@ -487,8 +461,7 @@ stats
 Accumulator
 -----------
 
-.. image:: ../images/Accumulator.svg
-    :align: center
+.. inheritance-diagram:: dkit.data.stats.Accumulator
 
 .. autoclass:: dkit.data.stats.Accumulator
    :members:
@@ -503,8 +476,7 @@ XmlTransformer
 
 Class Diagram
 ~~~~~~~~~~~~~
-.. image:: ../images/XmlTransformer.svg
-	:align: center
+.. inheritance-diagram:: dkit.data.xml_helper.XmlTransformer
 
 Members
 ~~~~~~~

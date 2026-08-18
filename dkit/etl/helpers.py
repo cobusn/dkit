@@ -180,7 +180,7 @@ class CachedSQLETL(SQLETL):
         """extract data"""
         base_sql = sql or self._get_docstring_sql()
         rendered = self._render(base_sql, params)
-        key = xxhash.xxh3_64_intdigest(rendered)
+        key = xxhash.xxh3_64_intdigest(rendered.encode('utf-8'))
         if key in self.cache and not self.disable_cache:
             logger.info(f"loading data from cache {self._cache_name}")
             return self.cache.get(key)

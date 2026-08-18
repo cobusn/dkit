@@ -45,7 +45,14 @@ class TestBenchmark(unittest.TestCase):
 
     def test_1(self):
         results = benchmark((a, b), 500, 100)
-        print(tabulate(results.table(), floatfmt=",.2f", headers="keys"))
+        table = results.table()
+        print(tabulate(table, floatfmt=",.2f", headers="keys"))
+        # both functions must be present with sane (positive) timings
+        self.assertEqual(len(table), 2)
+        for row in table:
+            self.assertIn(row["function"], ("a", "b"))
+            self.assertGreater(row["mean"], 0)
+            self.assertGreater(row["median"], 0)
 
 
 if __name__ == '__main__':

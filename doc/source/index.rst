@@ -10,7 +10,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   
+
+   introduction.rst
+   tutorial.rst
+   howto_etl_model.rst
+   howto_documents.rst
+   howto_cli_exploration.rst
    base.rst
    data.rst
    etl.rst
@@ -18,7 +23,11 @@ Contents:
    parsers.rst
    plot.rst
    utilities.rst
-   decorators.rst 
+   decorators.rst
+   doc2.rst
+   algorithms.rst
+   shell.rst
+   cli.rst
 
 Indices and tables
 ==================

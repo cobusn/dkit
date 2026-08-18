@@ -33,8 +33,8 @@ Benchmarking Utilities
     print(results.table())
 
 """
+import statistics
 import time
-from boltons.statsutils import Stats
 from tqdm import tqdm
 from typing import Dict, List, Union
 
@@ -44,15 +44,17 @@ class BenchmarkResult(object):
     Helper class to display and interpret benchmark results
 
     args:
-        results: Dictionary of benchmark results
+        results: Dictionary of function name to list of sample timings
     """
-    def __init__(self, results: Dict[str, Stats]):
+    def __init__(self, results: Dict[str, List[float]]):
         self.results = results
 
     def ordered(self):
         """dictionary ordered with slowest result first"""
         return {
-            k: v for k, v in sorted(self.results.items(), key=lambda x: x[1].mean, reverse=True)
+            k: v for k, v in sorted(
+                self.results.items(), key=lambda x: statistics.mean(x[1]), reverse=True
+            )
         }
 
     def table(self) -> List[Dict[str, Union[float, None]]]:
@@ -60,8 +62,8 @@ class BenchmarkResult(object):
         table = [
             {
                 "function": k,
-                "mean": v.mean,
-                "median": v.median,
+                "mean": statistics.mean(v),
+                "median": statistics.median(v),
             }
             for k, v in self.ordered().items()
         ]
@@ -100,7 +102,7 @@ def benchmark(functions, i=500, samples=100):
 
     return BenchmarkResult(
         {
-            f.__name__: Stats(_stat(f) for iter in tqdm(range(i)))
+            f.__name__: [_stat(f) for iter in tqdm(range(i))]
             for f in functions
         }
     )

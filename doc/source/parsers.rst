@@ -8,8 +8,7 @@ parsers
 HTMLTableParser
 ===============
 
-.. image:: ../images/HTMLTableParser.svg
-	:align: center
+.. inheritance-diagram:: dkit.parsers.html_parser.HTMLTableParser
 
 .. autoclass:: dkit.parsers.html_parser.HTMLTableParser
    :members:
@@ -19,8 +18,7 @@ MatchScanner
 ============
 Refer to `SearchScanner` for usage example.
 
-.. image:: ../images/MatchScanner.svg
-	:align: center
+.. inheritance-diagram:: dkit.parsers.helpers.MatchScanner
 
 .. autoclass:: dkit.parsers.helpers.MatchScanner
    :members:
@@ -30,8 +28,7 @@ Refer to `SearchScanner` for usage example.
 SearchScanner
 =============
 
-.. image:: ../images/SearchScanner.svg
-	:align: center
+.. inheritance-diagram:: dkit.parsers.helpers.SearchScanner
 
 .. autoclass:: dkit.parsers.helpers.SearchScanner
    :members:
@@ -54,8 +51,7 @@ This example will generate the following output:
 InfixParser
 ===========
 
-.. image:: ../images/InfixParser.svg
-	:align: center
+.. inheritance-diagram:: dkit.parsers.infix_parser.InfixParser
 
 .. autoclass:: dkit.parsers.infix_parser.InfixParser
    :members:
@@ -64,6 +60,8 @@ InfixParser
 
 ExpressionParser
 ================
+
+.. inheritance-diagram:: dkit.parsers.infix_parser.ExpressionParser
 
 .. autoclass:: dkit.parsers.infix_parser.ExpressionParser
    :members:
@@ -85,8 +83,7 @@ uri_parser
 
 URIStruct
 ---------
-.. image::  ../images/URIStruct.svg
-    :align: center
+.. inheritance-diagram:: dkit.parsers.uri_parser.URIStruct
 
 .. autoclass:: dkit.parsers.uri_parser.URIStruct
     :members:
@@ -99,8 +96,7 @@ parse
 type_parser
 ===========
 
-.. image:: ../images/TypeParser.svg
-    :align: center
+.. inheritance-diagram:: dkit.parsers.type_parser.TypeParser
 
 .. autoclass:: dkit.parsers.type_parser.TypeParser
 

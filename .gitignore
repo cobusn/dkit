@@ -7,6 +7,9 @@ test/plots/*
 *.xlsx
 # C extensions
 *.so
+dkit/data/*.c
+dkit/utilities/*.c
+tdigest/_tdigest.c
 
 # Distribution / packaging
 .Python
@@ -141,3 +144,7 @@ doc/images/*.dot
 doc/images/*.svg
 examples/example_*.plot
 examples/example_*.svg
+AGENTS.md
+CLAUDE.md
+_resume/*
+_*/*

@@ -11,8 +11,7 @@ Repository
 
 Class Diagram
 -------------
-.. image:: ../images/Repository.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.Repository
 
 Members
 -------
@@ -25,8 +24,7 @@ ArgumentsMixin
 
 Class Diagram
 -------------
-.. image:: ../images/ArgumentsMixin.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.ArgumentsMixin
 
 Members
 -------
@@ -40,8 +38,7 @@ InitArgumentsMixin
 
 Class Diagram
 -------------
-.. image:: ../images/InitArgumentsMixin.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.InitArgumentsMixin
 
 Members
 -------
@@ -55,8 +52,7 @@ ConfigMixin
 
 Class Diagram
 -------------
-.. image:: ../images/ConfigMixin.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.ConfigMixin
 
 Members
 -------
@@ -69,8 +65,7 @@ InitConfigMixin
 
 Class Diagram
 -------------
-.. image:: ../images/InitConfigMixin.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.InitConfigMixin
 
 Members
 -------
@@ -85,8 +80,7 @@ ConfiguredObject
 
 Class Diagram
 -------------
-.. image:: ../images/ConfiguredObject.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.ConfiguredObject
 
 Members
 -------
@@ -100,8 +94,7 @@ ConfiguredApplication
 
 Class Diagram
 -------------
-.. image:: ../images/ConfiguredApplication.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.ConfiguredApplication
 
 Members
 -------
@@ -115,8 +108,7 @@ ConsoleApplication
 
 Class Diagram
 -------------
-.. image:: ../images/ConsoleApplication.svg
-	:align: center
+.. inheritance-diagram:: dkit.base.ConsoleApplication
 
 Members
 -------

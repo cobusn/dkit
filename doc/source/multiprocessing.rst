@@ -9,8 +9,7 @@ multi_processing
 
 The module consist of the following components:
 
-    .. image:: ../images/classes_multiprocessing.svg
-        :align: center
+    .. inheritance-diagram:: dkit.multi_processing
 
 Pipelines
 =========
@@ -23,8 +22,7 @@ ListPipeline
    :undoc-members:
    :inherited-members:
 
-.. image:: ../images/ListPipeline.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.ListPipeline
 
 This example illustrate use of the list oriented pipeline:
 
@@ -43,8 +41,7 @@ TaskPipeline
    :undoc-members:
    :inherited-members:
 
-.. image:: ../images/TaskPipeline.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.TaskPipeline
 
 This example illustrate use of the task oriented pipeline:
 
@@ -64,8 +61,7 @@ ListMessage
 `ListMessage` objects are used with the ListPipeline and contain
 a list of objects.
 
-.. image:: ../images/ListMessage.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.ListMessage
 
 .. autoclass:: dkit.multi_processing.ListMessage
    :members:
@@ -78,8 +74,7 @@ UIDTaskMessage
 Used with `TaskPipeline` instances.  The message id will
 be a randomly generated identifier.
 
-.. image:: ../images/UIDTaskMessage.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.UIDTaskMessage
 
 .. autoclass:: dkit.multi_processing.UIDTaskMessage
    :members:
@@ -96,8 +91,7 @@ be an md5 hash of its arguments.
    if this is not the intented behaviour, use the 
    UIDTaskMessage instead.
 
-.. image:: ../images/MD5TaskMessage.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.MD5TaskMessage
 
 .. autoclass:: dkit.multi_processing.MD5TaskMessage
    :members:
@@ -109,8 +103,7 @@ Workers
 Worker classes need to be defined by the user and must inherit from `Worker`
 (refer to examples above).
 
-.. image:: ../images/Worker.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.Worker
 
 .. autoclass:: dkit.multi_processing.Worker
    :members:
@@ -122,8 +115,7 @@ Journal
 The Journal class is used internally by the library although it can be 
 instantiated from a Shelve file
 
-.. image:: ../images/Journal.svg
-	:align: center
+.. inheritance-diagram:: dkit.multi_processing.Journal
 
 .. autoclass:: dkit.multi_processing.Journal
    :members:

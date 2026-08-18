@@ -8,8 +8,7 @@ plot
 Package Overview
 ================
 
-.. image:: ../images/classes_plot.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar
 
 .. automodule:: dkit.plot.ggrammar
 
@@ -36,8 +35,7 @@ Plot Objects are specialized for specific data structures.
 Plot
 ----
 
-.. image:: ../images/Plot.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.Plot
 
 .. autoclass:: dkit.plot.ggrammar.Plot
    :members:
@@ -56,8 +54,7 @@ The above snippet will produce the following image:
 
 .. image:: ../../examples/example_hist.svg
 
-.. image:: ../images/GeomHistogram.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.GeomHistogram
 
 .. autoclass:: dkit.plot.ggrammar.GeomHistogram
    :members:
@@ -71,8 +68,7 @@ Modifiers
 Aestethic
 ---------
 
-.. image:: ../images/Aesthetic.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.Aesthetic
 
 .. autoclass:: dkit.plot.ggrammar.Aesthetic
    :members:
@@ -83,8 +79,7 @@ Aestethic
 XAxis
 -----
 
-.. image:: ../images/XAxis.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.XAxis
 
 .. autoclass:: dkit.plot.ggrammar.XAxis
    :members:
@@ -95,8 +90,7 @@ XAxis
 YAxis
 -----
 
-.. image:: ../images/YAxis.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.YAxis
 
 .. autoclass:: dkit.plot.ggrammar.YAxis
    :members:
@@ -107,8 +101,7 @@ YAxis
 Title
 -----
 
-.. image:: ../images/Title.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.Title
 
 .. autoclass:: dkit.plot.ggrammar.Title
    :members:
@@ -122,8 +115,7 @@ Plot Types
 AbstractGeom
 ------------
 
-.. image:: ../images/AbstractGeom.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.AbstractGeom
 
 .. autoclass:: dkit.plot.ggrammar.AbstractGeom
    :members:
@@ -134,8 +126,7 @@ AbstractGeom
 GeomArea
 --------
 
-.. image:: ../images/GeomArea.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.GeomArea
 
 .. autoclass:: dkit.plot.ggrammar.GeomArea
    :members:
@@ -146,8 +137,7 @@ GeomArea
 GeomBar
 -------
 
-.. image:: ../images/GeomBar.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.GeomBar
 
 .. autoclass:: dkit.plot.ggrammar.GeomBar
    :members:
@@ -158,8 +148,7 @@ GeomBar
 GeomLine
 --------
 
-.. image:: ../images/GeomLine.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.GeomLine
 
 .. autoclass:: dkit.plot.ggrammar.GeomLine
    :members:
@@ -170,8 +159,7 @@ GeomLine
 GeomScatter
 -----------
 
-.. image:: ../images/GeomScatter.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.ggrammar.GeomScatter
 
 .. autoclass:: dkit.plot.ggrammar.GeomScatter
    :members:
@@ -184,6 +172,8 @@ Backends
 Backend
 -------
 
+.. inheritance-diagram:: dkit.plot.base.Backend
+
 .. autoclass:: dkit.plot.base.Backend
    :members:
    :undoc-members:
@@ -192,8 +182,7 @@ Backend
 BackendGnuPlot
 --------------
 
-.. image:: ../images/BackendGnuPlot.svg
-	:align: center
+.. inheritance-diagram:: dkit.plot.gnuplot.BackendGnuPlot
 
 .. autoclass:: dkit.plot.gnuplot.BackendGnuPlot
    :members:

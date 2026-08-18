@@ -322,7 +322,7 @@ class ArrowSchemaGenerator(object):
         )
 
 
-def infer_arrow_schema(iterable: RowIterable, n: int = 50) -> tuple[pa.Schema, Iterator[Row]]:
+def infer_arrow_schema(iterable: RowIterable, n: int = 1000) -> tuple[pa.Schema, Iterator[Row]]:
     """
     Infer an Arrow schema from sampled rows without coercing row values.
 

@@ -24,7 +24,7 @@ import unittest
 import sys; sys.path.insert(0, "..") # noqa
 import random
 from math import exp
-from dkit.data.histogram import Histogram, LegacyHistogram
+from dkit.data.histogram import Histogram, LegacyHistogram, binner
 from dkit.data.helpers import frange
 from dkit.plot import ggrammar
 from dkit.plot.gnuplot import BackendGnuPlot
@@ -57,7 +57,11 @@ class TestHistogram(unittest.TestCase):
 
     def test_histogram_data(self):
         for name, test in self.tests.items():
-            h_data = Histogram.from_data(test, 6)
+            values = list(test)
+            h_data = Histogram.from_data(values, 6)
+            # all input values must be accounted for in the bin counts
+            total = sum(b.count for b in h_data.bins)
+            self.assertEqual(total, len(values))
             plt = ggrammar.Plot(h_data) \
                 + ggrammar.Aesthetic(width=78, height=25) \
                 + ggrammar.GeomHistogram(name, "#FF0000", 0.8) \
@@ -66,6 +70,18 @@ class TestHistogram(unittest.TestCase):
                 + ggrammar.XAxis("bin")
             print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))
             print(str(h_data))
+
+    def test_binner(self):
+        data = [{"value": v} for v in range(1000)]
+        bins = binner(data, "value", bins=10)
+        # all input rows must be accounted for in the bin counts
+        total = sum(b["count"] for b in bins)
+        self.assertEqual(total, len(data))
+        # requested bin count is respected
+        self.assertEqual(len(bins), 10)
+        # bins are ordered by left boundary
+        lefts = [b["left"] for b in bins]
+        self.assertEqual(lefts, sorted(lefts))
 
 
 class TestLegacyHistogram(unittest.TestCase):
