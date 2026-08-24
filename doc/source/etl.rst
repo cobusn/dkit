@@ -5,6 +5,8 @@ etl
 .. toctree::
    :maxdepth: 2
 
+   etl_extensions.rst
+
 model
 =====
 
@@ -203,190 +205,8 @@ pyarrow extension
 
 Extensions
 ==========
-HDFS
-----
 
-.. automodule:: dkit.etl.extensions.ext_hdfs
-
-HDFSReader
-~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_hdfs.HDFSReader
-
-.. autoclass:: dkit.etl.extensions.ext_hdfs.HDFSReader
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-HDFSWriter
-~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_hdfs.HDFSWriter
-
-.. autoclass:: dkit.etl.extensions.ext_hdfs.HDFSWriter
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTables
---------
-
-PyTablesAccessor
-~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesAccessor
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesAccessor
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTablesModelFactory
-~~~~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesModelFactory
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesModelFactory
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTablesSource
-~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesSource
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesSource
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTablesSink
-~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesSink
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesSink
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTablesReflector
-~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesReflector
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesReflector
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-PyTablesServices
-~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_tables.PyTablesServices
-
-.. autoclass:: dkit.etl.extensions.ext_tables.PyTablesServices
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SqlAlchemy
-----------
-Abstraction of the SQLAlchemy API that provide access to any supported database. 
-Refer to the SQLAlchemy documentaton for more information.
-
-Sample usage:
-
-.. include:: ../../examples/example_ext_sql_alchemy.py
-    :literal:
-
-Produces:
-
-.. include:: ../../examples/example_ext_sql_alchemy.out
-    :literal:
-
-
-SQLAlchemyAccessor
-~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyAccessor
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyAccessor
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemyModelFactory
-~~~~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyModelFactory
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyModelFactory
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemyTableSource
-~~~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTableSource
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTableSource
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemySelectSource
-~~~~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySelectSource
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySelectSource
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemyTemplateSource
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTemplateSource
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyTemplateSource
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemySink
-~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySink
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemySink
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLAlchemaReflector
-~~~~~~~~~~~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyReflector
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLAlchemyReflector
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-SQLServices
-~~~~~~~~~~~
-
-.. inheritance-diagram:: dkit.etl.extensions.ext_sql_alchemy.SQLServices
-
-.. autoclass:: dkit.etl.extensions.ext_sql_alchemy.SQLServices
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-XML
----
-
-XmlSource
-~~~~~~~~~
-.. inheritance-diagram:: dkit.etl.extensions.ext_xml.XmlSource
-
-.. autoclass:: dkit.etl.extensions.ext_xml.XmlSource
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+See :doc:`etl_extensions` for HDFS, PyTables, SQLAlchemy, and XML.
 
 Verifier
 ========
@@ -427,4 +247,8 @@ open_source
 open_sink
 ---------
 .. autofunction:: dkit.etl.utilities.open_sink
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
