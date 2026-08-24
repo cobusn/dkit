@@ -10,3 +10,6 @@ pytest-cov
 scipy
 confluent_kafka
 aiosmtpd
+lorem
+sphinx-argparse
+furo
