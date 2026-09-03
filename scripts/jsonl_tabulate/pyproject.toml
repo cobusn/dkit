@@ -1,0 +1,16 @@
+[project]
+name = "jsonl-table"
+dynamic = ["version"]
+description = "Tabulate JSONL data from stdin or files"
+requires-python = ">=3.11"
+dependencies = [
+  "tabulate",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
+
+[project.scripts]
+jsonl-tabulate = "jsonl_table.jsonl_tabulate:main"
