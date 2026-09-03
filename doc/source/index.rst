@@ -16,12 +16,14 @@ Contents:
    howto_etl_model.rst
    howto_documents.rst
    howto_cli_exploration.rst
+   howto_plot2_styles.rst
    base.rst
    data.rst
    etl.rst
    multiprocessing.rst
    parsers.rst
    plot.rst
+   plot2/index.rst
    utilities.rst
    decorators.rst
    doc2.rst

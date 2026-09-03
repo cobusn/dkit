@@ -208,6 +208,11 @@ class Module(object):
         # where clause
         where_clause = self.args.where if hasattr(self.args, "where") else None
         for the_uri in uri_list:
+            # "-" is shorthand for stdin, the way most shell tools accept it.
+            # JSONL is dkit's own standard interchange format for piping (it
+            # is already the default for -o), so a bare "-" means that dialect.
+            if the_uri == "-":
+                the_uri = "jsonl:///stdio"
             with model_services.model.source(
                 uri=the_uri,
                 skip_lines=self.args.skip_lines,

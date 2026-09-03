@@ -1,3 +1,6 @@
+import io
+import shutil
+import sys
 import unittest
 import os
 from dkit import exceptions
@@ -150,12 +153,47 @@ class TestExplore(TestDK):
         ]
         self.go(tests)
 
-    def _test_histogram(self):
-        "x table"
+    def test_dash_reads_jsonl_from_stdin(self):
+        "'-' is shorthand for jsonl:///stdio"
+        with open("dk_testdata/mpg.jsonl") as f:
+            content = f.read()
+        old_stdin = sys.stdin
+        sys.stdin = io.StringIO(content)
+        try:
+            explore_module.ExploreModule(["count", "-d", "manufacturer", "-"]).run()
+        finally:
+            sys.stdin = old_stdin
+
+    def test_stdio_uri_reads_jsonl_from_stdin(self):
+        "jsonl:///stdio, spelled out, still works"
+        with open("dk_testdata/mpg.jsonl") as f:
+            content = f.read()
+        old_stdin = sys.stdin
+        sys.stdin = io.StringIO(content)
+        try:
+            explore_module.ExploreModule(
+                ["count", "-d", "manufacturer", "jsonl:///stdio"]
+            ).run()
+        finally:
+            sys.stdin = old_stdin
+
+    @unittest.skipUnless(shutil.which("chafa"), "chafa is not installed")
+    def test_histogram(self):
+        "x histogram, to the terminal via chafa"
         tests = [
             ["histogram", "-d", "displ", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
+
+    def test_histogram_to_file(self):
+        "x histogram, to a file"
+        outfile = "dk_testdata/_test_histogram.png"
+        tests = [
+            ["histogram", "-d", "displ", "-o", outfile, "dk_testdata/mpg.jsonl"],
+        ]
+        self.go(tests)
+        self.assertTrue(os.path.exists(outfile))
+        os.remove(outfile)
 
     def test_summary(self):
         "x summary"
@@ -165,12 +203,27 @@ class TestExplore(TestDK):
         ]
         self.go(tests)
 
-    def _test_plot(self):
-        "x plot"
+    @unittest.skipUnless(shutil.which("chafa"), "chafa is not installed")
+    def test_plot(self):
+        "x plot, to the terminal via chafa"
         tests = [
             ["plot", "-x", "cty", "-y", "hwy", "dk_testdata/mpg.jsonl"],
+            ["plot", "-x", "cty", "-y", "hwy", "--type", "bar", "dk_testdata/mpg.jsonl"],
+            ["plot", "-x", "cty", "-y", "hwy", "--type", "line", "dk_testdata/mpg.jsonl"],
+            ["plot", "-x", "cty", "-y", "hwy", "--type", "area", "dk_testdata/mpg.jsonl"],
+            ["plot", "-x", "cty", "-y", "hwy", "--type", "impulse", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
+
+    def test_plot_to_file(self):
+        "x plot, to a file"
+        outfile = "dk_testdata/_test_plot.png"
+        tests = [
+            ["plot", "-x", "cty", "-y", "hwy", "-o", outfile, "dk_testdata/mpg.jsonl"],
+        ]
+        self.go(tests)
+        self.assertTrue(os.path.exists(outfile))
+        os.remove(outfile)
 
 
 class TestRelations(TestDK):

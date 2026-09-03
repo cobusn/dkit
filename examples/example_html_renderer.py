@@ -142,7 +142,7 @@ The table below shows the first twelve monthly records.
 """)
 
 # Table from the nottem dataset
-with source.load("examples/data/nottem_temp.jsonl") as infile:
+with source.load("data/nottem_temp.jsonl") as infile:
     temperature_data = list(infile)[:12]
 
 report.add_element(
@@ -174,4 +174,4 @@ renderer = HtmlRenderer(
     inline_images=True,   # embed any local images as data URIs
 )
 
-renderer.render("examples/example_render.html")
+renderer.render("example_render.html")

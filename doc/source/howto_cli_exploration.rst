@@ -77,16 +77,103 @@ field:
    male        266
    female      152
 
-``dk xplore histogram`` draws a console histogram (using gnuplot, with
-colour if your terminal supports it) for a numeric field —
-``dk xplore qhist`` produces a quicker, coarser version of the same
-thing.
-
 .. note::
    ``summary`` and ``histogram`` require the field to be fully numeric
    with no blank values. ``Fare`` in the sample file has one blank
-   value, which raises a ``ValueError``; ``Pclass``, used above, has
-   none.
+   value, which raises a ``ValueError``; ``Pclass``, ``SibSp`` and
+   ``Parch``, used below, have none.
+
+Plotting and histograms
+===========================
+
+``dk xplore histogram`` draws a histogram for a numeric field, and
+``dk xplore plot`` draws one field against another. Both are built on
+:doc:`plot2/index`, and both default to writing straight to the terminal
+rather than a file.
+
+Titanic's numeric fields are mostly small, discrete counts (``Pclass``,
+``SibSp``, ``Parch``), which do not make for much of a picture, so this
+section switches to ``examples/data/mpg.jsonl`` -- fuel economy for 117
+cars, with continuous, correlated fields that plot well:
+
+.. code-block:: bash
+
+   dk xplore histogram -d displ examples/data/mpg.jsonl
+
+This renders inline as a real image, not ASCII art — ``dk`` shells out to
+`chafa <https://hpjansson.org/chafa/>`_, which draws it using whichever
+graphics protocol your terminal supports (Kitty, iTerm2 or Sixel), falling
+back to coloured Unicode block characters if it supports none of them. That
+means what you see depends on the terminal: a modern one shows a proper
+raster image; an old one, or a plain SSH session through a dumb pipe, still
+shows something readable. If ``chafa`` is not installed, both commands
+raise an error naming the package to install (``chafa`` is packaged for
+Ubuntu/Debian in ``universe``, and for RHEL/Fedora via EPEL).
+
+A terminal render cannot be captured as a static page, so here is the same
+command's ``-o`` output instead -- the picture is identical either way, only
+the destination differs:
+
+.. image:: ../../examples/plots/dk_xplore_histogram.png
+   :align: center
+
+``dk xplore plot`` takes an ``-x`` and a ``-y`` field, and a ``--type``:
+
+.. code-block:: bash
+
+   dk xplore plot -x cty -y hwy --type scatter examples/data/mpg.jsonl
+
+.. image:: ../../examples/plots/dk_xplore_plot_scatter.png
+   :align: center
+
+``--type`` also accepts ``bar``, ``line``, ``area`` and ``impulse``
+(``scatter`` is the default). ``-x`` can be omitted to plot a field against
+its row position instead of another field.
+
+Pass ``-o`` to either command to write a PNG (or any format matplotlib
+writes) instead of drawing in the terminal, and ``--theme`` to pick a
+different plot2 theme -- both commands default to ``dkit-dark``, which
+suits a terminal background better than a white plot would:
+
+.. code-block:: bash
+
+   dk xplore histogram -d displ -o displ.png examples/data/mpg.jsonl
+   dk xplore plot -x cty -y hwy --theme dkit-light examples/data/mpg.jsonl
+
+.. image:: ../../examples/plots/dk_xplore_plot_light.png
+   :align: center
+
+See :doc:`plot2/index` for what each theme and ``--type`` looks like
+rendered to a file -- every figure there is a real ``dk`` command's output,
+just saved rather than shown inline. ``dk xplore qhist`` is a lighter
+alternative to ``histogram`` for a field: it draws directly in text with
+``plotille`` instead of ``chafa``, so it needs no external binary, at the
+cost of a coarser picture that cannot use plot2's themes.
+
+Reading from a pipe
+=======================
+
+Every ``dk`` subcommand that takes an input file also accepts a source
+*URI* in place of one, and ``jsonl:///stdio`` is one such URI: it reads
+JSONL from standard input instead of a file, which is what lets one ``dk``
+command feed another:
+
+.. code-block:: bash
+
+   cat examples/data/titanic.csv | dk xplore head "jsonl:///stdio" -n 3
+
+``-`` is shorthand for exactly that -- the same convention ``cat``, ``tar``
+and ``jq`` use for "read from stdin" -- and is equivalent to typing
+``jsonl:///stdio`` in full:
+
+.. code-block:: bash
+
+   cat examples/data/titanic.csv | dk xplore head - -n 3
+
+Piping only ever means JSONL: it is dkit's own interchange format between
+its tools, and already the default for ``-o`` on write. There is no ``-``
+shorthand for piping CSV or another dialect in -- write ``jsonl:///stdio``
+elsewhere in a pipeline, or convert with ``dk run etl`` first.
 
 Finding duplicates
 =====================
@@ -192,5 +279,5 @@ Where to go next
   concepts driven from Python instead of the shell.
 - :doc:`cli` — full reference for every ``dk`` subcommand, including
   ``dk xplore view`` (an interactive curses grid) and ``dk xplore plot``
-  (plot-grammar charts), which are easiest to explore directly in a
-  terminal rather than read about.
+  (line, bar, area, scatter and impulse charts, drawn with plot2), which are
+  easiest to explore directly in a terminal rather than read about.

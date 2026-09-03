@@ -78,16 +78,19 @@ class Document:
         - author: document author
         - date: defaults to today's date. Else provide a string
         - contact: contact details for title page
+        - version: document/report version, for title pages that show one
     """
 
     def __init__(self, title: str = None, sub_title: str = None,
-                 author: str = None, title_date: str = None, contact: str = None):
+                 author: str = None, title_date: str = None, contact: str = None,
+                 version: str = None):
         self.title = title
         self.sub_title = sub_title
         self.author = author
         self._title_date = title_date
         self._date = datetime.now()
         self.contact = contact
+        self.version = version
         self.jinja_objects = {
             "image": self._jinja_include_image,
             "page_break": self._jinja_include_page_break,
@@ -182,7 +185,10 @@ class _JsonIncludeMixin:
 class Image(JSONWizard):
     """Image Object"""
     source: str
-    title: str = None
+    # str | None, not str: a null title round trips through from_dict as the
+    # string "None" when the annotation does not admit None, which renders as a
+    # caption reading "None"
+    title: str | None = None
     align: str = "center"
     width: float | None = None
     height: float | None = None
@@ -310,11 +316,32 @@ class Column(_TableElement):
 
 @dataclass
 class SparkLine(_TableElement):
+    """
+    Sparkline table column: a tiny TikZ line chart per row, drawn from a
+    separate history of rows rather than a single cell value.
+
+    args:
+        - spark_data: rows to draw the sparkline from -- typically a wider
+          history than the table itself shows, e.g. every period rather
+          than just the reported one
+        - master: field on the *table's* rows identifying which entity a row is
+        - child: field on ``spark_data`` identifying which entity a point is.
+          Usually the same field name as ``master``, since both come from the
+          same source rows
+        - value: field on ``spark_data`` holding the value to plot
+        - title: column heading
+        - width: in cm
+        - height: in cm
+    """
     spark_data: List
     master: str
     child: str
     value: str
-    height = 0.3
+    title: str = None
+    width: float = 2
+    height: float = 0.3
+    align: str = "center"
+    heading_align: str = "center"
 
 
 @dataclass

@@ -26,6 +26,8 @@ Manager resources to build a document from templates, code and data.
 
 import importlib.resources
 import logging
+import shutil
+import subprocess
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Literal, Self
@@ -33,9 +35,11 @@ from abc import ABC
 import yaml
 from pydantic import BaseModel
 from functools import lru_cache
+from ..exceptions import DKitApplicationException, DKitShellException
 from . import document as doc
 from .rl_renderer import RLRenderer, DefaultStyler
 from .docx_renderer import DocxRenderer
+from .latex_renderer import LatexRenderer
 
 logger = logging.getLogger("document-builder")
 
@@ -54,6 +58,9 @@ class DocumentConfiguration(BaseModel):
     output: str = "main.pdf"
     renderer: Literal["reportlab", "latex", "docx"]
     styler: str = "default"
+    # latex only: \documentclass{}. Must already be installed and on
+    # LaTeX's own search path -- Builder does not ship or locate .cls files.
+    doc_class: str = "article"
     plot_folder: str = "/tmp"
     template_folder: str = "templates"
 
@@ -220,6 +227,7 @@ class Builder:
     renderers = {
         "reportlab": RLRenderer,
         "docx": DocxRenderer,
+        "latex": LatexRenderer,
     }
 
     def __init__(self, definition: DocumentDefinition):
@@ -280,12 +288,54 @@ class Builder:
     def _get_renderer(self, doc):
         renderer = self.renderers[self.definition.configuration.renderer]
         styler = self._get_styler(self.definition.configuration.styler)
+        if self.definition.configuration.renderer == "latex":
+            return renderer(doc, doc_type=self.definition.configuration.doc_class,
+                            styler=styler)
         return renderer(doc, styler=styler)
 
     def _render(self, doc):
         """Render document"""
         renderer = self._get_renderer(doc)
-        renderer.render(self.definition.configuration.output)
+        if self.definition.configuration.renderer == "latex":
+            self._render_latex(renderer)
+        else:
+            renderer.render(self.definition.configuration.output)
+
+    def _render_latex(self, renderer):
+        """render via LatexRenderer, then compile the .tex it wrote to a PDF
+
+        Unlike RLRenderer/DocxRenderer, LatexRenderer.render() only writes
+        LaTeX source -- turning that into the file ``configuration.output``
+        names needs an external ``pdflatex``, run twice so cross references
+        and the table of contents settle. Compiling in a temporary directory
+        would break every relative image path a template's plots and
+        ``configuration.plot_folder`` rely on, so this runs in place instead,
+        next to ``configuration.output`` -- the same convention
+        RLRenderer/DocxRenderer already follow -- and only the .aux/.log/.out
+        litter pdflatex leaves behind is cleaned up afterwards. The .tex
+        itself is kept: it is a normal, inspectable build output, the same
+        way :mod:`example_document`'s own scripts treat it.
+        """
+        if shutil.which("pdflatex") is None:
+            raise DKitShellException(
+                "pdflatex is not installed. On Ubuntu/Debian: 'apt install "
+                "texlive-latex-base texlive-latex-extra'. On RHEL/Fedora: "
+                "'dnf install texlive-scheme-basic texlive-collection-latexextra'."
+            )
+        output = Path(self.definition.configuration.output)
+        tex_path = output.with_suffix(".tex")
+        renderer.render(str(tex_path))
+        for _ in range(2):
+            result = subprocess.run(
+                ["pdflatex", "-interaction=nonstopmode", tex_path.name],
+                cwd=tex_path.parent or ".", capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                raise DKitApplicationException(
+                    f"pdflatex failed to build {output}:\n{result.stdout[-4000:]}"
+                )
+        for ext in (".aux", ".log", ".out"):
+            tex_path.with_suffix(ext).unlink(missing_ok=True)
 
     def build(self):
         self._render(

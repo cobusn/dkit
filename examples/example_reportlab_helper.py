@@ -123,7 +123,7 @@ pdf_doc = doc.Document("Test Document", "Reportlab Helper", "Author Name",
 pdf_doc.add_template("# Heading 1")
 pdf_doc.add_template(lorem.paragraph())
 pdf_doc.add_template(lorem.paragraph())
-# pdf_doc.add_template("{{ image('examples/data/plotdata.pdf', title='the title', height=3) }}")
+# pdf_doc.add_template("{{ image('data/plotdata.pdf', title='the title', height=3) }}")
 pdf_doc.add_element(doc.Heading([doc.Str("Heading 2")], 1))
 pdf_doc.add_element(doc.Paragraph([doc.Str(lorem.paragraph())]))
 pdf_doc.add_template(md)
@@ -135,7 +135,7 @@ pdf_doc.add_template(md_big)
 class Data:
 
     def __init__(self):
-        with source.load("examples/data/nottem_temp.jsonl") as infile:
+        with source.load("data/nottem_temp.jsonl") as infile:
             self.data = list(infile)[:12]
 
     @doc.wrap_matplotlib(width=5, height=5, filename="plot.png", kind=".png")

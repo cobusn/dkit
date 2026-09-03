@@ -200,7 +200,8 @@ def add_option_input_file(parser):
 
 def add_option_input_uris(parser):
     """input files"""
-    parser.add_argument(dest="input", nargs="+", help='input uri(s)')
+    parser.add_argument(dest="input", nargs="+",
+                        help="input uri(s), or '-' to read JSONL from stdin")
 
 
 def add_option_long_format(parser):

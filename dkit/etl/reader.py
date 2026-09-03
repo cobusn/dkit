@@ -78,6 +78,9 @@ class StreamReader(OpenReader):
     def __iter__(self):
         yield from self.file_obj
 
+    def readlines(self, hint):
+        return self.file_obj.readlines(hint)
+
 
 class StdinReader(StreamReader):
 

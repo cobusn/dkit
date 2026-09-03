@@ -32,7 +32,6 @@ from curses_components.grid import GridComponent
 from . import module, options
 from dkit.data import manipulate as mp, eda, iteration
 from dkit.data.json_utils import make_simple_encoder
-from dkit.plot import ggrammar
 from dkit.etl.extensions.ext_xlsx import XlsxSink
 from dkit.etl import sink
 import logging
@@ -144,21 +143,29 @@ class ExploreModule(module.MultiCommandModule):
         """generate histogram for field"""
         from dkit.data.stats import Accumulator
         from dkit.data.histogram import Histogram
+        from dkit.plot2 import quick
 
         # hack to extract only required field
         self.args.fields = [self.args.field]
         field_name = self.args.field
 
+        # streamed via Accumulator's t-digest, so this does not have to hold
+        # every row in memory to bin a large field
         a = Accumulator((i[field_name] for i in self.input_stream(self.args.input)))
         h = Histogram.from_accumulator(a, precision=2)
 
-        p = ggrammar.Plot(h) \
-            + ggrammar.GeomHistogram(field_name, color="#FF0000", alpha=0.9) \
-            + ggrammar.Title(f"Frequency distribution of {field_name}") \
-            + ggrammar.YAxis("frequency") \
-            + ggrammar.XAxis(field_name)
-
-        self.__render_plot(p)
+        # from_accumulator's bins hold Decimal, which plot2's arithmetic (e.g.
+        # bar offsets) does not mix with the float rcParams/geom defaults
+        bins = [
+            {k: float(v) for k, v in b.as_dict().items()}
+            for b in h.bins
+        ]
+        fig = quick.bar(
+            bins, x="midpoint", y="count", width="width",
+            color="#FF0000", title=f"Frequency distribution of {field_name}",
+            xlabel=field_name, ylabel="frequency", theme=self.args.theme,
+        )
+        self.__show_or_save(fig)
 
         if self.args.table is True:
             t = [b.as_dict() for b in h.bins]
@@ -188,28 +195,27 @@ class ExploreModule(module.MultiCommandModule):
         from dkit.data import filters
         self.__do_regex(filters.match_filter)
 
-    def __render_plot(self, grammar):
+    def __show_or_save(self, fig):
+        """write a figure to file, or display it inline in the terminal
+
+        save_figure needs the theme the figure was drawn with: its own
+        savefig.* rcParams -- dkit-light sets savefig.facecolor explicitly --
+        would otherwise apply and repaint a differently themed figure.
         """
-        Render plot to terminal or to file depending on
-        options set
-        """
-        from dkit.plot import gnuplot
-        print(self.args.script)
         if self.args.output is not None:
-            terminal = ggrammar.Plot.terminal_from_filename(self.args.output)
-            gnuplot.BackendGnuPlot(terminal=terminal) \
-                .render(grammar.as_dict(), self.args.output, self.args.script)
+            from dkit.plot2 import save_figure
+            save_figure(fig, self.args.output, theme=self.args.theme)
         else:
-            self.print(
-                gnuplot.BackendGnuPlot("dumb").render_str(grammar.as_dict())
-            )
+            from dkit.shell import terminal_image
+            terminal_image.show(fig)
 
     def do_plot(self):
-        """generate plot grammar"""
-        from dkit.plot import ggrammar
+        """generate a plot for two fields"""
+        from dkit.plot2 import quick
 
         x_field = self.args.xfield
         y_field = self.args.yfield
+        x = None if x_field == "_index" else x_field
 
         # hack to only extract the required field
         self.args.fields = [y_field]
@@ -217,17 +223,16 @@ class ExploreModule(module.MultiCommandModule):
             self.args.fields.append(x_field)
 
         data = self.input_stream(self.args.input)
-        geom = ggrammar.GEOM_MAP[self.args.plot_type]
+        plot_fn = {
+            "scatter": quick.scatter,
+            "bar": quick.bar,
+            "line": quick.line,
+            "area": quick.area,
+            "impulse": quick.stem,
+        }[self.args.plot_type]
 
-        p = ggrammar.Plot(data) \
-            + geom(y_field, y_data=y_field, x_data=x_field) \
-            + ggrammar.XAxis(x_field) \
-            + ggrammar.YAxis(y_field)
-
-        if self.args.title is not None:
-            p += ggrammar.Title(self.args.title)
-
-        self.__render_plot(p)
+        fig = plot_fn(data, x=x, y=y_field, title=self.args.title, theme=self.args.theme)
+        self.__show_or_save(fig)
 
     def __do_regex(self, re_filter):
         flags = 0
@@ -319,6 +324,8 @@ class ExploreModule(module.MultiCommandModule):
 
     def init_parser(self):
         """initialize argparse parser"""
+        from dkit.plot2.theme import themes
+
         self.init_sub_parser("explore data")
 
         # count
@@ -386,8 +393,8 @@ class ExploreModule(module.MultiCommandModule):
         options.add_option_field_name(parser_histogram)
         options.add_option_tabulate(parser_histogram)
         parser_histogram.add_argument("-o", "--output", help="output to file", default=None)
-        parser_histogram.add_argument("--script", help="gnuplot script file (optional)",
-                                      default=None)
+        parser_histogram.add_argument("--theme", choices=sorted(themes),
+                                      default="dkit-dark", help="plot2 theme")
 
         # qhist
         parser_q_histogram = self.sub_parser.add_parser(
@@ -412,10 +419,12 @@ class ExploreModule(module.MultiCommandModule):
         parser_plot.add_argument("-y", "--yfield", help="y field name", required=True)
         parser_plot.add_argument("--type", dest="plot_type",
                                  help="plot type.",
-                                 choices=list(ggrammar.GEOM_MAP.keys()), default="scatter")
+                                 choices=["scatter", "bar", "line", "area", "impulse"],
+                                 default="scatter")
         parser_plot.add_argument("--title", help="plot title", default=None)
         parser_plot.add_argument("-o", "--output", help="output to file", default=None)
-        parser_plot.add_argument("--script", help="gnuplot script file (optional)",  default=None)
+        parser_plot.add_argument("--theme", choices=sorted(themes),
+                                 default="dkit-dark", help="plot2 theme")
 
         # struc
         parser_struc = self.sub_parser.add_parser("struc", help=self.do_strucmap.__doc__)

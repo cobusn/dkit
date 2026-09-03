@@ -28,4 +28,7 @@ clean:
 	rm -f *.jpg
 	rm -f *.svg
 	rm -f *.plot
+	rm -f plots/plot2*.png
+	rm -f plots/plot2_canned_report.html
+	rm -f plots/dk_xplore_*.png
 

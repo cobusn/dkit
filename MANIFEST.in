@@ -4,3 +4,4 @@ include dkit/resources/*.yaml
 include dkit/resources/*.ttf
 include dkit/resources/*.txt
 include dkit/resources/templates/*.md
+include dkit/plot2/styles/*.mplstyle
