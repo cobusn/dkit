@@ -25,6 +25,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.graphviz',
     'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.todo',
     'sphinxarg.ext',
 ]
 

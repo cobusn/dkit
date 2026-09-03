@@ -20,6 +20,7 @@
     without defaults or errors;
 * doc2 
   * support for autolink in Reportlab Renderer
+* expand and properly test DataTrie
 * generate report folder structure and configuration files (via dk build (init-tex | init-rl))
 * support for Python 3.14
 
