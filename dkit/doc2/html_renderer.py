@@ -39,6 +39,7 @@ Usage::
 import base64
 import functools
 import html as _html
+from importlib.resources import files
 import mimetypes
 
 from . import document as doc
@@ -60,6 +61,11 @@ class HtmlRenderer:
             base64 data URIs so images are embedded in the HTML document.
             Remote URLs (``http://`` / ``https://``) are always left as-is.
     """
+
+    @staticmethod
+    def get_email_css() -> str:
+        """Return the bundled stylesheet intended for email HTML output."""
+        return files("dkit.resources").joinpath("email.css").read_text(encoding="utf-8")
 
     def __init__(
         self,

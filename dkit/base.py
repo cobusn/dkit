@@ -241,12 +241,12 @@ class InitConfigMixin(ConfigMixin):
             if self.arguments.config is not None:
                 config = configparser.ConfigParser()
                 config_filename = os.path.expanduser(self.arguments.config)
-                config.readfp(open(config_filename))
+                config.read(config_filename, encoding="utf-8")
             elif default_config is not None:
                 # Config file not specified with -f, execute if a defualt file is specified.
                 config_filename = os.path.expanduser(default_config)
                 config = configparser.ConfigParser()
-                config.readfp(open(config_filename))
+                config.read(config_filename, encoding="utf-8")
             else:
                 raise exceptions.DKitConfigException("No valid configration file specified.")
             return config

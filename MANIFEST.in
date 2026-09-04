@@ -1,3 +1,4 @@
+include dkit/resources/email.css
 include dkit/resources/background.pdf
 include dkit/resources/*.csv
 include dkit/resources/*.yaml

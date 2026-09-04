@@ -257,6 +257,12 @@ def test_css_file_in_head():
         os.unlink(css_path)
 
 
+def test_bundled_email_css():
+    css = HtmlRenderer.get_email_css()
+    assert ".main" in css
+    assert "background" in css
+
+
 def test_no_css_no_style_tag():
     d = doc.Document(title="T")
     html = HtmlRenderer(d).render_string()

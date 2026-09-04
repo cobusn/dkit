@@ -9,7 +9,7 @@ PYTHON	    = python
 all:	$(CONFIGURED) $(OUTFILES) $(OUTTEX)
 
 $(CONFIGURED) : %.out : %.py
-	$(PYTHON) $< --config config.ini &> $@
+	$(PYTHON) $< --config config.ini > $@ 2>&1
 
 $(OUTFILES) : %.out : %.py
 	$(PYTHON) $< > $@

@@ -29,17 +29,10 @@ Extract:
 Load:
     - writing to S3
 """
-import json
 import logging
-from abc import ABC, abstractmethod
 import re
-from pyarrow.fs import FileSystem
 
-from ..data.iteration import chunker
-from .extensions.ext_arrow import build_table, make_arrow_schema, write_parquet_dataset
-from .extensions.ext_athena import SchemaGenerator
 from .extensions.ext_sql_alchemy import SQLServices
-from .model import Entity
 from ..utilities.jinja2 import render_strict
 import xxhash
 import diskcache
@@ -51,9 +44,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_CACHE_EXPIRATION = 86400  # on day
 
 
-#
-# Fix this...
-#
 def is_select_statement(sql_string):
     """perform a basic test to see if a string is likely a SQL query
 
@@ -66,13 +56,6 @@ def is_select_statement(sql_string):
     pattern = r"^\s*SELECT\s+.+?\s+FROM\s+.+?(?:\s+WHERE\s+.+?)?\s*;?\s*$"
     match = re.match(pattern, sql_string, re.IGNORECASE | re.DOTALL)
     return bool(match)
-
-
-class AbstractExtractor(ABC):
-
-    @abstractmethod
-    def __call__(self):
-        pass
 
 
 class SQLETL:
@@ -188,156 +171,3 @@ class CachedSQLETL(SQLETL):
             data = self._extract(rendered)
             self.cache.set(key, data, expire=self.expire)
             return data
-
-
-class SQLExtractor(AbstractExtractor):
-    """SQL Extraction utility class"""
-
-    def __init__(self, sql_services: SQLServices, conn: str):
-        self.services = sql_services
-        self.conn = conn
-
-    def extract_schema(self, table_name):
-        """reflect table schema from database"""
-        schema = self.services.get_sql_table_schema(
-            conn_name=self.conn,
-            table_name=table_name
-        )
-        logger.debug(json.dumps(schema.as_dict(), indent=2))
-        return schema
-
-    def __call__(self, sql):
-        """run query for interval between start and stop"""
-        return self.services.run_query(
-            self.services.model.get_connection(self.conn),
-            sql
-        )
-
-
-class TemplateSQLExtractor(AbstractExtractor):
-    """SQL Template query extractor
-
-    Arguments:
-        - sql_servcies: SQLServcies instance
-        - conn: connection name
-        - entity: entity name
-        - query_name: query name (as stored in model)
-        - query_str: SQL string
-
-    query_name and query_str is mutually exclusive one must be
-    defined.
-    """
-
-    def __init__(self, sql_services: SQLServices, conn: str, entity: str,
-                 query_name: str = None, query_sql: str = None):
-        self.services = sql_services
-        self.conn = conn
-        self.entity = entity
-        self.query_name = query_name
-        self.query_sql = query_sql
-        if all([query_name, query_sql]) or (not any([query_name, query_sql])):
-            raise ValueError("only one of `query_name' or 'query_sql' must be defined")
-
-    def make_sql(self, **parameters):
-        """
-        Create SQL by rendering the configured query template.
-
-        Args:
-            **parameters: named Template parameters
-
-        Raises:
-            jinja2.exceptions.UndefinedError: If a required template variable
-                is missing.
-            ValueError: If neither or both of ``query_name`` and ``query_sql``
-                are configured.
-        """
-        if self.query_sql is not None:
-            sql = render_strict(self.query_sql, **parameters)
-        elif self.query_name is not None:
-            query = self.services.model.queries[self.query_name]
-            sql = query.template.render(**parameters)
-        else:
-            raise ValueError("only one of `query_name' or 'query_sql' must be defined")
-        logger.debug(sql)
-        return sql
-
-    def schema(self, table_name):
-        """return entity schema"""
-        return self.services.model.entities[self.entity]
-
-    def __call__(self, **parameters):
-        """run query for interval between start and stop"""
-        return self.services.run_query(
-            self.services.model.get_connection(self.conn),
-            self.make_sql(**parameters)
-        )
-
-
-class AbstractLoader(ABC):
-
-    @abstractmethod
-    def __call__(self):
-        pass
-
-
-class ParquetLoader(AbstractLoader):
-    """
-    ETL data from SQL Database to Athena
-
-    args:
-        - schema: Entity instance
-        - fs: FileSystem (e.g. S3FileSystem instance)
-        - partition_columns: lis of partition columns or None
-        - compression: e.g. snappy
-        - chunk_size: max size of each parquet file
-        - s3_path: destination path
-        - existing_data_behaviour="delete_matching":
-            ‘overwrite_or_ignore’ | ‘error’ | ‘delete_matching’
-    """
-    def __init__(self,
-                 schema: Entity,
-                 fs: FileSystem,
-                 path: str,
-                 partition_columns=None,
-                 compression="snappy",
-                 chunk_size=1_000_000,
-                 existing_data_behaviour="delete_matching",
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.schema = schema
-        self.path = path
-        self.fs = fs
-        self.schema = schema
-        self.compression = compression
-        self.chunk_size = chunk_size
-        self.partition_columns = partition_columns if partition_columns else []
-        self.existing_data_behaviour = existing_data_behaviour
-
-    def make_ddl(self, table_name):
-        """
-        Generate DDL for Athena table
-        """
-        gen = SchemaGenerator(
-            table_name=table_name,
-            entity=self.schema,
-            partition_by=self.partition_columns,
-            kind="parquet",
-            location=f"s3://{self.path}"
-        )
-        return gen.get_create_sql()
-
-    def __call__(self, data):
-        arrow_schema = make_arrow_schema(self.schema)
-        logger.debug(str(arrow_schema))
-        for chunk in chunker(data, self.chunk_size):
-            table = build_table(chunk, schema=arrow_schema)
-            if len(table) > 0:
-                # dont write an empty table
-                write_parquet_dataset(
-                    table=table,
-                    path=self.path,
-                    partition_cols=self.partition_columns,
-                    fs=self.fs,
-                    compression=self.compression,
-                    existing_data_behaviour=self.existing_data_behaviour
-                )
