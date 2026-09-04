@@ -175,5 +175,5 @@ And a matplotlib plot:
 pdf_doc.add_template(md_table, data=Data())
 
 RLRenderer(pdf_doc, allow_soft_breaks=False).render("test.pdf")
-# DocxRenderer(pdf_doc).render("test.docx")
-HtmlRenderer(pdf_doc).render("test.html")
+DocxRenderer(pdf_doc).render("output/test.docx")
+HtmlRenderer(pdf_doc).render("output/test.html")

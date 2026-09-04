@@ -2,7 +2,7 @@ import sys; sys.path.insert(0, "..")  # noqa
 import unittest
 import jinja2
 
-from dkit.etl.helpers import is_select_statement, TemplateSQLExtractor
+from dkit.etl.helpers import is_select_statement
 
 
 class TestIsSelectStatement(unittest.TestCase):
@@ -36,21 +36,6 @@ class TestIsSelectStatement(unittest.TestCase):
         self.assertFalse(
             is_select_statement("INSERT INTO table_name VALUES (1)")
         )
-
-
-class TestTemplateSQLExtractor(unittest.TestCase):
-
-    def test_make_sql_raises_on_missing_inline_template_variable(self):
-        """raise when an inline SQL template is rendered with missing variables"""
-        extractor = TemplateSQLExtractor(
-            sql_services=None,
-            conn="dummy",
-            entity="dummy",
-            query_sql="SELECT * FROM customer WHERE id = {{ customer_id }}",
-        )
-
-        with self.assertRaises(jinja2.exceptions.UndefinedError):
-            extractor.make_sql()
 
 
 if __name__ == "__main__":

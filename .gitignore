@@ -151,3 +151,5 @@ _*/*
 examples/plots/*.png
 examples*.html
 examples/plots/*
+examples/output/*
+examples/python-logo.png

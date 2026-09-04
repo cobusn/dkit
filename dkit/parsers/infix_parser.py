@@ -47,6 +47,7 @@ from datetime import datetime
 from pyparsing import (
     CaselessLiteral,
     Combine,
+    DelimitedList,
     Forward,
     Literal,
     Optional,
@@ -54,11 +55,10 @@ from pyparsing import (
     Word,
     ZeroOrMore,
     alphas,
-    delimitedList,
     nums,
-    oneOf,
+    one_of,
     ParseException,
-    originalTextFor,
+    original_text_for,
 )
 
 from ..data import helpers
@@ -239,34 +239,34 @@ class InfixParser(object):
         add_op = plus | minus
         multiplication_op = mult | div
         exp_op = Literal("^")
-        compare_op = oneOf(["!=", "==", "<", "<=", ">", ">="])
-        logical_op = oneOf(["|", "&"])
+        compare_op = one_of(["!=", "==", "<", "<=", ">", ">="])
+        logical_op = one_of(["|", "&"])
         expr = Forward()
-        quoted_string = QuotedString('"').setParseAction(self.__push_op)
-        _function = oneOf(self._functions.keys()) \
+        quoted_string = QuotedString('"').set_parse_action(self.__push_op)
+        _function = one_of(self._functions.keys()) \
             + lpar \
-            + delimitedList(originalTextFor(expr) | quoted_string) \
+            + DelimitedList(original_text_for(expr) | quoted_string) \
             + rpar
         atom = (
             Optional("-") + (
-                float_number.setParseAction(self.__push_value)
-                | constants.setParseAction(self.__push_constant)
-                | variable.setParseAction(self.__push_variable)
-                | _function.setParseAction(self.__push_function)
+                float_number.set_parse_action(self.__push_value)
+                | constants.set_parse_action(self.__push_constant)
+                | variable.set_parse_action(self.__push_variable)
+                | _function.set_parse_action(self.__push_function)
             ) | (lpar + expr.suppress() + rpar)
-        ).setParseAction(self.__push_uminus)
+        ).set_parse_action(self.__push_uminus)
 
         # by defining exponentiation as "atom [ ^ factor ]..." instead of "atom [ ^ atom ]...",
         # we get right-to-left exponents, instead of left-to-righ
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
         factor = Forward()
-        factor << atom + ZeroOrMore((exp_op + factor).setParseAction(self.__push_op))
-        term = factor + ZeroOrMore((multiplication_op + factor).setParseAction(self.__push_op))
-        expr << term + ZeroOrMore((add_op + term).setParseAction(self.__push_op))
+        factor << atom + ZeroOrMore((exp_op + factor).set_parse_action(self.__push_op))
+        term = factor + ZeroOrMore((multiplication_op + factor).set_parse_action(self.__push_op))
+        expr << term + ZeroOrMore((add_op + term).set_parse_action(self.__push_op))
         c_expr = (expr | quoted_string) + ZeroOrMore(
-            (compare_op + (expr | quoted_string)).setParseAction(self.__push_op)
+            (compare_op + (expr | quoted_string)).set_parse_action(self.__push_op)
         )
-        l_expr = c_expr + ZeroOrMore((logical_op + c_expr).setParseAction(self.__push_op))
+        l_expr = c_expr + ZeroOrMore((logical_op + c_expr).set_parse_action(self.__push_op))
         return l_expr
 
     @staticmethod
@@ -348,7 +348,7 @@ class InfixParser(object):
             self
         """
         try:
-            self.__parse_definition().parseString(str_expression, parseAll=True)
+            self.__parse_definition().parse_string(str_expression, parse_all=True)
         except ParseException as E:
             raise DKitParseException(E)
         self._evaluation_stack = ReusableStack(self._parse_stack)

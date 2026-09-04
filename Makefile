@@ -58,3 +58,4 @@ clean:
 	rm -f {dkit,test}/*.pyc
 	rm -rf test/cover
 	rm -rf {dkit,test}/__pycache__
+	rm -rf tdigest/*.o
