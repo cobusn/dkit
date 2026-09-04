@@ -156,12 +156,25 @@ class DocxRenderer:
             element.target
         )
 
-    def _reduce_to_text(self, elements):
-        """reduce to text, for use by hyperlinks etc"""
-        try:
-            return " ".join(i.text for i in elements)
-        except TypeError:
-            raise TypeError(f"Only Str elements expected here: {elements}")
+    def _reduce_to_text(self, elements) -> str:
+        """flatten inline elements to plain text, for use by hyperlinks etc
+
+        Link content is not always one plain Str: text wrapped across a
+        source line becomes Str/SoftBreak/Str, and Bold/Emph hold their own
+        text as a further list rather than a string -- both need flattening
+        rather than a bare ``.text`` lookup.
+        """
+        parts = []
+        for element in elements:
+            if isinstance(element, doc.SoftBreak):
+                parts.append(" ")
+            elif isinstance(element, (doc.Bold, doc.Emph)):
+                parts.append(self._reduce_to_text(element.text))
+            elif isinstance(element, doc.Str):
+                parts.append(element.text)
+            else:
+                raise TypeError(f"Only inline text elements expected here: {element!r}")
+        return "".join(parts)
 
     @make.register(doc.SoftBreak)
     def make_soft_break(self, element: doc.SoftBreak):

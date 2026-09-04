@@ -174,4 +174,4 @@ renderer = HtmlRenderer(
     inline_images=True,   # embed any local images as data URIs
 )
 
-renderer.render("example_render.html")
+renderer.render("output/example_render.html")

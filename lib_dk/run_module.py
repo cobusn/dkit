@@ -293,12 +293,6 @@ class RunModule(module.MultiCommandModule):
                 p
             )
 
-    def do_report(self):
-        """run report"""
-        from dkit.doc import builder
-        b = builder.ReportBuilder.from_file(self.args.report)
-        b.run()
-
     def init_parser(self):
         """initialize argparse parser"""
         self.init_sub_parser()
@@ -404,14 +398,6 @@ class RunModule(module.MultiCommandModule):
             default=False,
             help="show parameters in sql statement without executing"
         )
-
-        # report
-        parser_report = self.sub_parser.add_parser("report", help=self.do_report.__doc__)
-        options.add_option_model(parser_report)
-        parser_report.add_argument(
-            "-r", "--report", required=True, help="report.yml file"
-        )
-        options.add_option_logging(parser_report)
 
         # template
         parser_template = self.sub_parser.add_parser(

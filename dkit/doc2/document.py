@@ -29,7 +29,6 @@ import typing
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
-from dataclass_wizard import JSONWizard
 from jinja2 import Template
 
 from ..data import json_utils as ju
@@ -94,6 +93,7 @@ class Document:
         self.jinja_objects = {
             "image": self._jinja_include_image,
             "page_break": self._jinja_include_page_break,
+            "include": self._jinja_include_file,
         }
         self.elements = []
 
@@ -117,6 +117,16 @@ class Document:
                 width,
                 height
             )
+        )
+
+    def _jinja_include_file(self, filename, language=None):
+        """
+        include the contents of a file as a code block, using jinja templates
+        """
+        with open(filename, "rt") as infile:
+            content = infile.read()
+        return _jsonise(
+            CodeBlock(content=content, language=language)
         )
 
     def add_element(self, element):
@@ -157,7 +167,7 @@ class LineBreak:
 
 
 @dataclass
-class PageBreak(JSONWizard):
+class PageBreak:
     "Line break"
     threshold: int | None = None
 
@@ -182,12 +192,9 @@ class _JsonIncludeMixin:
 
 
 @dataclass
-class Image(JSONWizard):
+class Image:
     """Image Object"""
     source: str
-    # str | None, not str: a null title round trips through from_dict as the
-    # string "None" when the annotation does not admit None, which renders as a
-    # caption reading "None"
     title: str | None = None
     align: str = "center"
     width: float | None = None
@@ -228,7 +235,7 @@ class Code:
 class CodeBlock:
     """Code Block"""
     content: str
-    language: str
+    language: str | None = None
 
 
 @dataclass
@@ -250,17 +257,27 @@ class Heading:
 
 
 def from_json(json):
-    """instantiate document object from JSON"""
-    obj_map = {
-        "Image": Image,
-        "Table": Table,
-        "PageBreak": PageBreak,
-    }
+    """instantiate document object from JSON
+
+    Plain keyword construction from the decoded dict works for every type
+    here except Table: its ``columns`` field holds nested Column dataclasses,
+    which need building up themselves rather than being left as raw dicts.
+    """
     obj_dict = encoder.loads(json)
     name = obj_dict["t"]
     content = obj_dict["c"]
-    obj_type = obj_map[name]
-    return obj_type.from_dict(content)
+    if name == "Table":
+        return Table(
+            data=content["data"],
+            columns=[Column(**c) for c in content["columns"]],
+            align=content["align"],
+        )
+    obj_map = {
+        "Image": Image,
+        "PageBreak": PageBreak,
+        "CodeBlock": CodeBlock,
+    }
+    return obj_map[name](**content)
 
 
 def _map_align(align):
@@ -345,7 +362,7 @@ class SparkLine(_TableElement):
 
 
 @dataclass
-class Table(JSONWizard):
+class Table:
     data: list[dict]
     columns: list[Column]
     align: str = "center"

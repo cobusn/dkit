@@ -92,9 +92,11 @@ What's in the box
     Parsing helpers: a URI parser, a type parser, and supporting
     utilities used throughout the ETL and schema layers.
 
-``dkit.plot``
-    Lightweight plotting: sparklines and console-rendered plots, useful
-    for a quick look at data without leaving the terminal.
+``dkit.plot2``
+    Declarative plotting on matplotlib: quick one-liners for common
+    charts, a layered geom/scale/theme grammar for anything more bespoke,
+    and canned analytical charts (control charts, pareto, histograms,
+    quadrant/growth-share).
 
 ``dkit.utilities``
     Supporting infrastructure: logging, CLI helpers, SMTP/email

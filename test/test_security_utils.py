@@ -28,7 +28,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 sys.path.insert(0, str(TEST_DIR.parent))  # noqa
 
-from dkit.doc.lorem import Lorem  # noqa
+from faker import Faker  # noqa
 import unittest
 from cryptography.fernet import InvalidToken
 from dkit.utilities.security import (  # noqa
@@ -224,9 +224,9 @@ class TestEncryptedIO(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        lorem = Lorem()
+        fake = Faker()
         cls.fernet = FernetBytes(TEST_KEY)
-        cls.data = lorem.txt_paragraph(max=10)
+        cls.data = fake.paragraph(nb_sentences=10)
         cls.fname = OUTPUT_DIR / "encrypted_data.txt"
         EncryptedIO(cls.fernet).write(cls.fname, cls.data.encode())
 

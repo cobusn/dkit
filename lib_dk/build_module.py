@@ -49,15 +49,6 @@ class BuildModule(module.MultiCommandModule):
         )
 
     @property
-    def doc_email(self):
-        """Author as per priority for choices"""
-        return value_by_priority(
-            self.args.email,
-            self.config.get(DOC_SECTION, "email", fallback=None),
-            default=""
-        )
-
-    @property
     def doc_contact(self):
         """Author as per priority for choices"""
         return value_by_priority(
@@ -82,14 +73,14 @@ class BuildModule(module.MultiCommandModule):
         builder.ProjectFolderInitializer(self.args.path)()
 
     def do_doc(self):
-        """create pdf document from markdown file(s)"""
-        from dkit.doc import builder
+        """create a document from markdown file(s)"""
         b = builder.SimpleDocRenderer(
             author=self.doc_author,
             title=self.args.title,
             sub_title=self.args.sub_title,
-            email=self.doc_email,
-            contact=self.doc_contact
+            contact=self.doc_contact,
+            renderer=self.args.format,
+            doc_class=self.args.doc_class,
         )
         b.build_from_files(
             self.args.output,
@@ -112,13 +103,20 @@ class BuildModule(module.MultiCommandModule):
         # doc
         parser_doc = self.sub_parser.add_parser("doc", help=self.do_doc.__doc__)
         options.add_option_defaults(parser_doc)
-        parser_doc.add_argument("-o", "--output", help="pdf output filename", required=True)
+        parser_doc.add_argument("-o", "--output", help="output filename", required=True)
         parser_doc.add_argument("-t", "--title", required=True, help="title")
         parser_doc.add_argument("-s", "--sub-title", dest="sub_title", help="title",
                                 default="")
         parser_doc.add_argument("-a", "--author", default=None, help="author")
-        parser_doc.add_argument("-e", "--email", help="email", default=None)
         parser_doc.add_argument("-c", "--contact", help="contact", default=None)
+        parser_doc.add_argument(
+            "-f", "--format", dest="format", default="reportlab",
+            choices=sorted(builder.RENDERERS), help="output format"
+        )
+        parser_doc.add_argument(
+            "--doc-class", dest="doc_class", default="article",
+            help="latex only: \\documentclass{} to use"
+        )
 
         parser_doc.add_argument("files", nargs="+")
 

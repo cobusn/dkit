@@ -210,16 +210,6 @@ class DefaultStyler(object):
             ol.bulletColor = self.style["BodyText"].textColor
             # self.__print_style(self.style.byName[style])
 
-    @property
-    def contact_email(self):
-        rv = self.doc.contact if self.doc.contact else ""
-        if self.doc.email:
-            if self.doc.contact:
-                rv += f" / {self.doc.email}"
-            else:
-                rv = str(self.doc.email)
-        return rv
-
     def first_page(self, canvas: Canvas, style_sheet):
         """default function for first pages"""
         class FirstPageConf(BaseModel):
@@ -253,7 +243,7 @@ class DefaultStyler(object):
         # title
         x, y = conf.title_xy
         canvas.setFont(self.title_font_name, conf.title_font_size)
-        canvas.drawString(x, y, self.doc.title)
+        canvas.drawString(x, y, self.doc.title or "")
 
         # main color
         canvas.setFillColor(conf.text_color)
@@ -261,17 +251,17 @@ class DefaultStyler(object):
         # subtitle
         x, y = conf.subtitle_xy
         canvas.setFont(self.title_font_name, conf.subtitle_font_size)
-        canvas.drawString(x, y, self.doc.sub_title)
+        canvas.drawString(x, y, self.doc.sub_title or "")
 
         # author
         x, y = conf.author_xy
         canvas.setFont(self.author_font_name, conf.author_font_size)
-        canvas.drawString(x, y, self.doc.author)
+        canvas.drawString(x, y, self.doc.author or "")
 
         # email
         x, y = conf.contact_xy
         canvas.setFont(self.author_font_name, conf.contact_font_size)
-        canvas.drawString(x, y, self.doc.contact)
+        canvas.drawString(x, y, self.doc.contact or "")
 
         # date
         x, y = conf.date_xy
@@ -306,12 +296,12 @@ class DefaultStyler(object):
         # title
         if conf.add_title:
             canvas.setFont(self.title_font_name, 8)
-            canvas.drawString(tl, ty + 12, self.doc.title)
+            canvas.drawString(tl, ty + 12, self.doc.title or "")
 
         # subtitle
         if conf.add_sub_title:
             canvas.setFont(self.author_font_name, 8)
-            canvas.drawString(tl, ty + 2, self.doc.sub_title)
+            canvas.drawString(tl, ty + 2, self.doc.sub_title or "")
 
         # date
         if conf.add_date:
@@ -320,7 +310,7 @@ class DefaultStyler(object):
             canvas.drawString(tr - tw, ty + 6, self.title_date)
 
         # author
-        canvas.drawString(tl, by - 10, self.doc.author)
+        canvas.drawString(tl, by - 10, self.doc.author or "")
         tw = stringWidth(self.title_date, self.author_font_name, 8)
 
         # page number

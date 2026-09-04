@@ -1,0 +1,16 @@
+# dkit-print: print/PDF variant of dkit-light
+#
+# Layer this on top of dkit-light; it overrides only what differs for print:
+#   Theme(rc=["dkit-light", "dkit-print"])
+
+figure.dpi:             300
+savefig.dpi:            300
+
+font.family:            serif
+font.size:              8
+
+axes.grid:              False
+axes.titleweight:       normal
+
+pdf.fonttype:           42
+ps.fonttype:            42

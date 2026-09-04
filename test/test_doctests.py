@@ -6,11 +6,6 @@ import dkit
 
 EXCLUDE = set(
     [
-        "dkit.doc.builder",
-        "dkit.doc.canned",
-        "dkit.doc.json_renderer",
-        "dkit.doc.latex_renderer",
-        "dkit.doc.reportlab_renderer",
         "dkit.etl.extensions.ext_sql_alchemy", # unless cxOracle installed
     ]
 )

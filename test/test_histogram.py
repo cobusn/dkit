@@ -26,8 +26,6 @@ import random
 from math import exp
 from dkit.data.histogram import Histogram, LegacyHistogram, binner
 from dkit.data.helpers import frange
-from dkit.plot import ggrammar
-from dkit.plot.gnuplot import BackendGnuPlot
 from dkit.data.stats import Accumulator
 
 
@@ -43,32 +41,18 @@ class TestHistogram(unittest.TestCase):
         }
 
     def test_histogram_accumulator(self):
-        for name, test in self.tests.items():
+        for test in self.tests.values():
             a = Accumulator(test)
             h_data = Histogram.from_accumulator(a)
-            plt = ggrammar.Plot(h_data) \
-                + ggrammar.Aesthetic(width=78, height=25) \
-                + ggrammar.GeomHistogram(name, "#FF0000", 0.8) \
-                + ggrammar.Title("Random Data Histogram") \
-                + ggrammar.YAxis("frequency") \
-                + ggrammar.XAxis("bin")
-            print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))
             print(str(h_data))
 
     def test_histogram_data(self):
-        for name, test in self.tests.items():
+        for test in self.tests.values():
             values = list(test)
             h_data = Histogram.from_data(values, 6)
             # all input values must be accounted for in the bin counts
             total = sum(b.count for b in h_data.bins)
             self.assertEqual(total, len(values))
-            plt = ggrammar.Plot(h_data) \
-                + ggrammar.Aesthetic(width=78, height=25) \
-                + ggrammar.GeomHistogram(name, "#FF0000", 0.8) \
-                + ggrammar.Title(name) \
-                + ggrammar.YAxis("frequency") \
-                + ggrammar.XAxis("bin")
-            print(BackendGnuPlot(terminal="svg").render_str(plt.as_dict()))
             print(str(h_data))
 
     def test_binner(self):

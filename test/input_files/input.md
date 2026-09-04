@@ -49,7 +49,7 @@ This is how to include verbatim latex:
 This is how to add json directly to the ast:
 
 ```jsoninclude
-{"~>": "paragraph", "data": [{"~>": "text", "data": "\nThis is the included data"}]}
+{"t": "CodeBlock", "c": {"content": "This is the included data", "language": null}}
 ```
 
 ## verbatim

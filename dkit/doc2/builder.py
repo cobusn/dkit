@@ -39,6 +39,7 @@ from ..exceptions import DKitApplicationException, DKitShellException
 from . import document as doc
 from .rl_renderer import RLRenderer, DefaultStyler
 from .docx_renderer import DocxRenderer
+from .html_renderer import HtmlRenderer
 from .latex_renderer import LatexRenderer
 
 logger = logging.getLogger("document-builder")
@@ -50,13 +51,103 @@ __all__ = [
     "DocumentDefinition",
     "DocumentInfo",
     "ProjectFolderInitializer",
+    "SimpleDocRenderer",
 ]
+
+#: every renderer Builder/SimpleDocRenderer know how to produce
+RENDERERS = {
+    "reportlab": RLRenderer,
+    "docx": DocxRenderer,
+    "html": HtmlRenderer,
+    "latex": LatexRenderer,
+}
+
+
+def get_renderer(document: doc.Document, renderer_name: str,
+                 doc_class: str = "article", styler_class=DefaultStyler):
+    """instantiate the named renderer, with the kwargs that one expects
+
+    Not every renderer takes the same constructor arguments: only ``latex``
+    needs ``doc_type``, and ``html``/``docx`` take no styler at all.  This is
+    the one place that distinction is made, so :class:`Builder` and
+    :class:`SimpleDocRenderer` cannot drift apart on it.
+    """
+    renderer_cls = RENDERERS[renderer_name]
+    if renderer_name == "latex":
+        return renderer_cls(document, doc_type=doc_class, styler=styler_class)
+    if renderer_name in ("html", "docx"):
+        return renderer_cls(document)
+    return renderer_cls(document, styler=styler_class)
+
+
+def render_to_file(document: doc.Document, renderer_name: str, output: str,
+                   doc_class: str = "article", styler_class=DefaultStyler):
+    """render ``document`` with the named renderer, writing ``output``
+
+    ``latex`` is the odd one out: :meth:`LatexRenderer.render` only writes
+    LaTeX source, so turning that into ``output`` needs an external
+    ``pdflatex`` pass, handled by :func:`_compile_latex`.
+    """
+    renderer = get_renderer(document, renderer_name, doc_class, styler_class)
+    if renderer_name == "latex":
+        _compile_latex(renderer, output)
+    else:
+        renderer.render(output)
+
+
+def _compile_latex(renderer: LatexRenderer, output: str):
+    """render via LatexRenderer, then compile the .tex it wrote to a PDF
+
+    Compiling in a temporary directory would break every relative image path
+    a template's plots rely on, so this runs in place instead, next to
+    ``output`` -- the same convention the other renderers already follow --
+    and only the .aux/.log/.out litter pdflatex leaves behind is cleaned up
+    afterwards. The .tex itself is kept: it is a normal, inspectable build
+    output, the same way :mod:`example_document`'s own scripts treat it.
+    """
+    if shutil.which("pdflatex") is None:
+        raise DKitShellException(
+            "pdflatex is not installed. On Ubuntu/Debian: 'apt install "
+            "texlive-latex-base texlive-latex-extra'. On RHEL/Fedora: "
+            "'dnf install texlive-scheme-basic texlive-collection-latexextra'."
+        )
+    output_path = Path(output)
+    tex_path = output_path.with_suffix(".tex")
+    renderer.render(str(tex_path))
+    for _ in range(2):
+        result = subprocess.run(
+            ["pdflatex", "-interaction=nonstopmode", tex_path.name],
+            cwd=tex_path.parent or ".", capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise DKitApplicationException(
+                f"pdflatex failed to build {output_path}:\n{result.stdout[-4000:]}"
+            )
+    for ext in (".aux", ".log", ".out"):
+        tex_path.with_suffix(ext).unlink(missing_ok=True)
+
+
+def import_class(name: str):
+    """import and return the class named by a dotted path, e.g. ``pkg.mod.Class``"""
+    logger.info(f"loading class: {name}")
+    l_class = name.split(".")
+    class_name = l_class[-1]
+    module_name = ".".join(l_class[:-1])
+    module_ = import_module(module_name)
+    return getattr(module_, class_name)
+
+
+def resolve_styler(styler: str):
+    """the styler named by config: "default", or a dotted class path"""
+    if styler == "default":
+        return DefaultStyler
+    return import_class(styler)
 
 
 class DocumentConfiguration(BaseModel):
     """report config"""
     output: str = "main.pdf"
-    renderer: Literal["reportlab", "latex", "docx"]
+    renderer: Literal["reportlab", "latex", "docx", "html"]
     styler: str = "default"
     # latex only: \documentclass{}. Must already be installed and on
     # LaTeX's own search path -- Builder does not ship or locate .cls files.
@@ -224,11 +315,8 @@ class ProjectFolderInitializer:
 class Builder:
     """Document Builder"""
 
-    renderers = {
-        "reportlab": RLRenderer,
-        "docx": DocxRenderer,
-        "latex": LatexRenderer,
-    }
+    #: kept for backward compatibility; use module-level RENDERERS
+    renderers = RENDERERS
 
     def __init__(self, definition: DocumentDefinition):
         self.definition = definition
@@ -246,21 +334,12 @@ class Builder:
         """
         return cls(DocumentDefinition.from_file(file_name, section))
 
-    def _get_class(self, name):
-        """import and retun class"""
-        logger.info(f"loading class: {name}")
-        l_class = name.split(".")
-        class_name = l_class[-1]
-        module_name = ".".join(l_class[:-1])
-        module_ = import_module(module_name)
-        return getattr(module_, class_name)
-
     @lru_cache
     def _load_code(self):
         """load document code"""
         code = {}
         for k, v in self.definition.code.items():
-            class_ = self._get_class(v)
+            class_ = import_class(v)
             code[k] = class_(self.definition)
         return code
 
@@ -273,71 +352,56 @@ class Builder:
                 _doc.add_template(infile.read(), **self._load_code())
         return _doc
 
-    def _get_styler(self, styler):
-        """Return styler class specified"""
-        if styler == "default":
-            styler_class = DefaultStyler
-        else:
-            styler_class = self._get_class(self.definition.configuration.styler)
-            '''
-            if not issubclass(styler_class, DefaultStyler):
-                styles raise TypeError(f"class {styler_class} is not of the correct type")
-            '''
-        return styler_class
-
-    def _get_renderer(self, doc):
-        renderer = self.renderers[self.definition.configuration.renderer]
-        styler = self._get_styler(self.definition.configuration.styler)
-        if self.definition.configuration.renderer == "latex":
-            return renderer(doc, doc_type=self.definition.configuration.doc_class,
-                            styler=styler)
-        return renderer(doc, styler=styler)
-
-    def _render(self, doc):
-        """Render document"""
-        renderer = self._get_renderer(doc)
-        if self.definition.configuration.renderer == "latex":
-            self._render_latex(renderer)
-        else:
-            renderer.render(self.definition.configuration.output)
-
-    def _render_latex(self, renderer):
-        """render via LatexRenderer, then compile the .tex it wrote to a PDF
-
-        Unlike RLRenderer/DocxRenderer, LatexRenderer.render() only writes
-        LaTeX source -- turning that into the file ``configuration.output``
-        names needs an external ``pdflatex``, run twice so cross references
-        and the table of contents settle. Compiling in a temporary directory
-        would break every relative image path a template's plots and
-        ``configuration.plot_folder`` rely on, so this runs in place instead,
-        next to ``configuration.output`` -- the same convention
-        RLRenderer/DocxRenderer already follow -- and only the .aux/.log/.out
-        litter pdflatex leaves behind is cleaned up afterwards. The .tex
-        itself is kept: it is a normal, inspectable build output, the same
-        way :mod:`example_document`'s own scripts treat it.
-        """
-        if shutil.which("pdflatex") is None:
-            raise DKitShellException(
-                "pdflatex is not installed. On Ubuntu/Debian: 'apt install "
-                "texlive-latex-base texlive-latex-extra'. On RHEL/Fedora: "
-                "'dnf install texlive-scheme-basic texlive-collection-latexextra'."
-            )
-        output = Path(self.definition.configuration.output)
-        tex_path = output.with_suffix(".tex")
-        renderer.render(str(tex_path))
-        for _ in range(2):
-            result = subprocess.run(
-                ["pdflatex", "-interaction=nonstopmode", tex_path.name],
-                cwd=tex_path.parent or ".", capture_output=True, text=True,
-            )
-            if result.returncode != 0:
-                raise DKitApplicationException(
-                    f"pdflatex failed to build {output}:\n{result.stdout[-4000:]}"
-                )
-        for ext in (".aux", ".log", ".out"):
-            tex_path.with_suffix(ext).unlink(missing_ok=True)
-
     def build(self):
-        self._render(
-            self.build_document()
+        config = self.definition.configuration
+        render_to_file(
+            self.build_document(), config.renderer, config.output,
+            doc_class=config.doc_class, styler_class=resolve_styler(config.styler),
         )
+
+
+class SimpleDocRenderer:
+    """render markdown file(s) straight to a document, no project needed
+
+    The one-shot counterpart to :class:`Builder`: no ``report.yaml``, no
+    ``templates``/``code``/``data`` sections, no project folder -- just
+    markdown files, a title, and a renderer choice. This is what ``dk build
+    doc`` uses.
+
+    args:
+        title: document title
+        author: document author
+        sub_title: document subtitle
+        contact: contact details shown on the title page
+        title_date: printed date. None uses today's date.
+        version: document/report version
+        renderer: one of ``RENDERERS`` -- "reportlab", "docx", "html", "latex"
+        doc_class: latex only: ``\\documentclass{}`` to use. Must already be
+            installed and on LaTeX's own search path.
+        styler: "default", or a dotted path to a styler class
+    """
+
+    def __init__(self, title: str, author: str | None = None,
+                sub_title: str | None = None, contact: str | None = None,
+                title_date: str | None = None, version: str | None = None,
+                renderer: str = "reportlab", doc_class: str = "article",
+                styler: str = "default"):
+        self.title = title
+        self.author = author
+        self.sub_title = sub_title
+        self.contact = contact
+        self.title_date = title_date
+        self.version = version
+        self.renderer = renderer
+        self.doc_class = doc_class
+        self.styler = styler
+
+    def build_from_files(self, output: str, *files: str):
+        """render ``files`` (markdown, jinja2-templated) to ``output``"""
+        document = doc.Document(
+            title=self.title, sub_title=self.sub_title, author=self.author,
+            title_date=self.title_date, contact=self.contact, version=self.version,
+        )
+        document.add_template_files(list(files))
+        render_to_file(document, self.renderer, output, self.doc_class,
+                       resolve_styler(self.styler))

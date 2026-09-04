@@ -118,10 +118,26 @@ class RLRenderer:
 
     @make.register(doc.Paragraph)
     def make_paragraph(self, element: doc.Paragraph):
-        yield Paragraph(
-            self.make_text(element.content),
-            self.styler[self.paragraph_style]   # style changed for block's
-        )
+        # native markdown image syntax (![alt](src)) nests the Image inside
+        # the paragraph's own content, unlike the {{ image(...) }} jinja
+        # helper's Image, which is always its own top-level element --
+        # make_text can only stringify inline text, so any embedded Image
+        # is split out into its own flowable instead
+        inlines = []
+        for item in element.content:
+            if isinstance(item, doc.Image):
+                if inlines:
+                    yield Paragraph(
+                        self.make_text(inlines), self.styler[self.paragraph_style]
+                    )
+                    inlines = []
+                yield from self.make(item)
+            else:
+                inlines.append(item)
+        if inlines:
+            yield Paragraph(
+                self.make_text(inlines), self.styler[self.paragraph_style]
+            )
 
     @make.register(doc.BlockQuote)
     def make_block_quote(self, element: doc.BlockQuote):

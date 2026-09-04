@@ -1,5 +1,5 @@
 # PYTHON
-CONFIGPY    = example_configured_application.py example_barplot.py
+CONFIGPY    = example_configured_application.py
 CONFIGURED  = $(CONFIGPY:.py=.out)
 PYTHONFILES = $(filter-out $(CONFIGPY), $(wildcard *.py))
 OUTFILES    = $(PYTHONFILES:.py=.out)
@@ -31,4 +31,3 @@ clean:
 	rm -f plots/plot2*.png
 	rm -f plots/plot2_canned_report.html
 	rm -f plots/dk_xplore_*.png
-

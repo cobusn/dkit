@@ -22,7 +22,6 @@ Contents:
    etl.rst
    multiprocessing.rst
    parsers.rst
-   plot.rst
    plot2/index.rst
    utilities.rst
    decorators.rst

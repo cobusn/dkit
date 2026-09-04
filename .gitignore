@@ -149,3 +149,5 @@ CLAUDE.md
 _resume/*
 _*/*
 examples/plots/*.png
+examples*.html
+examples/plots/*

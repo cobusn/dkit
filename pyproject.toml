@@ -22,27 +22,15 @@ Homepage = "https://github.com/cobusn/dkit"
 Issues = "https://github.com/cobusn/dkit/issues"
 
 [tool.setuptools]
-packages=[
-    "dkit",
-    "dkit.algorithms",
-    "dkit.data",
-    "dkit.doc",
-    "dkit.doc2",
-    "dkit.etl",
-    "dkit.etl.extensions",
-    "dkit.parsers",
-    "dkit.plot",
-    "dkit.plot2",
-    "dkit.plot2.geom",
-    "dkit.plot2.styles",
-    "dkit.resources",
-    "dkit.resources.src",
-    "dkit.resources.templates",
-    "dkit.shell",
-    "dkit.utilities",
-    "lib_dk"
-]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+# auto-discover instead of a hand-maintained list -- new subpackages (or
+# ones removed, e.g. the pending dkit.doc/dkit.plot cleanup) just work.
+# namespaces = true: dkit.resources and dkit.resources.templates have no
+# __init__.py, so they only get picked up as implicit namespace packages.
+include = ["dkit*", "lib_dk*"]
+namespaces = true
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}

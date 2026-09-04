@@ -77,12 +77,31 @@ class DocRenderer(BaseRenderer):
         return doc.Link(content, target)
 
     def image(self, token: Dict[str, Any], state: BlockState) -> str:
-        title = self.render_children(token, state)
+        title = self._flatten_text(self.render_children(token, state))
         target = token['attrs']['url']
         return doc.Image(
             target,
-            title,
+            title or None,
         )
+
+    def _flatten_text(self, children) -> str:
+        """flatten inline elements to plain text
+
+        Unlike Emph/Bold/etc., whose ``.text`` every renderer already knows
+        to walk recursively, ``Image.title`` is a plain string (it round
+        trips through as_json/from_json, which nested inline objects would
+        not survive), so alt text needs flattening here rather than being
+        left as the list render_children() returns.
+        """
+        parts = []
+        for child in children:
+            if isinstance(child, doc.Str):
+                parts.append(child.text)
+            elif isinstance(child, doc.SoftBreak):
+                parts.append(" ")
+            elif isinstance(child, (doc.Emph, doc.Bold)):
+                parts.append(self._flatten_text(child.text))
+        return "".join(parts)
 
     def list(self, token: Dict[str, Any], state: BlockState) -> str:
         ordered = token["attrs"]["ordered"]

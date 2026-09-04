@@ -1,0 +1,24 @@
+# dkit-dark: dark variant of dkit-light
+#
+# Layer this on top of dkit-light; it overrides colours only:
+#   Theme(rc=["dkit-light", "dkit-dark"])
+#
+# NOTE: in .mplstyle files '#' starts a comment, so colours are written
+#       WITHOUT the leading '#'.
+
+figure.facecolor:       1c1c1c
+savefig.facecolor:      1c1c1c
+
+text.color:             e8e8e8
+
+axes.facecolor:         1c1c1c
+axes.edgecolor:         8a8a8a
+axes.labelcolor:        e8e8e8
+axes.prop_cycle:        cycler('color', ['4fb3e8', '00d1b2', 'f2a65a', 'e5698f', 'a98cf0', 'd6d64f'])
+
+grid.color:             4d4d4d
+
+xtick.color:            b0b0b0
+ytick.color:            b0b0b0
+
+legend.labelcolor:      e8e8e8

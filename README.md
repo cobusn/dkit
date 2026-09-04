@@ -9,6 +9,13 @@ of storage formats, manage schemas, manipulate data, and generate reports.
 
 ---
 
+## Bundled fonts
+
+This project bundles Source Sans Pro fonts by Adobe, licensed under the
+[SIL Open Font License 1.1](dkit/resources/OFL-1.1.txt).
+
+---
+
 ## Installation
 
 ```bash
@@ -29,7 +36,7 @@ pip install -e .             # editable install for development
 | `dkit.doc2` | Programmatic document builder — PDF (ReportLab), DOCX, HTML, Markdown renderers; email pipeline |
 | `dkit.algorithms` | Trie, t-digest |
 | `dkit.parsers` | URI parser, type parser, parser helpers |
-| `dkit.plot` | Sparklines, console plots |
+| `dkit.plot2` | Declarative plotting on matplotlib: quick one-liners, geoms/scales/themes, canned analytical charts |
 | `dkit.utilities` | Logging, CLI helpers, SMTP/email, Jinja2, security, ZMQ, concurrency, benchmarking |
 | `dkit.shell` | Shell and config utilities |
 
@@ -169,7 +176,6 @@ dk schemas grep       "person.*"
 | `melt` | Transpose a pivot table back to key:value pairs |
 | `query` | Execute a SQL query |
 | `exec` | Execute a driver-level query (DDL etc.) |
-| `report` | Run a report definition |
 | `template` | Apply datasets to a Jinja2 template |
 
 ```bash
@@ -180,9 +186,11 @@ dk run pivot    input.jsonl -o pivot.jsonl
 dk run melt     pivot.jsonl -o output.jsonl
 dk run query    --connection mydb "select * from person"
 dk run exec     --connection mydb "create index ..."
-dk run report   report.yml
 dk run template template.j2 data.jsonl
 ```
+
+Document reports are run via `dk build report report.yml` -- all
+document/report functionality lives under `dk build`, not `dk run`.
 
 ---
 
