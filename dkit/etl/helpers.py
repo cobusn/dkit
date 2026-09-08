@@ -100,11 +100,16 @@ class SQLETL:
         logger.debug(_sql)
         return _sql
 
+    def render_sql(self, sql=None, params=None):
+        """build sql from provided or docstring and parameters"""
+        return self._render(
+            sql or self._get_docstring_sql(),
+            params
+        )
+
     def extract(self, sql, params):
         """extract data"""
-        _sql = sql or self._get_docstring_sql()
-        r_sql = self._render(_sql, params)
-        return self._extract(r_sql)
+        return self._extract(self.render_sql(sql, params))
 
     def transform(self, data):
         return data
