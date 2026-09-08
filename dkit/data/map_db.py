@@ -152,7 +152,7 @@ class FileLoaderMixin(object):
     :param codec: codec (e.g. yaml, json, pickle)
     :param backups: create backup when writing (default is true)
     :param binary: set to true for binary codecs such as pickle
-    :param save_options: dictionary to pass to codec
+    :param sort_keys: override mapping key ordering for codecs that support it
 
     .. note::
 
@@ -165,7 +165,7 @@ class FileLoaderMixin(object):
         self.backups = backups
         super().__init__(**kwargs)
 
-    def save(self, filename, codec=None):
+    def save(self, filename, codec=None, sort_keys=None):
         """
         write schema to file
 
@@ -181,6 +181,8 @@ class FileLoaderMixin(object):
             save_options = {"default_flow_style": False}
         else:
             save_options = {}
+        if sort_keys is not None and codec.__name__ in ("json", "yaml"):
+            save_options["sort_keys"] = sort_keys
         if codec.__name__ in ['pickle']:
             if "b" not in mode:
                 mode += "b"

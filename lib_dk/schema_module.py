@@ -79,7 +79,8 @@ class SchemaModule(module.CRUDModule):
             services.model.entities[self.args.entity] = ent
             services.save_model_file(
                 services.model,
-                self.args.model_uri
+                self.args.model_uri,
+                sort_keys=self.args.sort_fields,
             )
 
     def do_print(self):
@@ -190,7 +191,11 @@ class SchemaModule(module.CRUDModule):
                 self.args.append
             )
             self.tabulate([{"name": k, "type": v} for k, v in e.as_dict().items()])
-        services.save_model_file(services.model, self.args.model_uri)
+        services.save_model_file(
+            services.model,
+            self.args.model_uri,
+            sort_keys=self.args.sort_fields,
+        )
 
     def do_import(self):
         """import external entities"""
@@ -245,6 +250,7 @@ class SchemaModule(module.CRUDModule):
         options.add_option_defaults(parser_infer)
         options.add_options_sampling(parser_infer)
         options.add_options_inputs(parser_infer)
+        options.add_option_sort_schema_fields(parser_infer)
 
         # ls
         parser_ls = self.sub_parser.add_parser("ls", help=self.do_ls.__doc__)
@@ -347,5 +353,6 @@ class SchemaModule(module.CRUDModule):
         options.add_option_connection_name(parser_sql_reflect)
         options.add_option_glob(parser_sql_reflect)
         options.add_option_append(parser_sql_reflect)
+        options.add_option_sort_schema_fields(parser_sql_reflect)
 
         super().parse_args()

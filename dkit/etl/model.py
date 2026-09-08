@@ -945,8 +945,12 @@ class ETLServices(object):
             ).load(model_filename)
         return export_model
 
-    def save_model_file(self, model_db: ModelManager, file_name):
+    def save_model_file(self, model_db: ModelManager, file_name, sort_keys=None):
         """
         save model to disk
         """
-        model_db.save(file_name, codec=get_model_codec(file_name))
+        model_db.save(
+            file_name,
+            codec=get_model_codec(file_name),
+            sort_keys=sort_keys,
+        )

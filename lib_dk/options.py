@@ -60,6 +60,17 @@ def add_option_append(parser):
                         help=add_option_append.__doc__)
 
 
+def add_option_sort_schema_fields(parser):
+    """sort inferred or reflected fields before saving the model"""
+    parser.add_argument(
+        "--sort-fields",
+        dest="sort_fields",
+        action="store_true",
+        default=False,
+        help=add_option_sort_schema_fields.__doc__,
+    )
+
+
 def add_option_backend_map(parser):
     """backend for intermediate storage"""
     parser.add_argument("--backend", default=None, type=str,

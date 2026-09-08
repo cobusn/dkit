@@ -21,10 +21,16 @@
 import sys
 import unittest
 import pickle
+import tempfile
 import yaml
 sys.path.insert(0, "..")
-from dkit.data.map_db import ObjectMapDB, FileObjectMapDB
+from dkit.data.map_db import Object, ObjectMapDB, FileObjectMapDB
 from test_entity_map import SampleObject
+
+
+class UnsortedObject(Object):
+    def as_dict(self):
+        return {"z": 1, "a": 2}
 
 
 class TestEntityMapDB(unittest.TestCase):
@@ -70,6 +76,25 @@ class TestEntityMapDB(unittest.TestCase):
         json_db.save("data/entity_map.yaml")
         json_db.load("data/entity_map.yaml")
         self.assertEqual(json_db.items["one"], self.test_instance)
+
+    def test_serialize_yaml_sort_keys_option(self):
+        """sort_keys controls YAML mapping order when explicitly provided"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            filename = f"{tmp_dir}/entity_map.yaml"
+            db = FileObjectMapDB(
+                schema={"items": UnsortedObject}, codec=yaml, backups=False
+            )
+            db.items["one"] = UnsortedObject()
+
+            db.save(filename, sort_keys=False)
+            with open(filename) as stream:
+                preserved = yaml.safe_load(stream)
+            self.assertEqual(list(preserved["items"]["one"]), ["z", "a"])
+
+            db.save(filename, sort_keys=True)
+            with open(filename) as stream:
+                sorted_keys = yaml.safe_load(stream)
+            self.assertEqual(list(sorted_keys["items"]["one"]), ["a", "z"])
 
     def test_serialize_pickle(self):
         """serialize to yaml"""
