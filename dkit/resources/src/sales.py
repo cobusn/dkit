@@ -1,16 +1,14 @@
 import sys; sys.path.insert(0, "..")  # noqa
 from functools import lru_cache
-import matplotlib.pyplot as plt
+
+from dkit.data import manipulate as mp
 from dkit.data.fake_helper import sales_transactions
 from dkit.doc2 import document as doc
 from dkit.doc2.builder import DocumentCode
-from dkit.data import manipulate as mp
+from dkit.plot2 import quick, scale
+
 
 PLOTTYPE = ".pdf"
-
-
-def cm(value: float) -> float:
-    return value / 2.54
 
 
 class Sales(DocumentCode):
@@ -28,19 +26,15 @@ class Sales(DocumentCode):
         )
         top_n = self.variables["top_n"]
         agg = agg[-top_n:]
-        plt.figure(
-            figsize=(cm(17), cm(6))
+        for row in agg:
+            mid = row["month_id"]
+            row["month_id"] = f"{mid // 10000}-{(mid // 100) % 100:02d}"
+        return quick.line(
+            agg, x="month_id", y="revenue",
+            title="Sales Revenue per Month", ylabel="sales",
+            xscale=scale.Categorical("month", rotation=45),
+            width=17, height=6,
         )
-        plt.plot(
-            [str(i["month_id"]) for i in agg],
-            [i["revenue"] for i in agg],
-        )
-        plt.xticks(rotation=45, ha="right")
-        plt.xlabel("month")
-        plt.ylabel("sales")
-        plt.title("Sales Revenue per Month")
-        plt.tight_layout()
-        return plt
 
     @doc.wrap_json
     def table(self):
@@ -49,7 +43,7 @@ class Sales(DocumentCode):
             self.data[:top_n],
             [
                 doc.Column("date", "Date", width=2),
-                doc.Column("region", "Region", width=3, align="r"),
+                doc.Column("region", "Region", width=5, align="r"),
                 doc.Column("product_category", "Category", width=3, align="r"),
                 doc.Column("units", "Units", width=2, align="r"),
                 doc.Column("revenue", "Revenue", width=2, align="right", format_="R {0:.2f}"),
