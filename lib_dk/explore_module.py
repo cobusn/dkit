@@ -173,19 +173,17 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_qhist(self):
         """generate quick histogram for specified field"""
-        import plotille
         from dkit.shell import console
-        width, _ = console.get_terminal_size()
+        from dkit.data.histogram import Histogram
         # hack to extract only required field
         self.args.fields = [self.args.field]
         field_name = self.args.field
         data = [i[field_name] for i in self.input_stream(self.args.input)]
+        histogram = Histogram.from_data(data, bins=self.args.bins)
         self.print(
-            plotille.hist(
-                data,
-                width=75,
-                bins=self.args.bins,
-                lc="bright_green",
+            console.render_histogram(
+                histogram,
+                width=None,
                 log_scale=self.args.log
             )
         )

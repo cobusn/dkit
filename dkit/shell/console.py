@@ -55,6 +55,42 @@ def echo(*kwds, **kwargs):
     print(*kwds, **kwargs)
 
 
+def render_histogram(histogram: "Histogram", width: int = None,
+                     log_scale: bool = False,
+                     line_color: str = "bright_green") -> str:
+    """Render an existing histogram as a Plotille terminal chart.
+
+    Args:
+        histogram: Histogram containing the bins and counts to render.
+        width: Chart width in terminal characters.
+        log_scale: Apply logarithmic scaling to the count axis.
+        line_color: Plotille colour name for the histogram.
+
+    Returns:
+        A string containing the rendered terminal chart.
+
+    Raises:
+        ImportError: If the optional Plotille dependency is unavailable.
+    """
+    if not histogram.bins:
+        return "<empty histogram>"
+
+    import plotille
+
+    print(get_terminal_size())
+    _width = width if width else get_terminal_size()[0] - 36
+    counts = [bin_.count for bin_ in histogram.bins]
+    bins = [histogram.bins[0].left]
+    bins.extend(bin_.right for bin_ in histogram.bins)
+    return plotille.hist_aggregated(
+        counts,
+        bins,
+        width=_width,
+        log_scale=log_scale,
+        lc=line_color,
+    )
+
+
 def to_columns(list, displaywidth=None):
     """
     Display a list of strings as a compact set of columns.
