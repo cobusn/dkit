@@ -32,8 +32,9 @@ Load:
 import logging
 import re
 
-from .extensions.ext_sql_alchemy import SQLServices
+from .extensions.ext_sql_alchemy import SQLServices, SQLAlchemyAccessor
 from ..utilities.jinja2 import render_strict
+from .model import Connection
 import xxhash
 import diskcache
 import os
@@ -132,6 +133,21 @@ class SQLETL:
         )
 
 
+class ConnectionSQLETL(SQLETL):
+    """
+    SQLETL that is instantiated from a connection and not model
+
+    Useful if connections are stored in config file and not model
+    """
+    def __init__(self, connection: Connection):
+        self.connection = connection
+
+    def _extract(self, sql):
+        logging.debug(sql)
+        accessor = SQLAlchemyAccessor(self.connection.as_dict())
+        yield from accessor.iter_select(sql)
+
+
 class CachedSQLETL(SQLETL):
     """
     SQL ETL utility that cache results based on the SQL statment
@@ -164,7 +180,7 @@ class CachedSQLETL(SQLETL):
     def cache_path(self):
         return os.path.join(self._cache_folder, self._cache_name)
 
-    def extract(self, sql, params):
+    def extract(self, sql, params) -> list[dict]:
         """extract data"""
         base_sql = sql or self._get_docstring_sql()
         rendered = self._render(base_sql, params)
@@ -173,6 +189,6 @@ class CachedSQLETL(SQLETL):
             logger.info(f"loading data from cache {self._cache_name}")
             return self.cache.get(key)
         else:
-            data = self._extract(rendered)
+            data = list(self._extract(rendered))
             self.cache.set(key, data, expire=self.expire)
             return data

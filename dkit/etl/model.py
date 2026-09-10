@@ -29,7 +29,8 @@
 # Jan 2019    Cobus Nel       Added Relation class
 # Jan 2019    Cobus Nel       Added ModelServices class
 # Aug 2019    Cobus Nel       Refactor Services classes
-# 27 Nov 2019 Cobus Nel       Added facility for options in Connection object
+# Nov 2019    Cobus Nel       Added facility for options in Connection object
+# Sep 2019    Cobus Nel       Refactor dataclasses to Pydantic models
 # =========== =============== =================================================
 
 import configparser
@@ -37,8 +38,7 @@ import importlib
 import os
 import re
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
-from typing import List, Dict
+from typing import Any, List, Dict
 from typing import Type, TypeVar
 
 import jinja2
@@ -46,6 +46,7 @@ from jinja2 import meta
 
 import yaml
 import pprint
+from pydantic import BaseModel, ConfigDict, StrictBytes, StrictStr
 from pathlib import Path
 from . import schema, source, transform
 from .. import exceptions, messages
@@ -217,20 +218,54 @@ class Entity(containers.DictionaryEmulator):
         yield from t(the_iterable)
 
 
-@dataclass
-class Connection(map_db.Object):
+class _ETLModel(BaseModel, map_db.Object):
+    """Base model for serialisable ETL configuration objects."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        """Create a model, retaining dataclass-style positional arguments.
+
+        Args:
+            *args: Values supplied in model field declaration order.
+            **kwargs: Values supplied by field name.
+        """
+        if args:
+            fields = tuple(type(self).model_fields)
+            if len(args) > len(fields):
+                raise TypeError(
+                    f"{type(self).__name__} takes at most {len(fields)} "
+                    f"positional arguments"
+                )
+            positional = dict(zip(fields, args))
+            overlap = positional.keys() & kwargs.keys()
+            if overlap:
+                names = ", ".join(sorted(overlap))
+                raise TypeError(f"multiple values for: {names}")
+            kwargs = {**positional, **kwargs}
+        super().__init__(**kwargs)
+
+    def as_dict(self, include_none=True):
+        """Return a dictionary representation of the model."""
+        return self.model_dump(exclude_none=not include_none)
+
+    def on_set(self, container):
+        """Validate a model before it is stored in an object map."""
+
+
+class Connection(_ETLModel):
     dialect: str
     database: str
-    driver: str = None
-    username: str = None
-    password: str = None
-    host: str = None
-    port: int = None
-    compression: str = None
-    encryption: str = None
-    options: str = None
-    parameters: Dict[str, str] = None
-    entity: str = None
+    driver: str | None = None
+    username: str | None = None
+    password: str | StrictBytes | None = None
+    host: str | None = None
+    port: int | None = None
+    compression: str | None = None
+    encryption: str | None = None
+    options: str | None = None
+    parameters: Dict[str, str] | bytes | None = None
+    entity: str | None = None
 
     @staticmethod
     def get_listing(container):
@@ -260,17 +295,13 @@ class Connection(map_db.Object):
 
     def as_dict(self, include_none=False):
         """to uri"""
-        if not include_none:
-            return {k: v for k, v in asdict(self).items() if v is not None}
-        else:
-            return asdict(self)
+        return super().as_dict(include_none=include_none)
 
 
-@dataclass
-class Endpoint(map_db.Object):
+class Endpoint(_ETLModel):
     connection: str
-    table_name: str = None
-    entity: str = None
+    table_name: str | None = None
+    entity: str | None = None
 
     @staticmethod
     def get_listing(container):
@@ -287,8 +318,7 @@ class Endpoint(map_db.Object):
         ]
 
 
-@dataclass
-class Relation(map_db.Object):
+class Relation(_ETLModel):
     constrained_entity: str
     constrained_columns: List[str]
     referred_entity: str
@@ -324,27 +354,16 @@ class Transform(containers.DictionaryEmulator):
         yield from t(the_iterable)
 
 
-@dataclass
-class Secret:
+class Secret(_ETLModel):
     """store generic authentication"""
-    key: str
-    secret: str = None
-    parameters: Dict[str, str] = None
-
-    def as_dict(self):
-        return asdict(self)
-
-    def on_set(self, container):
-        pass
+    key: StrictStr | StrictBytes
+    secret: StrictStr | StrictBytes | None = None
+    parameters: Dict[str, Any] | StrictStr | StrictBytes | None = None
 
 
-@dataclass
-class Query(map_db.Object):
+class Query(_ETLModel):
     query: str
-    description: str = ""
-
-    def as_dict(self):
-        return asdict(self)
+    description: str | None = ""
 
     @staticmethod
     def get_listing(container):

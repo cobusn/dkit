@@ -14,7 +14,7 @@ connections:
     driver: mysql+mysqlconnector
     host: 127.0.0.1
     password: default
-    port: '3306'
+    port: 3306
     username: cobus
   mpg_psql:
     database: mpg

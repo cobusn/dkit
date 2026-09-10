@@ -2,24 +2,25 @@ __meta__:
   version: '0.2'
 connections:
   northwind:
-    database: data/Northwind_small.sqlite
     dialect: sqlite
+    database: data/Northwind_small.sqlite
     driver: sql
 endpoints: {}
+queries: {}
 entities:
   mpg:
-    class: String(str_len=10)
-    cty: Integer()
-    cyl: Integer()
-    displ: Float()
-    drv: String(str_len=1)
-    fl: String(str_len=1)
-    hwy: Integer()
     index: Integer()
     manufacturer: String(str_len=9)
     model: String(str_len=19)
-    trans: String(str_len=10)
+    displ: Float()
     year: Integer()
+    cyl: Integer()
+    trans: String(str_len=10)
+    drv: String(str_len=1)
+    cty: Integer()
+    hwy: Integer()
+    fl: String(str_len=1)
+    class: String(str_len=10)
   mtcars:
     am: Integer()
     car: String(str_len=19)
@@ -33,7 +34,6 @@ entities:
     qsec: Float()
     vs: Integer()
     wt: Float()
-queries: {}
+transforms: {}
 relations: {}
 secrets: {}
-transforms: {}

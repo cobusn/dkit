@@ -4,10 +4,11 @@ import warnings
 from configparser import ConfigParser
 sys.path.insert(0, "..") # noqa
 from dkit.etl.model import Entity, Relation, ModelManager, Connection, \
-    Query, Secret
+    Endpoint, Query, Secret
 from dkit.etl import source
 from create_data import NROWS
 import jinja2
+from pydantic import BaseModel
 
 schema_1 = {
     "_id": "Integer(primary_key=True)",
@@ -215,12 +216,21 @@ class TestModel(unittest.TestCase):
         # filename provided
         m = ModelManager.from_file("model.yml")
         self.assertTrue(isinstance(m, ModelManager))
+
         # config filename
         m = ModelManager.from_file("model.yml", "dk.ini")
         self.assertTrue(isinstance(m, ModelManager))
         # config instance
         m = ModelManager.from_file("model.yml", ConfigParser())
         self.assertTrue(isinstance(m, ModelManager))
+
+    def test_etl_objects_are_pydantic_models(self):
+        """ETL configuration objects should use Pydantic validation."""
+        self.assertTrue(issubclass(Connection, BaseModel))
+        self.assertTrue(issubclass(Endpoint, BaseModel))
+        self.assertTrue(issubclass(Relation, BaseModel))
+        self.assertTrue(issubclass(Query, BaseModel))
+        self.assertTrue(issubclass(Secret, BaseModel))
 
     def test_add_connection(self):
         c = ModelManager.from_file()
