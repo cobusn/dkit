@@ -44,6 +44,7 @@ from . import matplotlib_extra  # noqa: F401  (imports plot's frame and theme)
 from . import geom  # noqa: F401  (imports plot and matplotlib_extra)
 from . import quick  # noqa: F401  (imports geom)
 from . import canned  # noqa: F401  (imports geom and dkit.data)
+from .histogram import plot_histogram  # noqa: F401
 from .theme import (  # noqa: F401
     CM_TO_INCH,
     Theme,
@@ -65,6 +66,7 @@ __all__ = [
     "Layer",
     "matplotlib_extra",
     "Plot",
+    "plot_histogram",
     "quick",
     "RenderContext",
     "Theme",

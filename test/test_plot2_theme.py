@@ -48,7 +48,7 @@ class TestBundledStyles(TestCase):
 
     def test_bundled_styles_present(self):
         available = bundled_styles()
-        for name in ("dkit-light", "dkit-dark", "dkit-print"):
+        for name in ("dkit-light", "dkit-dark", "dkit-console", "dkit-print"):
             self.assertIn(name, available)
 
     def test_styles_load(self):
@@ -63,6 +63,19 @@ class TestBundledStyles(TestCase):
             self.assertFalse(mpl.rcParams["axes.spines.right"])
             colors = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
             self.assertEqual(colors[0], "#05386E")
+
+    def test_console_style_values(self):
+        with mpl_style.context(resolve_style("dkit-console")):
+            self.assertEqual(mpl.rcParams["figure.facecolor"], "#101010")
+            self.assertEqual(mpl.rcParams["text.color"], "#7FEFFF")
+            self.assertEqual(mpl.rcParams["axes.labelcolor"], "#00E5FF")
+            self.assertEqual(mpl.rcParams["xtick.color"], "#66D9EF")
+            self.assertEqual(mpl.rcParams["ytick.color"], "#66D9EF")
+            colors = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+            self.assertEqual(
+                colors,
+                ["#00CC33", "#FFBF00", "#FF2B00", "#00BFFF", "#7F7F7F"],
+            )
 
     def test_layering(self):
         """later layers win"""

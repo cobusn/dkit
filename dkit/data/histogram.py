@@ -22,14 +22,11 @@ of frequency plots.
 """
 import math
 from decimal import Decimal, getcontext
-from operator import itemgetter
 from typing import List
 
 from dataclasses import dataclass
 
-from .containers import SortedCollection
 from .stats import Accumulator
-import warnings
 import tabulate
 import numpy
 
@@ -80,6 +77,50 @@ def binner(data, value_field, bins: int = None, bin_digits: int = 1):
     return [{"left": left, "count": count} for left, count in bin_counts]
 
 
+def _recommended_bin_count(accumulator, low, high, max_bins=50):
+    """Estimate a readable bin count from accumulator statistics.
+
+    Args:
+        accumulator: Accumulator containing observations and IQR statistics.
+        low: Lower bound of the histogram range.
+        high: Upper bound of the histogram range.
+        max_bins: Maximum number of automatically selected bins.
+
+    Returns:
+        Recommended number of histogram bins.
+    """
+    observations = accumulator.observations
+    data_range = float(high - low)
+    if observations < 2 or data_range <= 0:
+        return 1
+
+    iqr = float(accumulator.iqr)
+    if iqr > 0:
+        bin_width = 2 * iqr / observations ** (1 / 3)
+        estimated = math.ceil(data_range / bin_width)
+    else:
+        estimated = math.ceil(math.log2(observations) + 1)
+
+    return min(max(1, estimated), max_bins)
+
+
+def _histogram_range(accumulator, range_mode):
+    """Return the requested histogram range for an accumulator."""
+    if accumulator.observations == 0:
+        raise ValueError("cannot create a histogram without observations")
+
+    minimum = float(accumulator.min)
+    maximum = float(accumulator.max)
+    if range_mode == "full":
+        return minimum, maximum
+    if range_mode == "tukey":
+        iqr = float(accumulator.iqr)
+        lower = float(accumulator.quantile(0.25)) - 1.5 * iqr
+        upper = float(accumulator.quantile(0.75)) + 1.5 * iqr
+        return max(minimum, lower), min(maximum, upper)
+    raise ValueError("range_mode must be 'full' or 'tukey'")
+
+
 @dataclass
 class Bin:
     """
@@ -128,15 +169,6 @@ class Histogram(object):
         """Return list of dicts for plotting"""
         return [b.as_dict() for b in self.bins]
 
-#    def _bin_width(self):
-#         """
-#        calculate bin width for histograms
-#
-#        Using Freedman-Diaconis rule
-#        """
-#        n = self.observations
-#        return 2 * self.iqr/(math.pow(n, -1/3))
-
     @classmethod
     def from_data(cls, data, bins: int = None, precision=1) -> "Histogram":
         """
@@ -154,106 +186,53 @@ class Histogram(object):
         return cls(bin_list)
 
     @classmethod
-    def from_accumulator(cls, accumulator: "Accumulator", n: int = 10,
-                         precision=None) -> List[Bin]:
+    def from_accumulator(cls, accumulator: "Accumulator", n: int = None,
+                         precision=None, range_mode="full") -> "Histogram":
         """
         estimate frequency distribution
 
         args:
-            * n: number of bins
+            * n: number of bins; automatically estimated when omitted
             * precision: decimal precision. If not specified, will inherit from class
+            * range_mode: either ``full`` or ``tukey``
         returns:
             * List[Bin]
         """
         precision_ = precision if precision is not None else accumulator.precision
         getcontext().prec = precision_
         centroids = list(accumulator._tdigest.centroids())
-        low_ = accumulator.median - 2.5 * accumulator.iqr
-        high_ = accumulator.median + 2.5 * accumulator.iqr
+        low_, high_ = _histogram_range(accumulator, range_mode)
         p = pow(10, precision_)
-        if accumulator.min > low_:
-            low = Decimal(math.floor(accumulator.min * p) / p)
-        else:
-            low = Decimal(low_)
-        if accumulator.max < high_:
-            high = Decimal(math.ceil(accumulator.max * p) / p)
-        else:
-            high = Decimal(high_)
+        low = Decimal(math.floor(low_ * p) / p)
+        high = Decimal(math.ceil(high_ * p) / p)
+
+        if low == high:
+            low -= Decimal("0.5")
+            high += Decimal("0.5")
+
+        if n is None:
+            n = _recommended_bin_count(accumulator, low, high)
+        elif n < 1:
+            raise ValueError("number of bins must be positive")
 
         binw = Decimal((high - low) / n)
         bins = [Bin(Decimal(low+i*binw), Decimal(low + (i+1)*binw)) for i in range(n)]
         bin_idx = 0
+        underflow = 0
+        overflow = 0
         for c in centroids:
-            if c.mean <= bins[bin_idx].right:
-                bins[bin_idx].count += c.weight
+            if c.mean < low:
+                underflow += c.weight
+            elif c.mean > high:
+                overflow += c.weight
             else:
-                if bin_idx < n-1:
-                    bins[bin_idx + 1].count += c.weight
+                while bin_idx < n - 1 and c.mean > bins[bin_idx].right:
                     bin_idx += 1
-                else:
-                    bins[bin_idx].count += c.weight
+                bins[bin_idx].count += c.weight
+
+        if range_mode == "tukey":
+            if underflow:
+                bins.insert(0, Bin(Decimal("-Infinity"), low, underflow))
+            if overflow:
+                bins.append(Bin(high, Decimal("Infinity"), overflow))
         return Histogram(bins)
-
-
-class LegacyHistogram(Accumulator):
-    """
-    Create histogram bins and frequencies from data
-
-    This class will automatically maintain statistics about the data
-    fed to it in addition to calculating histogram data.
-
-    Args:
-    hist_min - Minimum value for brackets.
-    hist_max - Maximmum value for brackets.
-    brackets - Number of brackets for Histogram (Optional)
-    precision -  Precision used for rounding bracket boundaries (Optional)
-    """
-    def __init__(self, hist_min: float, hist_max: float, brackets: int = 10, precision: int = 5):
-        """
-        Constructor
-        """
-        warnings.warn(
-            "LegacyHistogram is deprecated, please use Histogram instead.",
-            DeprecationWarning
-        )
-        self.inf = float("inf")
-        self.neg_inf = -1 * self.inf
-        super().__init__([], precision)
-        self.hist_min = float(hist_min)
-        self.hist_max = float(hist_max)
-        self.no_brackets = brackets
-        self._bins = self.__bins()
-        self._histogram = SortedCollection(self._bins, key=itemgetter(0))
-
-    def __bins(self):
-        """
-        Calculate bin brackets.
-        """
-        stepsize = round((self.hist_max-self.hist_min)/self.no_brackets, self.precision)
-        bins = [[self.neg_inf, 0]]
-        current = self.hist_min + stepsize
-        for i in range(self.no_brackets):
-            bins.append([current, 0])
-            current = round(current + stepsize, self.precision)
-        return bins
-
-    def push(self, value):
-        """
-        Feed a value to the histogram.
-
-        :param value: add value added to counters.
-        :type value: float/int
-        """
-        super().push(value)
-        self._histogram.find_le(value)[1] += 1
-
-    @property
-    def bins(self):
-        """
-        List containing brackets.  The brackets are in the following format::
-
-          [[-infinity, count], [bracket1, count] ... [bracket n, count]]
-
-        :returns: List containing the bin data.Return bin data.
-        """
-        return self._bins[0:-1]

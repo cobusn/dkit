@@ -51,3 +51,17 @@ def show(fig: Figure, dpi: int = 150) -> None:
         path = Path(tmp) / "plot.png"
         fig.savefig(path, dpi=dpi, bbox_inches="tight")
         subprocess.run(["chafa", str(path)], check=True)
+
+
+def show_histogram(histogram, dpi: int = 150, **options) -> None:
+    """Render a Histogram with Plot2 and display it in the terminal.
+
+    Args:
+        histogram: Precomputed histogram to display.
+        dpi: Resolution used when converting the figure to a PNG.
+        **options: Options passed to ``dkit.plot2.plot_histogram``.
+    """
+    from ..plot2 import plot_histogram
+
+    options.setdefault("theme", "dkit-console")
+    show(plot_histogram(histogram, **options), dpi=dpi)

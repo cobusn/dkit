@@ -60,7 +60,8 @@ from .theme import Theme
 
 
 __all__ = [
-    "area", "bar", "heatmap", "hist", "line", "scatter", "slope", "stem", "treemap"
+    "area", "bar", "heatmap", "hist", "line", "plot_histogram", "scatter",
+    "slope", "stem", "treemap"
 ]
 
 Rows = Union[Frame, Iterable[Mapping]]
@@ -244,13 +245,49 @@ def hist(data: Rows, field: str, bins: Union[int, None] = None,
     See :func:`line` for the shared arguments.
     """
     frame = Frame(data, where=where)
-    binned = list(Histogram.from_data(frame.values(field), bins=bins,
-                                      precision=precision))
-    return _render(
-        geom.Bar(label, x="midpoint", y="count", color=color, width="width"),
-        Frame(binned), xscale, yscale,
-        xlabel if xlabel is not None else field, ylabel, ax,
-        title=title, theme=theme, **options,
+    histogram = Histogram.from_data(
+        frame.values(field), bins=bins, precision=precision
+    )
+    return plot_histogram(
+        histogram,
+        label=label,
+        title=title,
+        xlabel=xlabel if xlabel is not None else field,
+        ylabel=ylabel,
+        color=color,
+        xscale=xscale,
+        yscale=yscale,
+        theme=theme,
+        ax=ax,
+        **options,
+    )
+
+
+def plot_histogram(histogram, title: Union[str, None] = None,
+                   label: Union[str, None] = None,
+                   xlabel: Union[str, None] = None,
+                   ylabel: str = "Frequency",
+                   color: Union[str, None] = None,
+                   theme: Union[Theme, str, None] = None,
+                   ax: Union[Axes, None] = None, **options) -> Figure:
+    """Render an existing Histogram as a bar chart.
+
+    This compatibility wrapper is kept near the quick plotting API. The
+    implementation lives in :mod:`dkit.plot2.histogram` to avoid duplicating
+    the conversion from bins to plot rows.
+    """
+    from .histogram import plot_histogram as _plot_histogram
+
+    return _plot_histogram(
+        histogram,
+        label=label,
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        color=color,
+        theme=theme,
+        ax=ax,
+        **options,
     )
 
 

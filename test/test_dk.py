@@ -3,6 +3,7 @@ import shutil
 import sys
 import unittest
 import os
+from unittest.mock import patch
 from dkit import exceptions
 from lib_dk import (
     admin_module,
@@ -195,6 +196,16 @@ class TestExplore(TestDK):
         self.assertTrue(os.path.exists(outfile))
         os.remove(outfile)
 
+    def test_histogram_uses_theme_positive_color(self):
+        "histogram bars use the active theme's positive color"
+        with patch("dkit.plot2.quick.bar", return_value=object()) as bar, \
+                patch("dkit.shell.terminal_image.show"):
+            explore_module.ExploreModule([
+                "histogram", "-d", "displ", "dk_testdata/mpg.jsonl",
+            ]).run()
+
+        self.assertEqual(bar.call_args.kwargs["color"], "positive")
+
     def test_summary(self):
         "x summary"
         tests = [
@@ -214,6 +225,18 @@ class TestExplore(TestDK):
             ["plot", "-x", "cty", "-y", "hwy", "--type", "impulse", "dk_testdata/mpg.jsonl"],
         ]
         self.go(tests)
+
+    def test_plot_uses_field_names_as_axis_labels(self):
+        "plot uses the selected field names as axis labels"
+        with patch("dkit.plot2.quick.scatter", return_value=object()) as scatter, \
+                patch("dkit.shell.terminal_image.show"):
+            explore_module.ExploreModule([
+                "plot", "-x", "cty", "-y", "hwy",
+                "dk_testdata/mpg.jsonl",
+            ]).run()
+
+        self.assertEqual(scatter.call_args.kwargs["xlabel"], "cty")
+        self.assertEqual(scatter.call_args.kwargs["ylabel"], "hwy")
 
     def test_plot_to_file(self):
         "x plot, to a file"

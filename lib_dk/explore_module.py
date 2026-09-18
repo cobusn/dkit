@@ -162,7 +162,7 @@ class ExploreModule(module.MultiCommandModule):
         ]
         fig = quick.bar(
             bins, x="midpoint", y="count", width="width",
-            color="#FF0000", title=f"Frequency distribution of {field_name}",
+            color="positive", title=f"Frequency distribution of {field_name}",
             xlabel=field_name, ylabel="frequency", theme=self.args.theme,
         )
         self.__show_or_save(fig)
@@ -229,7 +229,11 @@ class ExploreModule(module.MultiCommandModule):
             "impulse": quick.stem,
         }[self.args.plot_type]
 
-        fig = plot_fn(data, x=x, y=y_field, title=self.args.title, theme=self.args.theme)
+        fig = plot_fn(
+            data, x=x, y=y_field, title=self.args.title,
+            xlabel=None if x is None else x_field, ylabel=y_field,
+            theme=self.args.theme,
+        )
         self.__show_or_save(fig)
 
     def __do_regex(self, re_filter):
@@ -392,7 +396,7 @@ class ExploreModule(module.MultiCommandModule):
         options.add_option_tabulate(parser_histogram)
         parser_histogram.add_argument("-o", "--output", help="output to file", default=None)
         parser_histogram.add_argument("--theme", choices=sorted(themes),
-                                      default="dkit-dark", help="plot2 theme")
+                                      default="dkit-console", help="plot2 theme")
 
         # qhist
         parser_q_histogram = self.sub_parser.add_parser(
@@ -422,7 +426,7 @@ class ExploreModule(module.MultiCommandModule):
         parser_plot.add_argument("--title", help="plot title", default=None)
         parser_plot.add_argument("-o", "--output", help="output to file", default=None)
         parser_plot.add_argument("--theme", choices=sorted(themes),
-                                 default="dkit-dark", help="plot2 theme")
+                                 default="dkit-console", help="plot2 theme")
 
         # struc
         parser_struc = self.sub_parser.add_parser("struc", help=self.do_strucmap.__doc__)

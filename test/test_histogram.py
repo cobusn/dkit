@@ -23,8 +23,13 @@ Created on 16 Feb 2015
 import unittest
 import sys; sys.path.insert(0, "..") # noqa
 import random
+import math
 from math import exp
-from dkit.data.histogram import Histogram, LegacyHistogram, binner
+from dkit.data.histogram import (
+    Histogram,
+    _recommended_bin_count,
+    binner,
+)
 from dkit.data.helpers import frange
 from dkit.data.stats import Accumulator
 
@@ -67,49 +72,49 @@ class TestHistogram(unittest.TestCase):
         lefts = [b["left"] for b in bins]
         self.assertEqual(lefts, sorted(lefts))
 
+    def test_recommended_bin_count_uses_freedman_diaconis(self):
+        class Stats:
+            observations = 1000
+            iqr = 10
 
-class TestLegacyHistogram(unittest.TestCase):
+        result = _recommended_bin_count(Stats(), 0, 100)
+        expected = math.ceil(100 / (2 * 10 / 1000 ** (1 / 3)))
+        self.assertEqual(result, min(expected, 50))
 
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        self.values = []
-        for i in range(10):
-            [self.values.append(i) for j in range(10)]
-        random.shuffle(self.values)
+    def test_recommended_bin_count_falls_back_to_sturges(self):
+        class Stats:
+            observations = 15
+            iqr = 0
 
-        self.h = LegacyHistogram(0, 10, 10)
-        for i in self.values:
-            self.h.push(i)
+        self.assertEqual(
+            _recommended_bin_count(Stats(), 0, 10),
+            math.ceil(math.log2(15) + 1),
+        )
 
-    def test_float(self):
-        """
-        Test histogram with float values.
-        """
-        h = LegacyHistogram(-1.0, 1.0, 10)
-        iterations = 1000
-        mu = 0.0
-        sigma = 1.0
-        for i in range(iterations):
-            h.push(random.normalvariate(mu, sigma))
+    def test_accumulator_defaults_to_full_range(self):
+        accumulator = Accumulator([1, 2, 3, 4, 100])
+        histogram = Histogram.from_accumulator(accumulator, n=4)
+        self.assertEqual(histogram.bins[0].left, 1)
+        self.assertEqual(histogram.bins[-1].right, 100)
 
-    def test_int(self):
-        """
-        Test histogram with integer values.
-        """
-        h = LegacyHistogram(-10, 10, 10)
-        iterations = 1000
-        for i in range(iterations):
-            randval = random.randint(-10, 10)
-            h.push(randval)
+    def test_accumulator_supports_tukey_range(self):
+        values = [1, 2, 3, 4, 5] * 20 + [1000]
+        accumulator = Accumulator(values)
+        histogram = Histogram.from_accumulator(
+            accumulator,
+            n=4,
+            range_mode="tukey",
+        )
+        self.assertEqual(histogram.bins[-1].right, float("inf"))
+        self.assertGreater(histogram.bins[-1].count, 0)
 
-    def test_empty_histogram(self):
-        """
-        Test behaviour with no data.
-        """
-        h = LegacyHistogram(-10, 10, 10)
-        self.assertEqual(h.mean, 0)
-        self.assertEqual(h.variance, 0)
+    def test_accumulator_rejects_unknown_range_mode(self):
+        accumulator = Accumulator([1, 2, 3])
+        with self.assertRaises(ValueError):
+            Histogram.from_accumulator(accumulator, range_mode="unknown")
 
-
+    def test_empty_accumulator_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "without observations"):
+            Histogram.from_accumulator(Accumulator())
 if __name__ == "__main__":
     unittest.main()

@@ -323,6 +323,14 @@ themes: dict[str, Theme] = {
         # against 1c1c1c.  Still absent from this theme's cycle.
         highlight="#ff4fd8",
     ),
+    "dkit-console": Theme(
+        rc=["dkit-light", "dkit-dark", "dkit-console"],
+        categorical=("#00CC33", "#FFBF00", "#FF2B00", "#00BFFF", "#7F7F7F"),
+        positive="#00CC33",
+        negative="#FF2B00",
+        neutral="#7F7F7F",
+        highlight="#FF66CC",
+    ),
     "dkit-print": Theme(rc=["dkit-light", "dkit-print"]),
 }
 

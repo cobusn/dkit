@@ -33,6 +33,7 @@ from matplotlib.dates import AutoDateLocator              # noqa: E402
 from matplotlib.ticker import AutoLocator, FixedLocator   # noqa: E402
 
 from dkit.exceptions import DKitPlotException             # noqa: E402
+from dkit.data.histogram import Bin, Histogram       # noqa: E402
 from dkit.plot2 import Plot, geom, quick, scale           # noqa: E402
 
 
@@ -272,6 +273,13 @@ class TestHist(TestCase):
         fig = quick.hist(self.values, "x", bins=5, where="${x} > 10")
         total = sum(p.get_height() for p in fig.axes[0].containers[0].patches)
         self.assertLess(total, 400)
+        plt.close(fig)
+
+    def test_plot_histogram_accepts_precomputed_histogram(self):
+        histogram = Histogram([Bin(0, 1, 3), Bin(1, 2, 5)])
+        fig = quick.plot_histogram(histogram)
+        patches = fig.axes[0].containers[0].patches
+        self.assertEqual([p.get_height() for p in patches], [3, 5])
         plt.close(fig)
 
 
