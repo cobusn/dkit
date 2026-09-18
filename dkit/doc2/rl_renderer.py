@@ -30,7 +30,9 @@ from reportlab.platypus import (
 
 from . import document as doc
 from .rl_styles import DefaultStyler
+from .rl_stylepack import StylePackStyler
 from .rl_helper import is_pdf, TableHelper, PdfImage
+from dkit.stylepack.model import StylePack
 
 HEADING_COUNTER = 0
 
@@ -38,11 +40,21 @@ HEADING_COUNTER = 0
 class RLRenderer:
     """Render document elements to PDF"""
 
-    def __init__(self, document: doc.Document, allow_soft_breaks=False, styler=DefaultStyler):
+    def __init__(
+        self,
+        document: doc.Document,
+        allow_soft_breaks=False,
+        styler=DefaultStyler,
+        style_pack: StylePack | None = None,
+    ):
         self.allow_soft_breaks = allow_soft_breaks  # allow breaks in a paragraph
         self.spacer_height = 0.0 * cm       # used by soft breaks
         self.paragraph_style = "BodyText"   # can change depending on type of block
-        self.styler = styler(document)
+        self.styler = (
+            StylePackStyler(document, style_pack)
+            if style_pack is not None and styler is DefaultStyler
+            else styler(document)
+        )
         self.content = [PageBreak()]
         self.document = document
 
@@ -111,10 +123,15 @@ class RLRenderer:
 
     @make.register(doc.Heading)
     def make_heading(self, element: doc.Heading):
-        yield Paragraph(
+        heading = Paragraph(
             self.make_text(element.content),
             self.styler[f"Heading{element.level}"]
         )
+        # Keep section headings with the first flowable that follows them.
+        # This prevents a heading from being stranded at the bottom of a page
+        # while its paragraph, image, or table starts on the next page.
+        heading.keepWithNext = 1
+        yield heading
 
     @make.register(doc.Paragraph)
     def make_paragraph(self, element: doc.Paragraph):

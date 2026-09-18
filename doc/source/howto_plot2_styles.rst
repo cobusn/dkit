@@ -178,3 +178,21 @@ What plot2 does not read
 (``examples/stylesheet.yaml``). plot2 does not: there is no
 ``Theme.from_yaml`` and no YAML bridge. Style state belongs in a file
 matplotlib itself validates, and a theme is ordinary Python.
+
+Using a document style pack
+===========================
+
+Document style packs use the same two-layer model. The manifest supplies the
+semantic chart palette, dimensions, and typography role, while the pack's
+``screen.mplstyle`` or ``print.mplstyle`` supplies native matplotlib settings.
+The document builder applies the selected variant in a scoped context:
+
+.. code-block:: console
+
+   dk build doc --style dkit-blue --format html \
+      --title "Quarterly report" --output report.html report.md
+
+The context is restored after the build, so selecting a document style does
+not change the global plot2 default or affect later plots. Code that creates
+plots independently can load a registered pack through the style-pack API
+and pass the resulting ``Theme`` explicitly.

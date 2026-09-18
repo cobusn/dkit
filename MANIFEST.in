@@ -6,3 +6,4 @@ include dkit/resources/*.ttf
 include dkit/resources/*.txt
 include dkit/resources/templates/*.md
 include dkit/plot2/styles/*.mplstyle
+recursive-include dkit/stylepacks/dkit_blue *

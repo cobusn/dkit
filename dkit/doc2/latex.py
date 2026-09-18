@@ -719,6 +719,7 @@ class Document(CompoundTexConstruct):
         doc_type: str = "article",
         font_size: int = 11,
         paper_size: str = "a4paper",
+        geometry_options: str | None = None,
     ):
         super().__init__()
         self._doc_type = "article"
@@ -746,7 +747,9 @@ class Document(CompoundTexConstruct):
             (None, "tikz"),   # sparkline columns in LongTable draw with it
             (None, "array"),  # \newcolumntype, for LongTable's L/C/R columns
         ]
-        if self.doc_type in VALID_DOC_TYPES:
+        if geometry_options is not None:
+            self.packages.append((geometry_options, "geometry"))
+        if self.doc_type in VALID_DOC_TYPES and geometry_options is None:
             # margin=2cm is explicit rather than geometry's own bare default
             # (also ~17cm on a4paper) so a table's column widths have a
             # documented text width to fit, e.g. BostonTables.columns().
@@ -788,7 +791,12 @@ class Document(CompoundTexConstruct):
 
     @paper_size.setter
     def paper_size(self, value: str):
-        if value not in VALID_PAPER_SIZES:
+        options = value.split(",")
+        if (
+            not options
+            or options[0] not in VALID_PAPER_SIZES
+            or any(option != "landscape" for option in options[1:])
+        ):
             raise TexError(TEX_MESSAGES["ERR_INVALID_PAPER_SIZE"])
         self._paper_size = value
 

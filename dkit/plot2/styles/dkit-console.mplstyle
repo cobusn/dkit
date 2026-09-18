@@ -1,0 +1,23 @@
+# dkit-console: CRT-inspired terminal display variant of dkit-dark
+#
+# Layer this on top of dkit-dark; it overrides the terminal palette:
+#   Theme(rc=["dkit-light", "dkit-dark", "dkit-console"])
+#
+# NOTE: in .mplstyle files '#' starts a comment, so colours omit '#'.
+
+figure.facecolor:       101010
+savefig.facecolor:      101010
+
+text.color:             7FEFFF
+
+axes.facecolor:         101010
+axes.edgecolor:         00BFFF
+axes.labelcolor:        00E5FF
+axes.prop_cycle:        cycler('color', ['00CC33', 'FFBF00', 'FF2B00', '00BFFF', '7F7F7F'])
+
+grid.color:             005A66
+
+xtick.color:            66D9EF
+ytick.color:            66D9EF
+
+legend.labelcolor:      7FEFFF

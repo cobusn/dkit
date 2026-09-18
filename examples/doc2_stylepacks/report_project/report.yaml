@@ -1,0 +1,19 @@
+version: 2.0a
+info:
+  author: Document Automation Team
+  title: Delivery report
+  sub_title: Style-pack project example
+  title_date: null
+  contact: reports@example.test
+configuration:
+  output: report.pdf
+  renderer: reportlab
+  style: dkit-blue
+  plot_folder: plots
+  template_folder: templates
+templates:
+  - templates/report.md
+code:
+  summary: src.summary.Summary
+data: {}
+variables: {}

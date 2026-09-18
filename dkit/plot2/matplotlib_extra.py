@@ -67,9 +67,13 @@ __all__ = ["SlopePlot", "TreeMap", "contrast_color"]
 
 #: label font size bounds for :class:`TreeMap`, as a multiple of ``font.size``.
 #: A treemap label has to fit inside its cell, so it runs smaller than body
-#: text; the range is what lets a large cell shout and a small one whisper.
-_MIN_FONT_SCALE = 0.7
-_MAX_FONT_SCALE = 1.05
+#: text; the range is what lets a large cell remain readable without shouting.
+_MIN_FONT_SCALE = 0.6
+_MAX_FONT_SCALE = 0.9
+_TITLE_AXES_TOP = 0.90
+
+#: inset for labels from the upper-left corner of a cell, in treemap units
+_LABEL_PADDING = 1.5
 
 #: reference axes height, in centimetres, that the bounds above are tuned for.
 #: Actual sizes scale by the real axes height relative to this, so a short
@@ -328,16 +332,25 @@ class TreeMap(_ExtraPlot):
             )
 
         active = self._get_theme(theme)
+        owns_axes = fig is None and ax is None
         with active.context():
             fig, ax = self._get_figure(active, fig, ax)
             self._draw_cells(fig, ax, rows, active, label_field, value_field,
-                             color_field, color_range, title)
+                             color_field, color_range, title, owns_axes)
         return fig, ax
 
     def _draw_cells(self, fig: Figure, ax: Axes, rows: Sequence[Mapping], theme: Theme,
                     label_field: str, value_field: str, color_field: str,
-                    color_range: Union[tuple, None], title: Union[str, None]) -> None:
+                    color_range: Union[tuple, None], title: Union[str, None],
+                    owns_axes: bool) -> None:
         """lay out and draw every cell, within an applied theme context"""
+        if owns_axes:
+            fig.subplots_adjust(
+                left=0,
+                right=1,
+                bottom=0,
+                top=_TITLE_AXES_TOP if title is not None else 1,
+            )
         # the layout coordinate system is sized to the axes' real aspect ratio,
         # so that set_aspect("equal") below fills the axes box.  squarify's
         # square 0..100 default would otherwise be padded down to a square in
@@ -384,8 +397,10 @@ class TreeMap(_ExtraPlot):
             if self.value_format is not None:
                 text = f"{text}\n{self.value_format.format(row[value_field])}"
             labels.append((ax.text(
-                rect["x"] + rect["dx"] / 2, rect["y"] + rect["dy"] / 2, text,
-                ha="center", va="center", color=contrast_color(color),
+                rect["x"] + _LABEL_PADDING,
+                rect["y"] + rect["dy"] - _LABEL_PADDING,
+                text,
+                ha="left", va="top", color=contrast_color(color),
                 fontsize=self._font_size(area, max_area, font_scale),
             ), rect))
 

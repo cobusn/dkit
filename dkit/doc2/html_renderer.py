@@ -40,9 +40,15 @@ import base64
 import functools
 import html as _html
 from importlib.resources import files
+import json
 import mimetypes
+import os
+from pathlib import Path
 
 from . import document as doc
+from dkit.stylepack.model import StylePack
+
+CM_TO_PX = 96 / 2.54
 
 
 class HtmlRenderer:
@@ -74,11 +80,26 @@ class HtmlRenderer:
         lang: str = "en",
         css: str | None = None,
         inline_images: bool = False,
+        style_pack: StylePack | None = None,
     ):
         self.doc = document
         self.fragment = fragment
         self.lang = lang
         self._inline_images = inline_images
+        self._output_directory = None
+        self._email_css = None
+        if style_pack is not None and css is None:
+            formats = style_pack.manifest.formats.html
+            if formats is None:
+                raise ValueError(
+                    f"style '{style_pack.manifest.id}' has no HTML resources"
+                )
+            css = self._load_css(str(style_pack.resource(formats.stylesheet)))
+            self._email_css = self._load_css(
+                str(style_pack.resource(formats.email_stylesheet))
+            )
+            css = self._add_font_css(css, style_pack)
+            css = self._add_page_css(css, style_pack)
         self._css = self._load_css(css)
 
     @staticmethod
@@ -90,6 +111,63 @@ class HtmlRenderer:
             with open(css, "r", encoding="utf-8") as fh:
                 return fh.read()
         return css
+
+    @staticmethod
+    def _add_page_css(css: str, style_pack: StylePack) -> str:
+        """Add print geometry and a safe chart width to pack CSS."""
+        page = style_pack.manifest.page
+        sizes = {
+            "a4": (21.0, 29.7),
+            "letter": (21.59, 27.94),
+            "legal": (21.59, 35.56),
+            "a5": (14.8, 21.0),
+        }
+        width, height = sizes[page.size]
+        if page.orientation == "landscape":
+            width, height = height, width
+        usable_width = width - page.left_margin_cm - page.right_margin_cm
+        chart_width = min(style_pack.manifest.charts.width_cm, usable_width)
+        page_css = (
+            "\n@page {\n"
+            f"  size: {page.size} {page.orientation};\n"
+            f"  margin: {page.top_margin_cm}cm {page.right_margin_cm}cm "
+            f"{page.bottom_margin_cm}cm {page.left_margin_cm}cm;\n"
+            "}\n"
+            f".image img {{ max-width: {chart_width}cm; height: auto; }}\n"
+        )
+        return css + page_css
+
+    @staticmethod
+    def _add_font_css(css: str, style_pack: StylePack) -> str:
+        """Embed pack fonts in document CSS as self-contained data URLs."""
+        declarations = []
+        faces = (
+            ("regular", "normal", "400"),
+            ("bold", "normal", "700"),
+            ("italic", "italic", "400"),
+            ("bold_italic", "italic", "700"),
+        )
+        for font in style_pack.manifest.fonts:
+            for face, font_style, font_weight in faces:
+                resource_name = getattr(font, face)
+                if resource_name is None:
+                    continue
+                encoded = base64.b64encode(
+                    style_pack.resource(resource_name).read_bytes()
+                ).decode("ascii")
+                declarations.append(
+                    "@font-face {\n"
+                    f"  font-family: {json.dumps(font.family)};\n"
+                    f"  font-style: {font_style};\n"
+                    f"  font-weight: {font_weight};\n"
+                    "  font-display: swap;\n"
+                    f"  src: url(\"data:font/ttf;base64,{encoded}\") "
+                    "format(\"truetype\");\n"
+                    "}\n"
+                )
+        if not declarations:
+            return css
+        return "\n".join(declarations) + "\n" + css
 
     def _to_data_uri(self, path: str) -> str:
         """Return a base64 data URI for a local image file.
@@ -123,8 +201,12 @@ class HtmlRenderer:
         Args:
             file_name: destination path.
         """
-        with open(file_name, "w", encoding="utf-8") as fh:
-            fh.write(self.render_string())
+        self._output_directory = Path(file_name).resolve().parent
+        try:
+            with open(file_name, "w", encoding="utf-8") as fh:
+                fh.write(self.render_string())
+        finally:
+            self._output_directory = None
 
     def render_email_string(self) -> str:
         """Return email-safe HTML with CSS inlined and images embedded.
@@ -146,7 +228,9 @@ class HtmlRenderer:
         import premailer
         # Run premailer on the class-based HTML (file paths, not data URIs)
         # so it never sees a data: src and cannot strip the <img> tags.
-        html = premailer.transform(self.render_string())
+        html = premailer.transform(
+            self._render_string(self._email_css or self._css)
+        )
         # Embed local images as data URIs after CSS inlining.
         if self._inline_images:
             html = self._embed_images_in_html(html)
@@ -177,7 +261,14 @@ class HtmlRenderer:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _wrap_document(self, body: str) -> str:
+    def _render_string(self, css: str | None) -> str:
+        """Render a complete document with explicitly selected CSS."""
+        body = self._make_elements(self.doc.elements)
+        if self.fragment:
+            return body
+        return self._wrap_document(body, css)
+
+    def _wrap_document(self, body: str, css: str | None = None) -> str:
         title = _html.escape(self.doc.title or "")
         author = _html.escape(self.doc.author or "")
         sub_title = _html.escape(self.doc.sub_title or "")
@@ -198,8 +289,9 @@ class HtmlRenderer:
             header_html = '<div class="header">\n' + "\n".join(header_parts) + '\n</div>\n'
 
         style_block = ""
-        if self._css:
-            style_block = f"<style>\n{self._css}\n</style>\n"
+        css = self._css if css is None else css
+        if css:
+            style_block = f"<style>\n{css}\n</style>\n"
 
         return (
             f'<!DOCTYPE html>\n'
@@ -319,7 +411,7 @@ class HtmlRenderer:
         if self._inline_images and not is_remote:
             src = self._to_data_uri(source)
         else:
-            src = _html.escape(source)
+            src = self._relative_image_path(source)
 
         alt = _html.escape(element.title or "")
         align = _html.escape(element.align or "center")
@@ -327,9 +419,9 @@ class HtmlRenderer:
 
         attrs = f'src="{src}" alt="{alt}"'
         if element.width:
-            attrs += f' width="{element.width}"'
+            attrs += f' width="{self._pixel_dimension(element.width)}"'
         if element.height:
-            attrs += f' height="{element.height}"'
+            attrs += f' height="{self._pixel_dimension(element.height)}"'
 
         return (
             f'<figure class="image image-{align}">\n'
@@ -337,6 +429,23 @@ class HtmlRenderer:
             f'{caption}'
             f'</figure>\n'
         )
+
+    def _relative_image_path(self, source: str) -> str:
+        """Make local absolute image paths relative to an HTML output file."""
+        if self._output_directory is None or source.startswith(
+            ("http://", "https://", "cid:", "data:")
+        ):
+            return _html.escape(source)
+        image_path = Path(source)
+        if not image_path.is_absolute():
+            return _html.escape(source)
+        relative = os.path.relpath(image_path, self._output_directory)
+        return _html.escape(relative)
+
+    @staticmethod
+    def _pixel_dimension(value: float) -> int:
+        """Convert a Doc2 centimetre dimension to an HTML pixel value."""
+        return round(value * CM_TO_PX)
 
     @make.register(doc.Table)
     def make_table(self, element: doc.Table) -> str:

@@ -127,6 +127,7 @@ dk MODULE [subcommand] [options]
 | `dk transforms` | Manage field transform rules |
 | `dk mapping` | Manage entity-relation mappings |
 | `dk admin` | Configuration administration |
+| `dk styles` | Register and preview document style packs |
 
 ### Action modules
 
@@ -191,6 +192,25 @@ dk run template template.j2 data.jsonl
 
 Document reports are run via `dk build report report.yml` -- all
 document/report functionality lives under `dk build`, not `dk run`.
+
+### Document styles
+
+Install a style-pack distribution and register it once in the DK configuration:
+
+```bash
+dk styles register dkit-blue --distribution libdkit \
+  --manifest dkit/stylepacks/dkit_blue/style.yaml
+dk styles validate dkit-blue
+dk build doc --style dkit-blue --format reportlab \
+  --title "Quarterly report" --output report.pdf report.md
+dk styles preview dkit-blue --output style-preview
+```
+
+Style packs contain native CSS, DOCX, LaTeX, ReportLab, and matplotlib
+resources plus a shared manifest. Registration records a fingerprint and
+does not execute provider code. Only install style wheels from sources you
+trust: a style pack can contain LaTeX code, templates, fonts, images, and
+other resources that are consumed by the relevant document tools.
 
 ---
 

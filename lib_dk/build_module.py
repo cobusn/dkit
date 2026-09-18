@@ -57,6 +57,14 @@ class BuildModule(module.MultiCommandModule):
             default=""
         )
 
+    @property
+    def doc_style(self):
+        """Style name selected by CLI or the DOC configuration section."""
+        return value_by_priority(
+            self.args.style,
+            self.config.get(DOC_SECTION, "style", fallback=None),
+        )
+
     def do_template(self):
         """
         apply data sets specified to jinja2 template
@@ -74,6 +82,9 @@ class BuildModule(module.MultiCommandModule):
 
     def do_doc(self):
         """create a document from markdown file(s)"""
+        style_pack = builder.resolve_style(
+            self.doc_style, self.args.config_uri
+        )
         b = builder.SimpleDocRenderer(
             author=self.doc_author,
             title=self.args.title,
@@ -81,6 +92,7 @@ class BuildModule(module.MultiCommandModule):
             contact=self.doc_contact,
             renderer=self.args.format,
             doc_class=self.args.doc_class,
+            style_pack=style_pack,
         )
         b.build_from_files(
             self.args.output,
@@ -116,6 +128,10 @@ class BuildModule(module.MultiCommandModule):
         parser_doc.add_argument(
             "--doc-class", dest="doc_class", default="article",
             help="latex only: \\documentclass{} to use"
+        )
+        parser_doc.add_argument(
+            "--style", default=None,
+            help="registered document style"
         )
 
         parser_doc.add_argument("files", nargs="+")

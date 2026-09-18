@@ -27,6 +27,8 @@ from pathlib import Path
 
 from . import document as doc
 from . import latex as tex
+from dkit.stylepack.errors import StylePackError
+from dkit.stylepack.model import StylePack
 
 __all__ = ["LatexRenderer"]
 
@@ -63,12 +65,32 @@ class LatexRenderer:
         font_size: int = 11,
         paper_size: str = "a4paper",
         styler=None,          # accepted for API compatibility; unused
+        style_pack: StylePack | None = None,
     ):
+        if style_pack is not None:
+            formats = style_pack.manifest.formats.latex
+            if formats is None:
+                raise StylePackError(
+                    f"style '{style_pack.manifest.id}' has no LaTeX resources"
+                )
+            if doc_type == "article":
+                doc_type = formats.class_name
+            paper_size = _paper_option(style_pack)
+            page = style_pack.manifest.page
+            geometry_options = ",".join([
+                f"left={page.left_margin_cm}cm",
+                f"right={page.right_margin_cm}cm",
+                f"top={page.top_margin_cm}cm",
+                f"bottom={page.bottom_margin_cm}cm",
+            ])
+        else:
+            geometry_options = None
         self.document = document
         self._tex_doc = tex.Document(
             doc_type=doc_type,
             font_size=font_size,
             paper_size=paper_size,
+            geometry_options=geometry_options,
         )
         self._set_title_fields()
 
@@ -403,3 +425,17 @@ class LatexRenderer:
         self.make_elements(self.document.elements)
         with open(file_name, "wt", encoding="utf-8") as fh:
             fh.write(str(self._tex_doc))
+
+
+def _paper_option(style_pack: StylePack) -> str:
+    """Translate shared page tokens into LaTeX class options."""
+    sizes = {
+        "a4": "a4paper",
+        "letter": "letterpaper",
+        "legal": "legalpaper",
+        "a5": "a5paper",
+    }
+    option = sizes[style_pack.manifest.page.size]
+    if style_pack.manifest.page.orientation == "landscape":
+        option += ",landscape"
+    return option

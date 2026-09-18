@@ -1,0 +1,4 @@
+figure.dpi: 300
+savefig.dpi: 300
+font.family: serif
+axes.prop_cycle: cycler('color', ['2569A9', '4A8691', '66CBDE', 'DEA95B'])

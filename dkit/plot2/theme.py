@@ -51,6 +51,8 @@ Neither call is needed to *use* a custom theme: a ``Theme`` instance is
 accepted everywhere a name is.  Registering buys reaching it by name from a
 config file or a command line, and a default buys not repeating ``theme=``.
 """
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field, replace as _replace
 from importlib.resources import files
 from os import fspath
@@ -337,6 +339,30 @@ themes: dict[str, Theme] = {
 #: theme used when no project default has been set
 DEFAULT_THEME = "dkit-light"
 
+_ACTIVE_THEME: ContextVar[Union[Theme, None]] = ContextVar(
+    "dkit_plot2_active_theme", default=None
+)
+
+
+def current_theme() -> Union[Theme, None]:
+    """Return the style-pack theme active for the current build context."""
+    return _ACTIVE_THEME.get()
+
+
+@contextmanager
+def theme_context(theme: Theme):
+    """Apply a theme and make it Plot2's implicit theme in this context.
+
+    Args:
+        theme: theme to apply and expose to plots created in the context.
+    """
+    token = _ACTIVE_THEME.set(theme)
+    try:
+        with theme.context():
+            yield theme
+    finally:
+        _ACTIVE_THEME.reset(token)
+
 #: the project default, replaced by :func:`~dkit.plot2.theme.set_default_theme`
 _default: Union[Theme, str] = DEFAULT_THEME
 
@@ -463,7 +489,7 @@ def get_theme(spec: Union[Theme, str, None] = None) -> Theme:
     if isinstance(spec, Theme):
         return spec
     if spec is None:
-        return default_theme()
+        return current_theme() or default_theme()
     if spec in themes:
         return themes[spec]
     # a bundled or built in *style* name is a reasonable shorthand for a theme

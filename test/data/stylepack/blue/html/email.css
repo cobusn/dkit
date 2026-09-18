@@ -1,0 +1,9 @@
+body {
+    background-color: #F4F8FB;
+    color: #173A5E;
+    font-family: "Source Sans Pro", Arial, sans-serif;
+}
+
+.header {
+    border-bottom: 3px solid #2569A9;
+}
