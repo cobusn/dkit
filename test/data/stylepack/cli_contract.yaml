@@ -1,10 +1,10 @@
 commands:
-  - dk styles register NAME --distribution DIST --manifest RESOURCE
-  - dk styles register NAME --distribution DIST --manifest RESOURCE --replace
-  - dk styles list
-  - dk styles show NAME
-  - dk styles validate NAME
-  - dk styles unregister NAME
+  - dk Stylesheets register NAME --distribution DIST --manifest RESOURCE
+  - dk Stylesheets register NAME --distribution DIST --manifest RESOURCE --replace
+  - dk Stylesheets list
+  - dk Stylesheets show NAME
+  - dk Stylesheets validate NAME
+  - dk Stylesheets unregister NAME
 errors:
   unknown_style: "unknown style '{name}'"
   duplicate_style: "style '{name}' is already registered"

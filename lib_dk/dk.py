@@ -45,7 +45,7 @@ class DataKit(object):
         mapping      maintain entity relation mapping
         queries      maintain queries
         schemas      maintain schemas
-        styles       maintain document style packages
+        Stylesheets  maintain document style packages
         transforms   mintain transforms
         XML          maintain XML rules
 
@@ -62,7 +62,7 @@ class DataKit(object):
     """
 
     modules = sorted(["admin", "build", "connections", "diff", "endpoints", "run", "queries",
-                      "mapping", "schemas", "styles", "transforms", "vault", "xplore", "XML"])
+                      "mapping", "schemas", "Stylesheets", "transforms", "vault", "xplore", "XML"])
 
     def __init__(self, arguments):
         self.arguments = arguments
@@ -110,7 +110,7 @@ class DataKit(object):
         from lib_dk import schema_module
         schema_module.SchemaModule(self.arguments[2:]).run()
 
-    def do_styles(self):
+    def do_Stylesheets(self):
         from lib_dk import styles_module
         styles_module.StylesModule(self.arguments[2:]).run()
 

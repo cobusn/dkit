@@ -67,10 +67,10 @@ check. Install the wheel into the target virtual environment and register it:
 .. code-block:: console
 
    pip install company_style_pack.whl
-   dk styles register company-blue --distribution company-style-pack \
+   dk Stylesheets register company-blue --distribution company-style-pack \
       --manifest company_style_pack/styles/company-blue/style.yaml
-   dk styles validate company-blue
-   dk styles show company-blue
+   dk Stylesheets validate company-blue
+   dk Stylesheets show company-blue
 
 Registration validates the manifest, dkit compatibility, every referenced
 resource, and a deterministic style-root fingerprint before changing
@@ -86,7 +86,7 @@ Select a registered pack for one-shot documents or configure a report:
 
    dk build doc --style company-blue --format reportlab \
       --title "Quarterly report" --output report.pdf report.md
-   dk styles preview company-blue --output preview
+   dk Stylesheets preview company-blue --output preview
 
 The preview contains ReportLab PDF, LaTeX PDF, DOCX, HTML, email HTML, and
 screen/print chart examples. ``configuration.style`` in ``report.yaml`` and

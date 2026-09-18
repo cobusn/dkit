@@ -74,14 +74,14 @@ uses its native asset:
 
 .. code-block:: console
 
-   dk styles register dkit-blue --distribution libdkit \
+   dk Stylesheets register dkit-blue --distribution libdkit \
       --manifest dkit/stylepacks/dkit_blue/style.yaml
    dk build doc --style dkit-blue --format html \
       --title "Quarterly report" --output report.html report.md
 
 For a configured report, set ``configuration.style`` in ``report.yaml``.
 ``[DOC] style`` in ``~/.dk.ini`` is the fallback for the one-shot document
-command. Use ``dk styles preview`` to produce representative output from all
+command. Use ``dk Stylesheets preview`` to produce representative output from all
 available renderer assets.
 
 HtmlRenderer

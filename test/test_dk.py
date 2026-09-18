@@ -5,6 +5,7 @@ import unittest
 import os
 from unittest.mock import patch
 from dkit import exceptions
+from lib_dk.dk import DataKit
 from lib_dk import (
     admin_module,
     connections_module,
@@ -17,6 +18,16 @@ from lib_dk import (
     transform_module,
     xml_module
 )
+
+
+class TestDataKitDispatch(unittest.TestCase):
+
+    def test_schema_and_stylesheet_shorthands_are_unambiguous(self):
+        "schema and stylesheet commands have distinct case-sensitive prefixes"
+        self.assertEqual(DataKit(["dk", "s"]).get_method(), "do_schemas")
+        self.assertEqual(
+            DataKit(["dk", "S"]).get_method(), "do_Stylesheets"
+        )
 
 
 class TestDK(unittest.TestCase):
