@@ -1,6 +1,8 @@
 import sys
 import types
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from unittest.mock import patch
 
 sys.path.insert(0, "..")  # noqa
@@ -26,10 +28,13 @@ class TestRenderHistogram(unittest.TestCase):
             Bin(1, 3, 5),
         ])
 
-        with patch.dict(sys.modules, {"plotille": fake_plotille}):
+        output = StringIO()
+        with patch.dict(sys.modules, {"plotille": fake_plotille}), \
+                redirect_stdout(output):
             result = render_histogram(histogram, width=40, log_scale=True)
 
         self.assertEqual(result, "rendered")
+        self.assertEqual(output.getvalue(), "")
         self.assertEqual(calls, [(
             [2, 5], [0, 1, 3],
             {"width": 40, "log_scale": True, "lc": "bright_green"},

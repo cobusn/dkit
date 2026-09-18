@@ -77,8 +77,8 @@ def render_histogram(histogram: "Histogram", width: int = None,
 
     import plotille
 
-    print(get_terminal_size())
-    _width = width if width else get_terminal_size()[0] - 36
+    terminal_width = get_terminal_size()[0]
+    _width = width if width else terminal_width - 36
     counts = [bin_.count for bin_ in histogram.bins]
     bins = [histogram.bins[0].left]
     bins.extend(bin_.right for bin_ in histogram.bins)

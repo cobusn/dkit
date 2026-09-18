@@ -25,7 +25,7 @@ import argparse
 import json
 
 from . import module, options
-from curses_components.grid import GridComponent
+from dkit.shell.grid_extensions import DkitGridComponent
 from dkit import exceptions
 from dkit.data import manipulate as mp, containers, aggregation as agg
 from dkit.etl.extensions import ext_sql_alchemy
@@ -189,7 +189,7 @@ class RunModule(module.MultiCommandModule):
             self.tabulate(data)
 
         elif self.args.view:
-            grid = GridComponent()
+            grid = DkitGridComponent()
             data = srv.run_template_query(
                 connection,
                 str_query,

@@ -28,7 +28,7 @@ import sys
 from re import RegexFlag
 import os
 
-from curses_components.grid import GridComponent
+from dkit.shell.grid_extensions import DkitGridComponent
 from . import module, options
 from dkit.data import manipulate as mp, eda, iteration
 from dkit.data.json_utils import make_simple_encoder
@@ -310,7 +310,7 @@ class ExploreModule(module.MultiCommandModule):
 
     def do_view(self):
         """display data in a curses based grid"""
-        grid = GridComponent(
+        grid = DkitGridComponent(
             max_col_width=self.args.width if self.args.width > 0 else 30
         )
         grid.display(
