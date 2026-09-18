@@ -26,6 +26,7 @@ import functools
 import os
 import tempfile
 import typing
+from contextlib import nullcontext
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
@@ -401,13 +402,31 @@ def wrap_matplotlib(filename=None, align="center", width=None, height=None, kind
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            plt = func(*args, **kwargs)
-            if not filename:
-                fd, name = tempfile.mkstemp(suffix=kind)
-                os.close(fd)
+            plot_theme = getattr(args[0], "plot_theme", None) if args else None
+            if plot_theme is None:
+                from dkit.plot2.theme import current_theme, theme_context
+
+                plot_theme = current_theme()
             else:
-                name = filename
-            plt.savefig(name)
+                from dkit.plot2.theme import theme_context
+
+            context = (
+                theme_context(plot_theme)
+                if plot_theme is not None else nullcontext()
+            )
+            with context:
+                plt = func(*args, **kwargs)
+                target = (
+                    filename(*args, **kwargs)
+                    if callable(filename)
+                    else filename
+                )
+                if not filename:
+                    fd, name = tempfile.mkstemp(suffix=kind)
+                    os.close(fd)
+                else:
+                    name = target
+                plt.savefig(name)
             rv = _jsonise(
                 Image(name, align=align, width=width, height=height)
             )

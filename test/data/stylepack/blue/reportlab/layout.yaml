@@ -1,0 +1,11 @@
+page:
+  title_xy: [40, 500]
+  subtitle_xy: [40, 480]
+  author_xy: [40, 360]
+  contact_xy: [40, 340]
+  date_xy: [40, 160]
+  title_font_size: 22
+  subtitle_font_size: 16
+  author_font_size: 14
+  contact_font_size: 16
+  date_font_size: 10

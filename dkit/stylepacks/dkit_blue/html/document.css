@@ -1,0 +1,17 @@
+:root {
+    --dkit-primary: #173A5E;
+    --dkit-accent: #2569A9;
+    --dkit-background: #F4F8FB;
+    --dkit-text: #173A5E;
+    --dkit-muted: #6B7F91;
+}
+
+body {
+    background: var(--dkit-background);
+    color: var(--dkit-text);
+    font-family: "Source Sans Pro", sans-serif;
+}
+
+h1, h2, h3 {
+    color: var(--dkit-primary);
+}

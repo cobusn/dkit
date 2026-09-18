@@ -137,6 +137,32 @@ msg = DocumentMessage(
   this as `height="auto"` on the element, rendering the image at zero
   height.
 
+### Declarative document styles
+
+`dkit.stylepack` provides renderer-independent style manifests with shared
+colour, typography, page, and chart tokens. Native CSS, ReportLab layout,
+DOCX, LaTeX, and matplotlib assets remain reviewable files in the style
+distribution; style distributions do not provide configuration-driven Python
+imports.
+
+Style registrations are stored in the user's `~/.dk.ini` by the `dk styles`
+commands. The distribution name, manifest path, and style-root fingerprint
+are recorded so a later build can detect a missing or changed installation:
+
+```console
+dk styles register dkit-blue --distribution libdkit \
+    --manifest dkit/stylepacks/dkit_blue/style.yaml
+dk build doc --style dkit-blue --format reportlab \
+    --title "Quarterly report" --output report.pdf report.md
+```
+
+Configured projects may select a style with `configuration.style` in
+`report.yaml`; `[DOC] style` is the CLI configuration fallback. The selected
+style is applied to ReportLab, HTML/email, DOCX, LaTeX, and scoped matplotlib
+contexts. `dk styles preview NAME --output FOLDER` creates a cross-format
+preview bundle. The built-in `styler` dotted path remains only as a deprecated
+compatibility option.
+
 ## Conventions
 
 ### Config-file-driven instantiation

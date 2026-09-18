@@ -123,6 +123,8 @@ examples/test.pickle.bak
 html/doctrees/
 html/html/
 test/data/*
+!test/data/stylepack/
+!test/data/stylepack/**
 test/input_files/*
 test/output/*
 examples/data/hosts.csv
@@ -133,6 +135,9 @@ scripts/dk/dkit
 scripts/dk/testdata/ini.cfg
 scripts/dk/scratch/*
 *.pdf
+!test/data/stylepack/**/*.pdf
+!dkit/stylepacks/dkit_blue/**/*.pdf
+!ntt_style/**/*.pdf
 scratch/*
 examples/arrow_data/*
 test/dk_testdata/spark.py
@@ -153,3 +158,4 @@ examples*.html
 examples/plots/*
 examples/output/*
 examples/python-logo.png
+examples/doc2_stylepacks/output/

@@ -22,6 +22,7 @@ Reportlab Style repository
 """
 from datetime import datetime
 from importlib.resources import open_binary, open_text
+from pathlib import Path
 
 import yaml
 from reportlab.lib import colors, pagesizes
@@ -44,7 +45,12 @@ class DefaultStyler(object):
     for different document standards
     """
 
-    def __init__(self, document: doc.Document, local_style: dict = None):
+    def __init__(
+        self,
+        document: doc.Document,
+        local_style: dict = None,
+        background_path: str | Path | None = None,
+    ):
         if local_style:
             self.local_style = local_style
         else:
@@ -52,6 +58,9 @@ class DefaultStyler(object):
                 "dkit.resources", "rl_stylesheet.yaml"
             )
         self.doc = document
+        self.background_path = (
+            Path(background_path) if background_path is not None else None
+        )
         self.style = getSampleStyleSheet()
         self.unit = cm
         self.register_fonts()
@@ -98,9 +107,13 @@ class DefaultStyler(object):
         size_map = {
             "A4": pagesizes.A4,
             "A5": pagesizes.A5,
-            "LETTER": pagesizes.LETTER
+            "LETTER": pagesizes.LETTER,
+            "LEGAL": pagesizes.LEGAL,
         }
-        return size_map[self.local_style["page"]["size"].upper()]
+        size = size_map[self.local_style["page"]["size"].upper()]
+        if self.local_style["page"].get("orientation", "portrait").lower() == "landscape":
+            return pagesizes.landscape(size)
+        return size
 
     @property
     def page_width(self):
@@ -233,9 +246,15 @@ class DefaultStyler(object):
         conf = FirstPageConf(**self.local_style["reportlab"]["front_page"])
 
         # image
-        with open_binary(conf.package, conf.image) as infile:
-            pdf = PdfImage(infile, self.page_width, self.page_height)
+        if self.background_path is not None:
+            pdf = PdfImage(
+                str(self.background_path), self.page_width, self.page_height
+            )
             pdf.drawOn(canvas, 0, 0)
+        else:
+            with open_binary(conf.package, conf.image) as infile:
+                pdf = PdfImage(infile, self.page_width, self.page_height)
+                pdf.drawOn(canvas, 0, 0)
 
         # color
         canvas.setFillColor(conf.title_color)

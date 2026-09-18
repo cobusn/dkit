@@ -17,6 +17,7 @@ Contents:
    howto_documents.rst
    howto_cli_exploration.rst
    howto_plot2_styles.rst
+   howto_stylepacks.rst
    base.rst
    data.rst
    etl.rst
@@ -36,4 +37,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

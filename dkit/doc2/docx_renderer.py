@@ -22,10 +22,13 @@ Render dkit doc cannonical format to Micosoft Word docx format using docx
 """
 from . import document as doc
 import docx
+from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm
 from .docx_helper import add_hyperlink, create_codeblock_style, DocxConfig
+from dkit.stylepack.errors import StylePackError
+from dkit.stylepack.model import StylePack
 import functools
 HEADING_COUNTER = 0
 
@@ -34,16 +37,29 @@ class DocxRenderer:
     """Render document elements to docx"""
 
     def __init__(self, document: doc.Document, allow_soft_breaks: bool = False,
-                 config: DocxConfig = None, template: str = None):
+                 config: DocxConfig = None, template: str = None,
+                 style_pack: StylePack | None = None):
         if config is None:
             config = DocxConfig()
         self.allow_soft_breaks = allow_soft_breaks  # allow breaks in a paragraph
         self.doc = document
         self.config = config
+        self.table_style = config.sty_table
+        if style_pack is not None:
+            formats = style_pack.manifest.formats.docx
+            if formats is None:
+                raise StylePackError(
+                    f"style '{style_pack.manifest.id}' has no DOCX resources"
+                )
+            template = str(style_pack.resource(formats.template))
+            if formats.table_style is not None:
+                self.table_style = formats.table_style
         if template is None:
             self.xdoc = docx.Document()
         else:
             self.xdoc = docx.Document(template)
+        if style_pack is not None:
+            self._apply_style_pack(style_pack)
         # Create custom style
         create_codeblock_style(self.xdoc)
 
@@ -52,6 +68,42 @@ class DocxRenderer:
         self.current_style = self.config.sty_normal
         self.list_level = None  # used by lists to determine level
         self.list_type = None     # used by lists
+
+    def _apply_style_pack(self, style_pack: StylePack):
+        """Apply the pack template geometry to every document section.
+
+        Args:
+            style_pack: validated style pack supplying the DOCX template and
+                physical page tokens.
+        """
+        formats = style_pack.manifest.formats.docx
+        if formats is None:
+            raise StylePackError(
+                f"style '{style_pack.manifest.id}' has no DOCX resources"
+            )
+        template = style_pack.resource(formats.template)
+        page_sizes = {
+            "a4": (21.0, 29.7),
+            "letter": (21.59, 27.94),
+            "legal": (21.59, 35.56),
+            "a5": (14.8, 21.0),
+        }
+        width, height = page_sizes[style_pack.manifest.page.size]
+        page = style_pack.manifest.page
+        if page.orientation == "landscape":
+            width, height = height, width
+        for section in self.xdoc.sections:
+            section.orientation = (
+                WD_ORIENT.LANDSCAPE
+                if page.orientation == "landscape"
+                else WD_ORIENT.PORTRAIT
+            )
+            section.page_width = Cm(width)
+            section.page_height = Cm(height)
+            section.left_margin = Cm(page.left_margin_cm)
+            section.right_margin = Cm(page.right_margin_cm)
+            section.top_margin = Cm(page.top_margin_cm)
+            section.bottom_margin = Cm(page.bottom_margin_cm)
 
     def set_properties(self):
         """set document properties"""
@@ -239,7 +291,7 @@ class DocxRenderer:
     def make_table(self, element: doc.Table):
         rows = len(element.data) + 1
         cols = len(element.columns)
-        table = self.xdoc.add_table(rows, cols, style=self.config.sty_table)
+        table = self.xdoc.add_table(rows, cols, style=self.table_style)
         table.autofit = False
         table.alignment = self._translate_table_alignment(element.align)
 

@@ -67,6 +67,9 @@ __all__ = ["Layer", "Plot", "RenderContext", "save_figure"]
 #: semantic colour names understood by ``color=`` on any layer
 SEMANTIC_COLORS = ("positive", "negative", "neutral", "highlight")
 
+#: top of an exclusive plot's axes when its title needs a dedicated band
+_EXCLUSIVE_TITLE_AXES_TOP = 0.90
+
 #: ``color="signed"`` colours each mark by the sign of its own value.  Only
 #: geoms that draw one mark per row can honour it.
 SIGNED = "signed"
@@ -434,12 +437,24 @@ class Plot:
             fig = ax.figure
             theme.size_figure(fig)
 
+        exclusive = any(layer.exclusive for layer in self.layers)
+        if exclusive:
+            fig.subplots_adjust(
+                left=0,
+                right=1,
+                bottom=0,
+                top=(
+                    _EXCLUSIVE_TITLE_AXES_TOP
+                    if self.title is not None
+                    else 1
+                ),
+            )
         self._draw_axes(
             frame, ax, theme,
             {"x": self._domain(frame, "x"), "y": self._domain(frame, "y")},
             title=self.title,
         )
-        if owns_figure and self.tight_layout:
+        if owns_figure and self.tight_layout and not exclusive:
             fig.tight_layout()
         return fig
 

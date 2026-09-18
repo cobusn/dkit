@@ -101,7 +101,7 @@ page:
 table:
   heading_color: "#FFFFFF"
   heading_background: "#5A5A5A"
-  fontSize: footnotesize
+  fontSize: normalsize
   font_color: "#5A5A5A"
   font: SourceSansPro
 matplotlib:

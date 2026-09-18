@@ -1,0 +1,63 @@
+schema_version: 1
+id: dkit-blue
+name: Dkit Blue
+requires_dkit: ">=26.9"
+
+colors:
+  primary: "#173A5E"
+  accent: "#2569A9"
+  background: "#F4F8FB"
+  surface: "#FFFFFF"
+  text: "#173A5E"
+  muted: "#6B7F91"
+  positive: "#20865A"
+  negative: "#C44A4A"
+  neutral: "#8A8A8A"
+  highlight: "#C8007C"
+  table_heading_background: "#2569A9"
+  table_heading_text: "#FFFFFF"
+
+typography:
+  heading: Source Sans Pro
+  body: Source Sans Pro
+  mono: DejaVu Sans Mono
+
+page:
+  size: a4
+  orientation: portrait
+  left_margin_cm: 2.0
+  right_margin_cm: 2.0
+  top_margin_cm: 2.2
+  bottom_margin_cm: 2.0
+
+charts:
+  categorical:
+    - "#2569A9"
+    - "#4A8691"
+    - "#66CBDE"
+    - "#DEA95B"
+  sequential: Blues
+  diverging: RdBu_r
+  positive: "#20865A"
+  negative: "#C44A4A"
+  neutral: "#8A8A8A"
+  highlight: "#C8007C"
+  width_cm: 16
+  height_cm: 7
+
+formats:
+  reportlab:
+    layout: reportlab/layout.yaml
+    cover: assets/cover.pdf
+  html:
+    stylesheet: html/document.css
+    email_stylesheet: html/email.css
+  latex:
+    class: dkit-blue
+    resources: latex
+    engine: pdflatex
+  docx:
+    template: docx/template.docx
+  matplotlib:
+    screen: matplotlib/screen.mplstyle
+    print: matplotlib/print.mplstyle

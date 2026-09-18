@@ -1,0 +1,9 @@
+*.aux
+*.docx
+*.html
+*.idx
+*.log
+*.out
+*.pdf
+*.tex
+plots/

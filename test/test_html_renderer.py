@@ -186,9 +186,24 @@ def test_image_without_title_no_figcaption():
 
 
 def test_image_dimensions():
-    html = _render(doc.Image("img.png", width=200, height=100))
-    assert 'width="200"' in html
-    assert 'height="100"' in html
+    html = _render(doc.Image("img.png", width=2, height=1))
+    assert 'width="76"' in html
+    assert 'height="38"' in html
+
+
+def test_render_rewrites_absolute_image_paths_relative_to_output(tmp_path):
+    """Standalone HTML can be moved with its local image assets."""
+    image = tmp_path / "assets" / "chart.png"
+    image.parent.mkdir()
+    output = tmp_path / "html" / "report.html"
+    output.parent.mkdir()
+    document = doc.Document(title="Report")
+    document.add_element(doc.Image(str(image)))
+
+    HtmlRenderer(document).render(str(output))
+
+    html = output.read_text(encoding="utf-8")
+    assert 'src="../assets/chart.png"' in html
 
 
 # ------------------------------------------------------------------

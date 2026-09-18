@@ -1,0 +1,6 @@
+figure.facecolor: white
+axes.facecolor: white
+axes.edgecolor: 173A5E
+axes.prop_cycle: cycler('color', ['173A5E', '2569A9', '4A8691', '8A8A8A'])
+text.color: 173A5E
+savefig.dpi: 300

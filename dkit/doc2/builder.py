@@ -26,8 +26,12 @@ Manager resources to build a document from templates, code and data.
 
 import importlib.resources
 import logging
+import os
 import shutil
 import subprocess
+import tempfile
+import warnings
+from contextlib import nullcontext
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Literal, Self
@@ -41,6 +45,10 @@ from .rl_renderer import RLRenderer, DefaultStyler
 from .docx_renderer import DocxRenderer
 from .html_renderer import HtmlRenderer
 from .latex_renderer import LatexRenderer
+from dkit.stylepack.model import StylePack
+from dkit.stylepack.registry import StyleRegistry
+from dkit.stylepack.matplotlib import matplotlib_theme
+from dkit.plot2.theme import theme_context as plot2_theme_context
 
 logger = logging.getLogger("document-builder")
 
@@ -64,7 +72,8 @@ RENDERERS = {
 
 
 def get_renderer(document: doc.Document, renderer_name: str,
-                 doc_class: str = "article", styler_class=DefaultStyler):
+                 doc_class: str = "article", styler_class=DefaultStyler,
+                 style_pack: StylePack | None = None):
     """instantiate the named renderer, with the kwargs that one expects
 
     Not every renderer takes the same constructor arguments: only ``latex``
@@ -74,34 +83,52 @@ def get_renderer(document: doc.Document, renderer_name: str,
     """
     renderer_cls = RENDERERS[renderer_name]
     if renderer_name == "latex":
-        return renderer_cls(document, doc_type=doc_class, styler=styler_class)
-    if renderer_name in ("html", "docx"):
-        return renderer_cls(document)
-    return renderer_cls(document, styler=styler_class)
+        return renderer_cls(
+            document,
+            doc_type=doc_class,
+            styler=styler_class,
+            style_pack=style_pack,
+        )
+    if renderer_name == "html":
+        return renderer_cls(document, style_pack=style_pack)
+    if renderer_name == "docx":
+        return renderer_cls(document, style_pack=style_pack)
+    return renderer_cls(
+        document,
+        styler=styler_class,
+        style_pack=style_pack,
+    )
 
 
 def render_to_file(document: doc.Document, renderer_name: str, output: str,
-                   doc_class: str = "article", styler_class=DefaultStyler):
+                   doc_class: str = "article", styler_class=DefaultStyler,
+                   style_pack: StylePack | None = None):
     """render ``document`` with the named renderer, writing ``output``
 
     ``latex`` is the odd one out: :meth:`LatexRenderer.render` only writes
     LaTeX source, so turning that into ``output`` needs an external
     ``pdflatex`` pass, handled by :func:`_compile_latex`.
     """
-    renderer = get_renderer(document, renderer_name, doc_class, styler_class)
+    renderer = get_renderer(
+        document, renderer_name, doc_class, styler_class, style_pack
+    )
     if renderer_name == "latex":
-        _compile_latex(renderer, output)
+        _compile_latex(renderer, output, style_pack)
     else:
         renderer.render(output)
 
 
-def _compile_latex(renderer: LatexRenderer, output: str):
+def _compile_latex(
+    renderer: LatexRenderer,
+    output: str,
+    style_pack: StylePack | None = None,
+):
     """render via LatexRenderer, then compile the .tex it wrote to a PDF
 
     Compiling in a temporary directory would break every relative image path
     a template's plots rely on, so this runs in place instead, next to
     ``output`` -- the same convention the other renderers already follow --
-    and only the .aux/.log/.out litter pdflatex leaves behind is cleaned up
+    and only the auxiliary litter pdflatex leaves behind is cleaned up
     afterwards. The .tex itself is kept: it is a normal, inspectable build
     output, the same way :mod:`example_document`'s own scripts treat it.
     """
@@ -113,18 +140,66 @@ def _compile_latex(renderer: LatexRenderer, output: str):
         )
     output_path = Path(output)
     tex_path = output_path.with_suffix(".tex")
-    renderer.render(str(tex_path))
-    for _ in range(2):
-        result = subprocess.run(
-            ["pdflatex", "-interaction=nonstopmode", tex_path.name],
-            cwd=tex_path.parent or ".", capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            raise DKitApplicationException(
-                f"pdflatex failed to build {output_path}:\n{result.stdout[-4000:]}"
+    with _materialised_latex_resources(style_pack) as latex_root:
+        renderer.render(str(tex_path))
+        environment = os.environ.copy()
+        if latex_root is not None:
+            environment["TEXINPUTS"] = (
+                str(latex_root) + os.pathsep
+                + environment.get("TEXINPUTS", "")
             )
-    for ext in (".aux", ".log", ".out"):
-        tex_path.with_suffix(ext).unlink(missing_ok=True)
+        try:
+            for _ in range(2):
+                result = subprocess.run(
+                    ["pdflatex", "-interaction=nonstopmode", tex_path.name],
+                    cwd=tex_path.parent or ".", capture_output=True, text=True,
+                    env=environment,
+                )
+                if result.returncode != 0:
+                    raise DKitApplicationException(
+                        f"pdflatex failed to build {output_path}:\n"
+                        f"{result.stdout[-4000:]}"
+                    )
+        finally:
+            for ext in (".aux", ".idx", ".log", ".out"):
+                tex_path.with_suffix(ext).unlink(missing_ok=True)
+
+
+def _materialised_latex_resources(style_pack: StylePack | None):
+    """Materialise style resources for one isolated LaTeX build."""
+    if style_pack is None:
+        return _EmptyContext()
+    formats = style_pack.manifest.formats.latex
+    if formats is None:
+        raise DKitApplicationException(
+            f"style '{style_pack.manifest.id}' has no LaTeX resources"
+        )
+    source = style_pack.directory(formats.resources)
+
+    class ResourceContext:
+        def __enter__(self):
+            self.directory = tempfile.TemporaryDirectory(
+                prefix="dkit-style-latex-"
+            )
+            destination = Path(self.directory.name) / "latex"
+            shutil.copytree(source, destination)
+            return destination
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            self.directory.cleanup()
+            return False
+
+    return ResourceContext()
+
+
+class _EmptyContext:
+    """Null context used when compiling an unstyled document."""
+
+    def __enter__(self):
+        return None
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
 
 
 def import_class(name: str):
@@ -141,7 +216,27 @@ def resolve_styler(styler: str):
     """the styler named by config: "default", or a dotted class path"""
     if styler == "default":
         return DefaultStyler
+    warnings.warn(
+        "custom dotted stylers are deprecated; use a registered style pack",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return import_class(styler)
+
+
+def resolve_style(style: str | None, config_path: str = "~/.dk.ini"):
+    """Load a registered style by name.
+
+    Args:
+        style: registered style name, or None for the legacy default.
+        config_path: INI file containing style registrations.
+
+    Returns:
+        The validated style pack, or None when no style was selected.
+    """
+    if style in (None, "default"):
+        return None
+    return StyleRegistry(config_path).get(style)
 
 
 class DocumentConfiguration(BaseModel):
@@ -149,6 +244,7 @@ class DocumentConfiguration(BaseModel):
     output: str = "main.pdf"
     renderer: Literal["reportlab", "latex", "docx", "html"]
     styler: str = "default"
+    style: str | None = None
     # latex only: \documentclass{}. Must already be installed and on
     # LaTeX's own search path -- Builder does not ship or locate .cls files.
     doc_class: str = "article"
@@ -320,6 +416,7 @@ class Builder:
 
     def __init__(self, definition: DocumentDefinition):
         self.definition = definition
+        self._plot_theme = None
 
     @classmethod
     def from_file(cls, file_name: str, section=None):
@@ -340,7 +437,9 @@ class Builder:
         code = {}
         for k, v in self.definition.code.items():
             class_ = import_class(v)
-            code[k] = class_(self.definition)
+            instance = class_(self.definition)
+            instance.plot_theme = self._plot_theme
+            code[k] = instance
         return code
 
     def build_document(self):
@@ -354,10 +453,23 @@ class Builder:
 
     def build(self):
         config = self.definition.configuration
-        render_to_file(
-            self.build_document(), config.renderer, config.output,
-            doc_class=config.doc_class, styler_class=resolve_styler(config.styler),
+        style_pack = resolve_style(config.style)
+        plot_theme = None
+        if style_pack is not None and style_pack.manifest.formats.matplotlib:
+            variant = "screen" if config.renderer == "html" else "print"
+            plot_theme = matplotlib_theme(style_pack, variant)
+        self._plot_theme = plot_theme
+        context = (
+            plot2_theme_context(plot_theme)
+            if plot_theme is not None else nullcontext()
         )
+        with context:
+            render_to_file(
+                self.build_document(), config.renderer, config.output,
+                doc_class=config.doc_class,
+                styler_class=resolve_styler(config.styler),
+                style_pack=style_pack,
+            )
 
 
 class SimpleDocRenderer:
@@ -385,7 +497,7 @@ class SimpleDocRenderer:
                 sub_title: str | None = None, contact: str | None = None,
                 title_date: str | None = None, version: str | None = None,
                 renderer: str = "reportlab", doc_class: str = "article",
-                styler: str = "default"):
+                styler: str = "default", style_pack: StylePack | None = None):
         self.title = title
         self.author = author
         self.sub_title = sub_title
@@ -395,6 +507,7 @@ class SimpleDocRenderer:
         self.renderer = renderer
         self.doc_class = doc_class
         self.styler = styler
+        self.style_pack = style_pack
 
     def build_from_files(self, output: str, *files: str):
         """render ``files`` (markdown, jinja2-templated) to ``output``"""
@@ -403,5 +516,11 @@ class SimpleDocRenderer:
             title_date=self.title_date, contact=self.contact, version=self.version,
         )
         document.add_template_files(list(files))
-        render_to_file(document, self.renderer, output, self.doc_class,
-                       resolve_styler(self.styler))
+        render_to_file(
+            document,
+            self.renderer,
+            output,
+            self.doc_class,
+            resolve_styler(self.styler),
+            self.style_pack,
+        )

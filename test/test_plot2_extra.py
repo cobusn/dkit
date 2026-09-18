@@ -124,6 +124,20 @@ class TestTreeMap(TestCase):
         fig, ax = TreeMap().draw(COUNTRIES, "country", "gdp")
         self.assertIn("Alpha", texts(ax))
 
+    def test_labels_are_top_left_aligned_and_smaller_than_body_text(self):
+        fig, ax = TreeMap().draw(COUNTRIES, "country", "gdp")
+        labels = [artist for artist in ax.texts if artist.get_text()]
+
+        self.assertTrue(labels)
+        self.assertTrue(all(label.get_ha() == "left" for label in labels))
+        self.assertTrue(all(label.get_va() == "top" for label in labels))
+        self.assertTrue(
+            all(
+                label.get_fontsize() < matplotlib.rcParams["font.size"]
+                for label in labels
+            )
+        )
+
     def test_min_label_area_drops_small_cells(self):
         fig, ax = TreeMap(min_label_area=0.4).draw(COUNTRIES, "country", "gdp")
         # only Alpha is 40% of the total
@@ -288,6 +302,38 @@ class TestTreeMapFigure(TestCase):
         x0, x1 = ax.get_xlim()
         y0, y1 = ax.get_ylim()
         self.assertAlmostEqual(covered / ((x1 - x0) * (y1 - y0)), 1.0, places=3)
+
+    def test_cells_use_the_full_figure_without_a_title(self):
+        """a standalone treemap does not retain subplot margins"""
+        fig, ax = TreeMap(figsize=(16.0, 6.0)).draw(
+            COUNTRIES, "country", "gdp"
+        )
+        position = ax.get_position()
+        self.assertAlmostEqual(position.x0, 0.0)
+        self.assertAlmostEqual(position.y0, 0.0)
+        self.assertAlmostEqual(position.x1, 1.0)
+        self.assertAlmostEqual(position.y1, 1.0)
+
+    def test_titled_plot_reserves_only_a_small_top_band(self):
+        """a treemap title gets a small dedicated top band"""
+        fig, ax = TreeMap(figsize=(16.0, 6.0)).draw(
+            COUNTRIES, "country", "gdp", title="GDP"
+        )
+        self.assertAlmostEqual(ax.get_position().y1, 0.90)
+
+    def test_plot_wrapper_preserves_treemap_usable_area(self):
+        """the Plot adapter applies the same compact exclusive layout"""
+        fig = Plot(
+            geom.TreeMap("country", "gdp"),
+            title="GDP",
+            width=16.0,
+            height=6.0,
+        ).render(COUNTRIES)
+        position = fig.axes[0].get_position()
+        self.assertAlmostEqual(position.x0, 0.0)
+        self.assertAlmostEqual(position.y0, 0.0)
+        self.assertAlmostEqual(position.x1, 1.0)
+        self.assertAlmostEqual(position.y1, 0.90)
 
 
 class TestSlopePlot(TestCase):
