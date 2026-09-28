@@ -60,6 +60,40 @@ class TestHistogram(unittest.TestCase):
             self.assertEqual(total, len(values))
             print(str(h_data))
 
+    def test_histogram_data_preserves_explicit_subdecimal_bins(self):
+        values = [0.011 + index * 0.001 for index in range(9)]
+
+        histogram = Histogram.from_data(values, bins=10)
+
+        self.assertEqual(len(histogram.bins), 10)
+        self.assertEqual(sum(bin_.count for bin_ in histogram.bins), len(values))
+        self.assertEqual(histogram.bins[0].left, min(values))
+        self.assertEqual(histogram.bins[-1].right, max(values))
+
+    def test_histogram_data_tukey_mode_summarises_outliers(self):
+        values = list(range(100)) + [-500_000, 500_000]
+
+        histogram = Histogram.from_data(values, bins=8, range_mode="tukey")
+
+        self.assertEqual(len(histogram.bins), 10)
+        self.assertEqual(histogram.bins[0].left, float("-inf"))
+        self.assertEqual(histogram.bins[-1].right, float("inf"))
+        self.assertEqual(histogram.bins[0].count, 1)
+        self.assertEqual(histogram.bins[-1].count, 1)
+        self.assertEqual(sum(bin_.count for bin_ in histogram.bins), len(values))
+
+    def test_histogram_data_tukey_mode_handles_zero_iqr(self):
+        values = [10] * 100 + [-1_000, 1_000]
+
+        histogram = Histogram.from_data(values, bins=8, range_mode="tukey")
+
+        self.assertEqual(len(histogram.bins), 3)
+        self.assertEqual([bin_.count for bin_ in histogram.bins], [1, 100, 1])
+
+    def test_histogram_data_rejects_unknown_range_mode(self):
+        with self.assertRaises(ValueError):
+            Histogram.from_data([1, 2, 3], range_mode="unknown")
+
     def test_binner(self):
         data = [{"value": v} for v in range(1000)]
         bins = binner(data, "value", bins=10)

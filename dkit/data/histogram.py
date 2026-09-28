@@ -121,6 +121,36 @@ def _histogram_range(accumulator, range_mode):
     raise ValueError("range_mode must be 'full' or 'tukey'")
 
 
+def _tukey_fences(values):
+    """Return finite Tukey fences that enclose the central distribution.
+
+    Args:
+        values: Numeric observations.
+
+    Returns:
+        Lower and upper fences, clamped to the observed range, followed by a
+        flag indicating that the interquartile range is zero.
+    """
+    array = numpy.asarray(values, dtype=float)
+    minimum = float(array.min())
+    maximum = float(array.max())
+    lower_quartile, upper_quartile = numpy.quantile(array, [0.25, 0.75])
+    interquartile_range = upper_quartile - lower_quartile
+    lower = max(minimum, float(lower_quartile - 1.5 * interquartile_range))
+    upper = min(maximum, float(upper_quartile + 1.5 * interquartile_range))
+
+    has_zero_iqr = interquartile_range == 0
+    if lower == upper and minimum != maximum:
+        distances = [abs(value - lower) for value in array if value != lower]
+        half_width = min(distances) / 2
+        lower = max(minimum, lower - half_width)
+        upper = min(maximum, upper + half_width)
+    elif lower == upper:
+        lower -= 0.5
+        upper += 0.5
+    return lower, upper, has_zero_iqr
+
+
 @dataclass
 class Bin:
     """
@@ -170,20 +200,56 @@ class Histogram(object):
         return [b.as_dict() for b in self.bins]
 
     @classmethod
-    def from_data(cls, data, bins: int = None, precision=1) -> "Histogram":
-        """
-        Use fixed-width Freedman-Diaconis binning to instantiate Histogram
+    def from_data(cls, data, bins: int = None, precision=1,
+                  range_mode="full") -> "Histogram":
+        """Create a fixed-width Freedman-Diaconis histogram.
+
+        Args:
+            data: Numeric values to group into bins.
+            bins: Number of bins, or ``None`` to use Freedman-Diaconis.
+            precision: Retained for compatibility. Bin edges are not rounded,
+                because rounding can collapse distinct buckets.
+            range_mode: ``full`` bins the entire observed range. ``tukey``
+                creates low and high overflow bins outside Tukey fences.
+
+        Returns:
+            Histogram with the exact bin edges calculated by NumPy.
         """
         values = list(data)
-        bins_, max_value = _histogram_counts(values, bins=bins, bin_digits=precision)
-        bin_list = []
-        for i in range(len(bins_)-1):
-            left, count = bins_[i]
-            right = bins_[i+1][0]
-            bin_list.append(Bin(left, right, count))
-        last = bins_[-1]
-        bin_list.append(Bin(last[0], max_value, last[1]))
-        return cls(bin_list)
+        if range_mode == "full":
+            counts, edges = numpy.histogram(
+                values,
+                bins=bins if bins else "fd",
+            )
+            return cls([
+                Bin(float(left), float(right), int(count))
+                for left, right, count in zip(edges[:-1], edges[1:], counts)
+            ])
+        if range_mode != "tukey":
+            raise ValueError("range_mode must be 'full' or 'tukey'")
+
+        lower, upper, has_zero_iqr = _tukey_fences(values)
+        central_values = [value for value in values if lower <= value <= upper]
+        if has_zero_iqr:
+            counts = [len(central_values)]
+            edges = [lower, upper]
+        else:
+            counts, edges = numpy.histogram(
+                central_values,
+                bins=bins if bins else "fd",
+                range=(lower, upper),
+            )
+        histogram_bins = [
+            Bin(float(left), float(right), int(count))
+            for left, right, count in zip(edges[:-1], edges[1:], counts)
+        ]
+        low_outliers = sum(value < lower for value in values)
+        high_outliers = sum(value > upper for value in values)
+        if low_outliers:
+            histogram_bins.insert(0, Bin(float("-inf"), lower, low_outliers))
+        if high_outliers:
+            histogram_bins.append(Bin(upper, float("inf"), high_outliers))
+        return cls(histogram_bins)
 
     @classmethod
     def from_accumulator(cls, accumulator: "Accumulator", n: int = None,

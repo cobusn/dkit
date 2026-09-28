@@ -140,7 +140,7 @@ def histogram(data: Rows, field: str, bins: Union[int, None] = None,
         field: numeric field to bin
         bins: number of bins.  None auto-selects by the Freedman-Diaconis rule.
         label: legend entry for the bars
-        precision: digits to round bin boundaries to
+        precision: retained for compatibility; bin boundaries are not rounded
         xlabel: x axis label, defaulting to ``field``: the axis *is* the field
         mean_label: legend entry for the reference line
 

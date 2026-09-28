@@ -103,8 +103,17 @@ def _cmd_histogram(grid: GridComponent, args: list[str]) -> None:
     from dkit.data.histogram import Histogram
     from dkit.shell.console import render_histogram
 
+    automatic_bins = bins is None
     try:
-        histogram = Histogram.from_data(values, bins=bins)
+        if automatic_bins:
+            bins = _automatic_bin_count(values, grid)
+            histogram = Histogram.from_data(
+                values,
+                bins=bins,
+                range_mode="tukey",
+            )
+        else:
+            histogram = Histogram.from_data(values, bins=bins)
         rendered = render_histogram(
             histogram,
             width=_histogram_width(grid),
@@ -118,6 +127,13 @@ def _cmd_histogram(grid: GridComponent, args: list[str]) -> None:
         return
 
     title = f"histogram: {column}"
+    outlier_counts = []
+    if automatic_bins and math.isinf(histogram.bins[0].left):
+        outlier_counts.append(f"{histogram.bins[0].count} low")
+    if automatic_bins and math.isinf(histogram.bins[-1].right):
+        outlier_counts.append(f"{histogram.bins[-1].count} high")
+    if outlier_counts:
+        title += f" ({'; '.join(outlier_counts)} outliers)"
     if ignored:
         title += f" (ignored {ignored} non-numeric values)"
     lines = _strip_ansi(rendered).splitlines()
@@ -293,6 +309,31 @@ def _histogram_width(grid: GridComponent) -> int | None:
     # Plotille's histogram includes labels and axis decorations in addition
     # to the requested plot width.
     return max(1, popup_content_width - 36)
+
+
+def _automatic_bin_count(values: list[float], grid: GridComponent) -> int:
+    """Choose a data-driven bin count that fits the histogram popup.
+
+    Args:
+        values: Numeric values selected from the grid column.
+        grid: Grid component whose screen constrains popup height.
+
+    Returns:
+        Freedman-Diaconis bin count capped to the available popup rows.
+    """
+    import numpy
+
+    edges = numpy.histogram_bin_edges(values, bins="fd")
+    estimated_bins = len(edges) - 1
+    if grid.stdscr is None:
+        return min(estimated_bins, 18)
+
+    screen_height = grid.stdscr.getmaxyx()[0]
+    popup_height = min(25, screen_height - 2)
+    # The Plotille result has a header and footer; popup chrome consumes four
+    # more rows.  Keep all bucket rows visible without scrolling.
+    visible_bins = max(1, popup_height - 8)
+    return min(estimated_bins, visible_bins)
 
 
 def _popup_dimensions(

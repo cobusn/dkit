@@ -238,7 +238,7 @@ def hist(data: Rows, field: str, bins: Union[int, None] = None,
     args:
         field: numeric field to bin
         bins: number of bins.  None auto-selects by the Freedman-Diaconis rule.
-        precision: digits to round bin boundaries to
+        precision: retained for compatibility; bin boundaries are not rounded
         xlabel: axis label.  Defaults to ``field``, which unlike the other
             functions is worth doing here: the axis *is* the field.
 

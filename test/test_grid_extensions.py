@@ -131,6 +131,20 @@ class TestGridExtensions(unittest.TestCase):
             line_color=None,
         )
 
+    @patch("dkit.shell.console.render_histogram", return_value="plot")
+    def test_histogram_caps_automatic_bins_to_popup_height(
+        self, render_histogram
+    ):
+        grid = FakeGrid([1, 2, 3, 4, 100])
+        grid.stdscr = type("Screen", (), {"getmaxyx": lambda self: (20, 120)})()
+
+        _cmd_histogram(grid, [])
+
+        histogram = render_histogram.call_args.args[0]
+        self.assertLessEqual(len(histogram.bins), 12)
+        self.assertEqual(histogram.bins[-1].right, float("inf"))
+        self.assertEqual(sum(bin_.count for bin_ in histogram.bins), 5)
+
     def test_histogram_rejects_invalid_bin_count(self):
         grid = FakeGrid([1, 2, 3])
 
