@@ -1,5 +1,5 @@
 from collections import namedtuple
-from tdigest._tdigest import lib as _lib
+from ._tdigest import lib as _lib
 DEFAULT_COMPRESSION = 400
 
 Centroid = namedtuple("Centroid", ("weight", "mean"))

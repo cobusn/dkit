@@ -42,7 +42,7 @@ tdigest_ffi.cdef(CFFI_CDEF)
 
 with open(os.path.join(source_directory, "tdigest.c")) as tdigest_source_file:
     tdigest_ffi.set_source(
-        "tdigest._tdigest",
+        "dkit.algorithms._tdigest",
         tdigest_source_file.read(),
         include_dirs=[source_directory]
     )
