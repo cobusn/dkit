@@ -38,7 +38,6 @@ from ...data.containers import DictionaryEmulator
 from ...parsers.uri_parser import NETWORK_DIALECTS
 
 jinja2 = LazyLoad("jinja2")
-ora = LazyLoad("cx_Oracle")
 sqlalchemy = LazyLoad("sqlalchemy")
 
 logger = logging.getLogger(__name__)
@@ -160,32 +159,26 @@ class URL(object):
     @property
     def _uri(self):
         rv = ""
-        if "oracle" in self.dialect:
-            # create Oracle DSN
-            return ora.makedsn(
-                self.host,
-                self.port,
-                service_name=self.database
-            )
-        else:
-            if self.host is not None:
-                if ":" in self.host:
-                    rv += "[%s]" % self.host
-                else:
-                    rv += self.host
-            if self.port is not None:
-                rv += ":" + str(self.port)
-            if self.database is not None:
-                rv += "/"
-                rv += self.database
+        if self.host is not None:
+            if ":" in self.host:
+                rv += "[%s]" % self.host
+            else:
+                rv += self.host
+        if self.port is not None:
+            rv += ":" + str(self.port)
+        if self.database is not None and self.dialect != "oracle+oracledb":
+            rv += "/"
+            rv += self.database
         return rv
 
     @property
     def _options(self):
-        if self.parameters is not None:
-            return "?" + urlencode(self.parameters)
-        else:
-            return ""
+        parameters = dict(self.parameters or {})
+        if self.dialect == "oracle+oracledb" and self.database is not None:
+            parameters["service_name"] = self.database
+        if parameters:
+            return "?" + urlencode(parameters)
+        return ""
 
     def __str__(self):
         return f"{self.dialect}://{self._user}{self._uri}{self._options}"
@@ -253,9 +246,18 @@ class SQLAlchemyAccessor(object):
 
             return engine
 
+        engine_options = {"echo": echo}
+        connection = dict(conn)
+        if conn["dialect"] == "oracle+oracledb":
+            parameters = dict(conn.get("parameters") or {})
+            thick_mode = parameters.pop("thick_mode", "false")
+            connection["parameters"] = parameters
+            if str(thick_mode).lower() in {"1", "true", "yes"}:
+                engine_options["thick_mode"] = True
+
         engine = self.sqlalchemy.create_engine(
-            as_sqla_url(conn),
-            echo=echo,
+            as_sqla_url(connection),
+            **engine_options,
         )
         return engine
 

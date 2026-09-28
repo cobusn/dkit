@@ -46,7 +46,7 @@ SQL_DRIVERS = {
     "impala": "impala",
     "mssql": "mssql+pymssql",
     "mysql+mysqldb": "mysql+mysqldb",
-    "oracle": "oracle+cx_oracle",
+    "oracle": "oracle+oracledb",
     "postgresql": "postgresql",
     "sqlite": "sqlite",
     "awsathena+rest": "awsathena+rest",
@@ -56,7 +56,7 @@ SQL_DRIVERS = {
 NETWORK_DIALECTS = list(SQL_DRIVERS.keys())
 """
 NETWORK_DIALECTS = [
-    "hdf5", "impala", "mssql", "mysql+mysqldb", "oracle+cx_oracle",
+    "hdf5", "impala", "mssql", "mysql+mysqldb", "oracle+oracledb",
     "postgresql", "sqlite", "awsathena+rest", "duckdb", "mssql+pyodbc"
 ]
 
@@ -234,6 +234,8 @@ def _parse_network_db(host_string):
             f"invalid dialect: {result.scheme}"
         )
     database = result.path[1:] if result.path else None
+    if result.scheme == "oracle+oracledb" and database is None:
+        database = params.pop("service_name", [None])[0]
 
     rv = {
         "driver": "sql",

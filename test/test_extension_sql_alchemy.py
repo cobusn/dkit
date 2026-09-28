@@ -17,6 +17,7 @@
 #
 import sys; sys.path.insert(0, "..")  # noqa
 import unittest
+from unittest.mock import Mock
 import yaml
 from datetime import datetime
 from dkit.etl.extensions import ext_sql_alchemy
@@ -56,6 +57,51 @@ NORTHWIND_TABLE_NAMES = list(sorted([
     'EmployeeTerritory', 'Employee', 'OrderDetail', 'Order', 'Product',
     'Region', 'Shipper', 'Supplier', 'Territory'
 ]))
+
+
+class TestSQLAlchemyURL(unittest.TestCase):
+    """Test SQLAlchemy URL construction without connecting to a database."""
+
+    def test_oracledb_url_uses_service_name(self):
+        """Oracle database names are emitted as service-name parameters."""
+        connection = {
+            "dialect": "oracle+oracledb",
+            "username": "user",
+            "password": "pass",
+            "host": "db.example.com",
+            "port": "1521",
+            "database": "PROD",
+            "parameters": {"events": "true"},
+        }
+
+        self.assertEqual(
+            ext_sql_alchemy.as_sqla_url(connection),
+            "oracle+oracledb://user:pass@db.example.com:1521?"
+            "events=true&service_name=PROD",
+        )
+
+    def test_oracledb_thick_mode_is_engine_option(self):
+        """Thick mode is not passed through as a driver URL parameter."""
+        connection = {
+            "dialect": "oracle+oracledb",
+            "username": "user",
+            "password": "pass",
+            "host": "db.example.com",
+            "port": "1521",
+            "database": "PROD",
+            "parameters": {"thick_mode": "true"},
+        }
+        accessor = object.__new__(ext_sql_alchemy.SQLAlchemyAccessor)
+        accessor.sqlalchemy = Mock()
+
+        accessor.make_engine(connection, echo=False)
+
+        accessor.sqlalchemy.create_engine.assert_called_once_with(
+            "oracle+oracledb://user:pass@db.example.com:1521?"
+            "service_name=PROD",
+            echo=False,
+            thick_mode=True,
+        )
 
 
 class TestSQLAlchemyTemplate(unittest.TestCase):

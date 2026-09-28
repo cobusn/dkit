@@ -184,6 +184,45 @@ class TestURIParser(unittest.TestCase):
             r = parse(test[0])
             self.assertEqual(r, test[1])
 
+    def test_oracledb_network_endpoint(self):
+        """python-oracledb is accepted as the Oracle SQLAlchemy dialect."""
+        uri = "oracle+oracledb://user:password@db.example.com:1521/PROD"
+
+        self.assertEqual(
+            parse(uri),
+            {
+                "dialect": "oracle+oracledb",
+                "username": "user",
+                "password": "password",
+                "host": "db.example.com",
+                "port": "1521",
+                "database": "PROD",
+                "driver": "sql",
+                "parameters": {},
+            },
+        )
+
+    def test_oracledb_service_name_parameter(self):
+        """Oracle service names satisfy the required connection database."""
+        uri = (
+            "oracle+oracledb://user:password@db.example.com:1521?"
+            "service_name=PROD"
+        )
+
+        self.assertEqual(
+            parse(uri),
+            {
+                "dialect": "oracle+oracledb",
+                "username": "user",
+                "password": "password",
+                "host": "db.example.com",
+                "port": "1521",
+                "database": "PROD",
+                "driver": "sql",
+                "parameters": {},
+            },
+        )
+
     def test_exception(self):
         with self.assertRaises(DKitParseException):
             parse("file.noname")

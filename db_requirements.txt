@@ -5,6 +5,6 @@ sqlalchemy-pyodbc-mssql
 pyathena
 psycopg2-binary
 mysqlclient
-cx_Oracle
+oracledb
 duckdb
 duckdb_engine

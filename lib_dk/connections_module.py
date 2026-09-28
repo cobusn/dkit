@@ -65,7 +65,8 @@ class ConnectionsModule(module.CRUDModule):
           awsathena+rest://@athena.af-south-1.amazonaws.com:443/db?s3_staging_dir=athena.af-south-1.amazonaws.com
 
         oracle:
-          oracle+cx_oracle://user:pass@host:1521/PROD
+          oracle+oracledb://user:pass@host:1521?service_name=PROD
+          # add &thick_mode=true for Oracle Database 11g or older
 
         postgres:
             postgresql://user:pass@host/5432

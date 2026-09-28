@@ -6,7 +6,7 @@ import dkit
 
 EXCLUDE = set(
     [
-        "dkit.etl.extensions.ext_sql_alchemy", # unless cxOracle installed
+        "dkit.etl.extensions.ext_sql_alchemy", # requires SQLAlchemy
     ]
 )
 
