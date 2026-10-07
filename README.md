@@ -237,5 +237,6 @@ prefixed with `_test_` and excluded from the default run.
 
 ## Project links
 
+- Release process: [RELEASE.md](RELEASE.md)
 - Source: https://github.com/cobusn/dkit
 - Issues: https://github.com/cobusn/dkit/issues
