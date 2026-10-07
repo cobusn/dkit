@@ -1,3 +1,34 @@
+# 26.10.1
+
+## Added
+- add CalendarHeatmap geom for GitHub-style day plots
+- add extensible dkit grid commands
+- add extensible stylepack system
+- add console plotting theme and histogram rendering
+
+## Changed
+- added untracked test output folders
+- dkit.etl.model use pydantic instead of dataclasses
+- migrate Oracle connections to python-oracledb
+
+## Fixed
+- package tdigest cffi extension within dkit
+
+## Documentation
+- added RELEASE.md
+
+## Other
+- removed dkit.etl.extensions.ext_rest.py
+- bugfixes on failed tests
+- bugfix for cases where data is None instead of str
+- updated Histogram.from_data() to use Tukey binning as an option
+- added grid extensions for curses_component.grid
+- added render_histogram()
+
+## Summary
+- 145 files changed
+- 7163 insertions(+), 516 deletions(-)
+
 # 26.09.1
 
 ## Added
