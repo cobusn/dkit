@@ -31,7 +31,7 @@ pip install -e .             # editable install for development
 | Package | Purpose |
 |---|---|
 | `dkit.etl` | Sources, sinks, transforms, schema management, ETL model |
-| `dkit.etl.extensions` | Format extensions: Arrow, Avro, Parquet, SQLAlchemy, Pandas, Spark, REST, Protobuf, XLS/XLSX, Athena, HDF5 |
+| `dkit.etl.extensions` | Format extensions: Arrow, Avro, Parquet, SQLAlchemy, Pandas, Spark, Protobuf, XLS/XLSX, Athena, HDF5 |
 | `dkit.data` | Aggregation, EDA, filtering, histograms, window functions, schema inference, fake data |
 | `dkit.doc2` | Programmatic document builder — PDF (ReportLab), DOCX, HTML, Markdown renderers; email pipeline |
 | `dkit.algorithms` | Trie, t-digest |

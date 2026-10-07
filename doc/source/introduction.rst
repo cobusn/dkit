@@ -68,7 +68,7 @@ What's in the box
 
 ``dkit.etl.extensions``
     Format-specific implementations that plug into ``dkit.etl``: Arrow,
-    Avro, Parquet, SQLAlchemy, Pandas, Spark, REST, Protocol Buffers,
+    Avro, Parquet, SQLAlchemy, Pandas, Spark, Protocol Buffers,
     Excel (XLS/XLSX), Athena, and HDF5.
 
 ``dkit.data``

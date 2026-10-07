@@ -59,7 +59,7 @@ Version follows CalVer (`YY.M.PATCH`). The source of truth is `dkit.__version__`
 |-----------------------|-------------------------------------------------------------------------|
 | `dkit.algorithms`     | Trie, t-digest                                                          |
 | `dkit.data`           | Aggregation, EDA, filtering, iteration, histogram, containers, diff, fake data, JSON/msgpack utilities, window functions, schema inference |
-| `dkit.etl`            | Sources, sinks, transforms, ETL model, schema, verifier; extensions for Arrow, Avro, Parquet, SQLAlchemy, Pandas, Spark, REST, Protobuf, XLS/XLSX, Athena |
+| `dkit.etl`            | Sources, sinks, transforms, ETL model, schema, verifier; extensions for Arrow, Avro, Parquet, SQLAlchemy, Pandas, Spark, Protobuf, XLS/XLSX, Athena |
 | `dkit.doc2`           | Programmatic document builder — ReportLab, Docx, HTML, and Markdown renderers, Markdown-to-doc, project folder initialiser |
 | `dkit.parsers`        | Parser helpers, URI parser, type parser                                 |
 | `dkit.plot2`          | Declarative plotting on matplotlib: quick one-liners, geoms/scales/themes, canned analytical charts |
