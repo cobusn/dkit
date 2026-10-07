@@ -2,13 +2,9 @@
 * improve test coverage (including for dk)
 
 # Next
-* `dkit.base`:
-  * deprecate this package
-  * remove ConfiguredApplication boilerplate and old base classes
 * `dkit.plot2`: deprecate the old plot and ggplot interfaces, create a more modern
   plot2 that is helpers to quickly generate plots instead of crafting from
   scratch. Use Matplotlib only
-  * Hierarchical treemap replacement using `squarify`
 * `dkit.data`:
   * refactor EDA (Exploratory Data Analysis)
   * expand and properly test DataTrie
@@ -18,7 +14,6 @@
   * validations on parsing Decimal(precision=X, scale=Y), will currently parse
     without defaults or errors;
 * `dkit.doc2` 
-  * properly integrate the CSS components and examples
   * support for autolink in Reportlab Renderer
   * table of contents for Reportlab, Latex and DocX
   * unit test coverage for `md_to_doc.py`: direct tests asserting canonical
@@ -29,12 +24,14 @@
     builder classes (Bold, Href, Itemize, Enumerate, Table, etc.) in
     isolation -- currently only covered indirectly via full-document renders
 * build system, compatibility and imports
-  * support for Python 3.14
   * run tests for multiple versions before build upload
   * build wheels for multiple python versions at once
   * optimise imports (use lazy loading where possible)
 
 # Clean-up
+* `dkit.base`:
+  * deprecate this package
+  * remove ConfiguredApplication boilerplate and old base classes
 * clean up test data files for tests
 * find out where dkit/utilities/numeric.py is used and if we can remove scipy
   (also used in window functions)
@@ -51,6 +48,9 @@
 * optimise mpak schema to use integers/floats for storing dates
 
 # Done
+* support for Python 3.14
+* properly integrate the CSS components and examples
+* Hierarchical treemap replacement using `squarify`
 * protobuf integration
 * Upgrade to sqlalchemy 2
 * Upgrade to mistune 2
