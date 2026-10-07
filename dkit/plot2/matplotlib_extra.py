@@ -49,6 +49,7 @@ sizing, ``save()`` and faceting.  See :func:`dkit.plot2.quick.treemap` and
 """
 from typing import Any, Iterable, Mapping, Sequence, Union
 
+import dayplot
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import squarify
@@ -63,7 +64,7 @@ from .frame import Frame
 from .theme import CM_TO_INCH, Theme, get_theme
 
 
-__all__ = ["SlopePlot", "TreeMap", "contrast_color"]
+__all__ = ["CalendarHeatmap", "SlopePlot", "TreeMap", "contrast_color"]
 
 #: label font size bounds for :class:`TreeMap`, as a multiple of ``font.size``.
 #: A treemap label has to fit inside its cell, so it runs smaller than body
@@ -583,5 +584,162 @@ class SlopePlot(_ExtraPlot):
         ax.grid(False)
         if y_label is not None:
             ax.set_ylabel(y_label)
+        if title is not None:
+            ax.set_title(title)
+
+
+class CalendarHeatmap(_ExtraPlot):
+    """a GitHub-style calendar heatmap: one square per day, shaded by value
+
+    The grid and day/month labelling is :func:`dayplot.calendar`'s own, the
+    same way :class:`TreeMap` leaves rectangle layout to ``squarify``; this
+    class resolves colours against the dkit ``Theme`` and gives it a theme,
+    figure sizing and ``ax=`` like every other plot2 entry point::
+
+        ch = CalendarHeatmap(vcenter=0)
+        fig, ax = ch.draw(rows, "date", "net_change")
+
+    args:
+        cmap: colour map role (``"sequential"``, ``"diverging"``) or name.
+            None uses the theme's sequential map.  Ignored when
+            ``color_map`` is given, since the data is then categorical.
+        color_map: categorical override: a mapping of value to colour, or a
+            list assigned in first-appearance order.  None colours by
+            ``value_field`` through ``cmap`` instead.
+        vmin: low end of the colour scale.  None uses the data's own minimum.
+        vmax: high end of the colour scale.  None uses the data's own maximum.
+        vcenter: value at the centre of the colour scale, for data that is
+            signed around a reference point (e.g. net gain/loss, an anomaly
+            from a baseline).  None colours linearly from ``vmin`` to
+            ``vmax``, unless the data itself spans both signs, in which case
+            ``dayplot`` centres it on zero.
+        color_for_none: colour for a day present in the displayed range but
+            absent from the data.  None takes ``dayplot``'s own default.
+        edgecolor: colour of each day's border
+        edgewidth: width of that border in points.  0 draws no visible border.
+        week_starts_on: ``"Sunday"`` through ``"Saturday"``
+        boxstyle: shape of each day's cell, passed to ``FancyBboxPatch``
+        legend: True draws ``dayplot``'s own legend: a small colour scale for
+            continuous data, or one patch per category for categorical data.
+        month_grid: True draws a bounding box around each month, which is
+            what makes month boundaries readable once a span runs past the
+            twelve month labels across the top.
+        month_grid_kws: keyword arguments for that box, passed to
+            ``matplotlib.patches.PathPatch``, e.g. ``{"edgecolor": "grey"}``.
+            Ignored when ``month_grid`` is False.
+        theme: default theme, overridable per :meth:`draw`
+        figsize: ``(width, height)`` in centimetres for a figure this object
+            creates.  None takes the size from the theme.
+    """
+
+    def __init__(self, *, cmap: Union[str, Colormap, None] = None,
+                 color_map: Union[dict, list, None] = None,
+                 vmin: Union[float, None] = None, vmax: Union[float, None] = None,
+                 vcenter: Union[float, None] = None,
+                 color_for_none: Union[str, None] = None,
+                 edgecolor: str = "black", edgewidth: float = 0.0,
+                 week_starts_on: str = "Sunday",
+                 boxstyle: str = "square", legend: bool = False,
+                 month_grid: bool = False,
+                 month_grid_kws: Union[dict, None] = None,
+                 theme: Union[Theme, str, None] = None,
+                 figsize: Union[tuple, None] = None):
+        super().__init__(theme, figsize)
+        self.cmap = cmap
+        self.color_map = color_map
+        self.vmin = vmin
+        self.vmax = vmax
+        self.vcenter = vcenter
+        self.color_for_none = color_for_none
+        self.edgecolor = edgecolor
+        self.edgewidth = edgewidth
+        self.week_starts_on = week_starts_on
+        self.boxstyle = boxstyle
+        self.legend = legend
+        self.month_grid = month_grid
+        self.month_grid_kws = month_grid_kws
+
+    def __repr__(self) -> str:
+        return f"CalendarHeatmap(cmap={self.cmap!r}, vcenter={self.vcenter!r})"
+
+    def _colormap(self, theme: Theme) -> Union[str, Colormap]:
+        """the effective colour map, resolved against the active theme
+
+        ``dayplot`` only accepts a colour map *name* or a
+        ``LinearSegmentedColormap``, not any ``Colormap`` -- unlike every
+        other geom here, which hands matplotlib a resolved object through
+        ``theme.get_cmap()``.  A role name therefore resolves to the theme's
+        own map *name* rather than the object ``get_cmap()`` would return.
+        """
+        if self.cmap is None:
+            return theme.sequential
+        if isinstance(self.cmap, str):
+            return {"sequential": theme.sequential,
+                    "diverging": theme.diverging}.get(self.cmap, self.cmap)
+        return self.cmap
+
+    def draw(self, data: Rows, date_field: str, value_field: str, *,
+             start_date=None, end_date=None, title: Union[str, None] = None,
+             where: Union[str, None] = None, theme: Union[Theme, str, None] = None,
+             fig: Union[Figure, None] = None, ax: Union[Axes, None] = None) -> tuple:
+        """draw one calendar heatmap and return ``(fig, ax)``
+
+        args:
+            data: rows, an iterable of mappings, or a :class:`~dkit.plot2.frame.Frame`
+            date_field: field supplying each day's date
+            value_field: field supplying the value coloured per day
+            start_date: earliest date to display, as a ``date``, ``datetime``
+                or ``"YYYY-MM-DD"`` string.  None uses the data's own minimum,
+                so the span is whatever ``data`` covers rather than a year.
+            end_date: latest date to display.  None uses the data's own maximum.
+            title: axes title
+            where: filter expression applied to the rows
+            theme: theme for this call, overriding the instance default
+            fig, ax: draw into these instead of creating a figure
+
+        returns:
+            ``(fig, ax)``
+        """
+        frame = Frame(data, where=where)
+        if not len(frame):
+            raise DKitPlotException("a calendar heatmap needs at least one row")
+
+        active = self._get_theme(theme)
+        owns_axes = fig is None and ax is None
+        with active.context():
+            fig, ax = self._get_figure(active, fig, ax)
+            if owns_axes:
+                fig.subplots_adjust(
+                    left=0, right=1, bottom=0,
+                    top=_TITLE_AXES_TOP if title is not None else 1,
+                )
+            self._draw_days(ax, active, frame, date_field, value_field,
+                            start_date, end_date, title)
+        return fig, ax
+
+    def _draw_days(self, ax: Axes, theme: Theme, frame: Frame, date_field: str,
+                   value_field: str, start_date, end_date,
+                   title: Union[str, None]) -> None:
+        """draw every day's cell, within an applied theme context
+
+        ``dayplot`` rejects ``cmap``/``vmin``/``vmax``/``vcenter`` outright
+        when ``colors`` (categorical mode) is given, even when they are only
+        the defaults -- so those four are omitted entirely rather than passed
+        as None.
+        """
+        numeric = {} if self.color_map is not None else dict(
+            cmap=self._colormap(theme), vmin=self.vmin, vmax=self.vmax,
+            vcenter=self.vcenter,
+        )
+        dayplot.calendar(
+            frame.values(date_field), frame.values(value_field),
+            start_date=start_date, end_date=end_date, colors=self.color_map,
+            color_for_none=self.color_for_none, edgecolor=self.edgecolor,
+            edgewidth=self.edgewidth, week_starts_on=self.week_starts_on,
+            boxstyle=self.boxstyle, legend=self.legend,
+            month_grid=self.month_grid, month_grid_kws=self.month_grid_kws or {},
+            ax=ax, **numeric,
+        )
+        ax.axis("off")
         if title is not None:
             ax.set_title(title)

@@ -6,8 +6,9 @@ Geoms
 
 Every geom below documents only what it adds: the arguments they all share --
 ``label``, ``x``, ``y``, ``color``, ``alpha``, ``where`` and ``axis`` -- are
-on ``Geom``. TreeMap and Slope, which own their whole Axes rather than
-drawing onto a pair of scales, are documented under :doc:`extensions`.
+on ``Geom``. TreeMap, Slope and CalendarHeatmap, which own their whole Axes
+rather than drawing onto a pair of scales, are documented under
+:doc:`extensions`.
 
 .. autoclass:: dkit.plot2.geom.base.Geom
    :members:

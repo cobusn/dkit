@@ -43,7 +43,7 @@ from .. import matplotlib_extra
 from ..plot import Layer, RenderContext
 
 
-__all__ = ["Slope", "TreeMap"]
+__all__ = ["CalendarHeatmap", "Slope", "TreeMap"]
 
 
 class _Standalone(Layer):
@@ -133,4 +133,44 @@ class Slope(_Standalone):
         self.plot.draw(
             ctx.frame, self.series_field, self.pivot_field, self.value_field,
             pivots=self.pivots, y_label=ctx.y.label, theme=ctx.theme, ax=ctx.ax,
+        )
+
+
+class CalendarHeatmap(_Standalone):
+    """a :class:`~dkit.plot2.matplotlib_extra.CalendarHeatmap` as a plot layer
+
+    ``Plot(geom.CalendarHeatmap(...)).facet(rows, by=...)`` is the way to lay
+    out several spans next to each other -- a year each, say -- since the
+    standalone class itself takes one ``start_date``/``end_date`` span per
+    ``draw()``::
+
+        Plot(geom.CalendarHeatmap("date", "commits", vcenter=0)) \\
+            .facet(rows, by="year", ncols=1)
+
+    args:
+        date_field: field supplying each day's date
+        value_field: field supplying the value coloured per day
+        start_date: earliest date to display.  None uses the data's own
+            minimum, so the span is whatever the rows cover.
+        end_date: latest date to display.  None uses the data's own maximum.
+        where: filter expression applied to this layer only
+        plot: a configured ``matplotlib_extra.CalendarHeatmap`` to draw with
+        **style: keyword arguments for ``matplotlib_extra.CalendarHeatmap``,
+            e.g. ``vcenter=0``, ``color_map={"holiday": "crimson"}``
+    """
+
+    def __init__(self, date_field: str, value_field: str, *,
+                 start_date=None, end_date=None,
+                 where: Union[str, None] = None, plot=None, **style):
+        super().__init__(matplotlib_extra.CalendarHeatmap, where, plot, style)
+        self.date_field = date_field
+        self.value_field = value_field
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def draw(self, ctx: RenderContext) -> None:
+        self.plot.draw(
+            ctx.frame, self.date_field, self.value_field,
+            start_date=self.start_date, end_date=self.end_date,
+            theme=ctx.theme, ax=ctx.ax,
         )

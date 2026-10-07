@@ -3,6 +3,7 @@ collections_extended
 cryptography
 curses_components
 cython
+dayplot
 diskcache
 filelock
 inflect

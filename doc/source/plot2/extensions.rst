@@ -2,11 +2,12 @@
 Extensions
 **********
 
-Treemap and slope plot answer questions the ordinary geoms cannot. A treemap
-shows how a total divides up when there are too many parts for a bar chart.
-A slope plot shows what moved between two points, and by how much, for many
-series at once. Both own their whole Axes rather than adding marks to a pair
-of scales, so they come in two forms:
+Treemap, slope plot and calendar heatmap answer questions the ordinary geoms
+cannot. A treemap shows how a total divides up when there are too many parts
+for a bar chart. A slope plot shows what moved between two points, and by how
+much, for many series at once. A calendar heatmap shows one value per day,
+GitHub-contribution style. All three own their whole Axes rather than adding
+marks to a pair of scales, so they come in two forms:
 
 * a standalone class in :mod:`dkit.plot2.matplotlib_extra`, built once and
   drawn repeatedly. Colours it has assigned persist between draws, which is
@@ -41,6 +42,9 @@ Geom adapters
 .. autoclass:: dkit.plot2.geom.standalone.Slope
    :members:
 
+.. autoclass:: dkit.plot2.geom.standalone.CalendarHeatmap
+   :members:
+
 Standalone classes
 ===================
 
@@ -51,6 +55,10 @@ Standalone classes
    :inherited-members:
 
 .. autoclass:: dkit.plot2.matplotlib_extra.SlopePlot
+   :members:
+   :inherited-members:
+
+.. autoclass:: dkit.plot2.matplotlib_extra.CalendarHeatmap
    :members:
    :inherited-members:
 

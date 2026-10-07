@@ -9,7 +9,8 @@ about the one plot it demonstrates. Aggregation stays in each script: plot2
 draws rows, it does not compute statistics, and which aggregation a plot
 needs is part of what the example is showing.
 """
-from datetime import date
+import random
+from datetime import date, timedelta
 
 from dkit.data import aggregation as agg
 from dkit.etl import source
@@ -93,6 +94,33 @@ def by_decade(monthly):
     )
     grouped.sort(key=lambda r: MONTHS.index(r["month"]))
     return grouped
+
+
+def daily_activity(days=440, seed=1):
+    """synthetic daily commit counts, spanning more than a calendar year
+
+    Weekends run quieter than weekdays, which is what the calendar heatmap
+    examples are showing: the span is whatever ``days`` covers, not a year.
+    """
+    rng = random.Random(seed)
+    start = date(2023, 9, 1)
+    rows = []
+    for i in range(days):
+        day = start + timedelta(days=i)
+        base = 1.5 if day.weekday() >= 5 else 5.0
+        rows.append({"date": day, "commits": round(max(0.0, rng.gauss(base, 2.0)))})
+    return rows
+
+
+def daily_net_change(days=440, seed=2):
+    """synthetic daily net gain/loss, signed around zero"""
+    rng = random.Random(seed)
+    start = date(2023, 9, 1)
+    rows = []
+    for i in range(days):
+        day = start + timedelta(days=i)
+        rows.append({"date": day, "net": round(rng.gauss(0.0, 50.0), 1)})
+    return rows
 
 
 def titanic_groups(passengers):

@@ -472,3 +472,36 @@ the panels -- exactly what makes the three panels comparable.
 
 .. image:: ../../../examples/plots/plot2_extensions_treemap_facet.png
    :align: center
+
+A calendar heatmap
+---------------------
+
+One square per day, shaded by value -- the GitHub contribution chart shape.
+``start_date``/``end_date`` default to the data's own span, which here is
+440 days, not a calendar year.
+
+.. literalinclude:: ../../../examples/plot2_extensions_calendar_heatmap.py
+   :language: python
+
+.. image:: ../../../examples/plots/plot2_extensions_calendar_heatmap.png
+   :align: center
+
+``vcenter=0`` for signed data: a day with no net change is pinned to the
+middle of the colour map, rather than to whichever end a plain linear scale
+happens to put "zero" at.
+
+.. literalinclude:: ../../../examples/plot2_extensions_calendar_heatmap_diverging.py
+   :language: python
+
+.. image:: ../../../examples/plots/plot2_extensions_calendar_heatmap_diverging.png
+   :align: center
+
+A calendar heatmap draws one span per ``draw()`` call, so several spans next
+to each other -- one calendar per year, here -- come from
+:meth:`~dkit.plot2.plot.Plot.facet` rather than from the layer itself.
+
+.. literalinclude:: ../../../examples/plot2_extensions_calendar_heatmap_facet.py
+   :language: python
+
+.. image:: ../../../examples/plots/plot2_extensions_calendar_heatmap_facet.png
+   :align: center

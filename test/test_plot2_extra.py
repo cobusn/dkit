@@ -18,12 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """
-tests for the dkit.plot2 specialised plots: TreeMap, SlopePlot and HeatMap
+tests for the dkit.plot2 specialised plots: TreeMap, SlopePlot, HeatMap and
+CalendarHeatmap
 
 Covers the three surfaces each one has: the standalone class in
 matplotlib_extra, the geom adapter inside a Plot, and the quick function.
 """
 import sys; sys.path.insert(0, "..")  # noqa
+from datetime import date                                     # noqa: E402
 from unittest import TestCase, main
 
 import matplotlib
@@ -32,13 +34,13 @@ import matplotlib.pyplot as plt                              # noqa: E402
 import numpy as np                                           # noqa: E402
 from matplotlib.collections import QuadMesh                   # noqa: E402
 from matplotlib.colors import LogNorm, to_hex                 # noqa: E402
-from matplotlib.patches import Rectangle                      # noqa: E402
+from matplotlib.patches import FancyBboxPatch, PathPatch, Rectangle  # noqa: E402
 from matplotlib.ticker import FixedLocator                    # noqa: E402
 
 from dkit.exceptions import DKitPlotException                 # noqa: E402
 from dkit.plot2 import Plot, geom, get_theme, quick, scale     # noqa: E402
 from dkit.plot2.matplotlib_extra import (                     # noqa: E402
-    SlopePlot, TreeMap, contrast_color,
+    CalendarHeatmap, SlopePlot, TreeMap, contrast_color,
 )
 
 
@@ -67,6 +69,20 @@ MOVES = [
     {"name": "Alpha", "year": 2024, "value": 25.0},
     {"name": "Beta", "year": 2024, "value": 15.0},
     {"name": "Gamma", "year": 2024, "value": 30.0},
+]
+
+#: ten days spanning a year boundary, one value per day
+DAYS = [
+    {"date": date(2023, 12, 29), "value": -2.0, "kind": "weekday"},
+    {"date": date(2023, 12, 30), "value": -1.0, "kind": "weekend"},
+    {"date": date(2023, 12, 31), "value": 0.0, "kind": "weekend"},
+    {"date": date(2024, 1, 1), "value": 1.0, "kind": "weekday"},
+    {"date": date(2024, 1, 2), "value": 2.0, "kind": "weekday"},
+    {"date": date(2024, 1, 3), "value": 3.0, "kind": "weekday"},
+    {"date": date(2024, 1, 4), "value": 4.0, "kind": "weekday"},
+    {"date": date(2024, 1, 5), "value": 5.0, "kind": "weekday"},
+    {"date": date(2024, 1, 6), "value": 6.0, "kind": "weekend"},
+    {"date": date(2024, 1, 7), "value": 7.0, "kind": "weekend"},
 ]
 
 
@@ -555,6 +571,82 @@ class TestHeatMap(TestCase):
         plt.close(fig)
 
 
+def day_cells(ax) -> list:
+    """the day squares a CalendarHeatmap draws"""
+    return [p for p in ax.patches if isinstance(p, FancyBboxPatch)]
+
+
+class TestCalendarHeatmap(TestCase):
+
+    def tearDown(self):
+        plt.close("all")
+
+    def test_one_cell_per_day_in_range(self):
+        fig, ax = CalendarHeatmap().draw(DAYS, "date", "value")
+        self.assertEqual(len(day_cells(ax)), 10)
+
+    def test_start_and_end_date_set_the_span(self):
+        fig, ax = CalendarHeatmap().draw(
+            DAYS, "date", "value",
+            start_date=date(2024, 1, 1), end_date=date(2024, 1, 7),
+        )
+        self.assertEqual(len(day_cells(ax)), 7)
+
+    def test_vcenter_centres_the_colour_scale(self):
+        """a day worth 0, under vcenter=0, must sit at the colour map's midpoint"""
+        cmap = get_theme("dkit-light").get_cmap("sequential")
+        fig, ax = CalendarHeatmap(vcenter=0.0).draw(DAYS, "date", "value")
+        zero_day = next(r for r, d in zip(day_cells(ax), DAYS) if d["value"] == 0.0)
+        self.assertEqual(to_hex(zero_day.get_facecolor()), to_hex(cmap(0.5)))
+
+    def test_color_map_colours_by_category(self):
+        tm = CalendarHeatmap(color_map={"weekday": "#4477aa", "weekend": "#cc6677"})
+        fig, ax = tm.draw(DAYS, "date", "kind")
+        weekday_cell = next(r for r, d in zip(day_cells(ax), DAYS)
+                            if d["kind"] == "weekday")
+        self.assertEqual(to_hex(weekday_cell.get_facecolor()), "#4477aa")
+
+    def test_axes_furniture_is_off(self):
+        fig, ax = CalendarHeatmap().draw(DAYS, "date", "value")
+        self.assertFalse(ax.axison)
+
+    def test_title(self):
+        fig, ax = CalendarHeatmap().draw(DAYS, "date", "value", title="Activity")
+        self.assertIn("Activity", [ax.get_title(loc=x) for x in ("left", "center", "right")])
+
+    def test_where_filters(self):
+        """filtering out the earliest rows narrows the data-derived span itself"""
+        fig, ax = CalendarHeatmap().draw(
+            DAYS, "date", "value", where='${value} >= 1.0'
+        )
+        self.assertEqual(len(day_cells(ax)), 7)
+
+    def test_empty_data(self):
+        with self.assertRaises(DKitPlotException):
+            CalendarHeatmap().draw([], "date", "value")
+
+    def test_draws_into_a_supplied_axes(self):
+        fig, ax = plt.subplots()
+        result_fig, result_ax = CalendarHeatmap().draw(DAYS, "date", "value", ax=ax)
+        self.assertIs(result_fig, fig)
+        self.assertIs(result_ax, ax)
+
+    def test_month_grid_off_by_default(self):
+        fig, ax = CalendarHeatmap().draw(DAYS, "date", "value")
+        self.assertFalse(any(isinstance(p, PathPatch) for p in ax.patches))
+
+    def test_month_grid_draws_a_bounding_box(self):
+        fig, ax = CalendarHeatmap(month_grid=True).draw(DAYS, "date", "value")
+        self.assertTrue(any(isinstance(p, PathPatch) for p in ax.patches))
+
+    def test_month_grid_kws_reach_the_box(self):
+        fig, ax = CalendarHeatmap(
+            month_grid=True, month_grid_kws={"edgecolor": "red"},
+        ).draw(DAYS, "date", "value")
+        box = next(p for p in ax.patches if isinstance(p, PathPatch))
+        self.assertEqual(to_hex(box.get_edgecolor()), "#ff0000")
+
+
 class TestStandaloneAdapters(TestCase):
     """the geom adapters are what give these plots themes, titles and facets"""
 
@@ -637,6 +729,27 @@ class TestStandaloneAdapters(TestCase):
         fig = p.render(COUNTRIES)
         self.assertEqual(len(cells(fig.axes[0])), 4)
 
+    def test_calendar_heatmap_layer_draws(self):
+        fig = Plot(geom.CalendarHeatmap("date", "value")).render(DAYS)
+        self.assertEqual(len(day_cells(fig.axes[0])), 10)
+
+    def test_calendar_heatmap_is_exclusive(self):
+        self.assertTrue(Plot(geom.CalendarHeatmap("date", "value")).exclusive)
+
+    def test_calendar_heatmap_start_end_date(self):
+        fig = Plot(geom.CalendarHeatmap(
+            "date", "value",
+            start_date=date(2024, 1, 1), end_date=date(2024, 1, 7),
+        )).render(DAYS)
+        self.assertEqual(len(day_cells(fig.axes[0])), 7)
+
+    def test_calendar_heatmap_facets_by_span(self):
+        rows = [dict(r, year=r["date"].year) for r in DAYS]
+        fig = Plot(geom.CalendarHeatmap("date", "value"), tight_layout=False) \
+            .facet(rows, by="year", ncols=1)
+        self.assertEqual(len(fig.axes), 2)
+        plt.close(fig)
+
     def test_save(self):
         import tempfile
         import os
@@ -700,6 +813,12 @@ class TestQuickSpecialised(TestCase):
         fig = quick.treemap(COUNTRIES, "country", "gdp",
                             where='${region} == "north"')
         self.assertEqual(len(cells(fig.axes[0])), 2)
+
+    def test_calendar_heatmap(self):
+        fig = quick.calendar_heatmap(DAYS, "date", "value", title="Activity")
+        self.assertEqual(len(day_cells(fig.axes[0])), 10)
+        titles = [fig.axes[0].get_title(loc=x) for x in ("left", "center", "right")]
+        self.assertIn("Activity", titles)
 
     def test_theme_by_name(self):
         fig = quick.slope(MOVES, "name", "year", "value", theme="dkit-dark")

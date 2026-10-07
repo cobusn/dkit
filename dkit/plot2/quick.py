@@ -60,8 +60,8 @@ from .theme import Theme
 
 
 __all__ = [
-    "area", "bar", "heatmap", "hist", "line", "plot_histogram", "scatter",
-    "slope", "stem", "treemap"
+    "area", "bar", "calendar_heatmap", "heatmap", "hist", "line",
+    "plot_histogram", "scatter", "slope", "stem", "treemap"
 ]
 
 Rows = Union[Frame, Iterable[Mapping]]
@@ -375,4 +375,31 @@ def slope(data: Rows, series_field: str, pivot_field: str, value_field: str,
         geom.Slope(series_field, pivot_field, value_field, pivots=pivots,
                    value_format=value_format),
         y=scale.Linear(ylabel), title=title, theme=theme, where=where, **options,
+    ).render(data, ax=ax)
+
+
+def calendar_heatmap(data: Rows, date_field: str, value_field: str,
+                     start_date=None, end_date=None,
+                     title: Union[str, None] = None,
+                     where: Union[str, None] = None,
+                     theme: Union[Theme, str, None] = None,
+                     ax: Union[Axes, None] = None, **options) -> Figure:
+    """one square per day, shaded by a value: a GitHub-style contribution chart
+
+    args:
+        date_field: field supplying each day's date
+        value_field: field supplying the value coloured per day
+        start_date: earliest date to display.  None uses the data's own
+            minimum, so the span is whatever ``data`` covers.
+        end_date: latest date to display.  None uses the data's own maximum.
+
+    See :func:`line` for the shared arguments and
+    :class:`~dkit.plot2.matplotlib_extra.CalendarHeatmap` for the styling
+    ones, which ``**options`` does *not* reach: pass them to
+    ``geom.CalendarHeatmap`` instead.
+    """
+    return Plot(
+        geom.CalendarHeatmap(date_field, value_field, start_date=start_date,
+                             end_date=end_date),
+        title=title, theme=theme, where=where, **options,
     ).render(data, ax=ax)
