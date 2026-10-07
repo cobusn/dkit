@@ -2,9 +2,8 @@
 
 import docx
 import pytest
+from docx.enum.style import WD_STYLE_TYPE
 from docx.opc.exceptions import PackageNotFoundError
-from pathlib import Path
-import shutil
 
 from dkit.doc2 import builder
 from dkit.doc2 import document as doc
@@ -49,8 +48,11 @@ def test_style_pack_passes_template_and_preserves_named_styles(tmp_path):
 def test_style_pack_selects_its_docx_table_style(tmp_path):
     """A DOCX manifest can select a named table style from its template."""
     pack = load_pack(tmp_path, table_style="Future Blue table")
-    reference = Path(__file__).parents[1] / "reference_template.docx"
-    shutil.copyfile(reference, pack.root / "docx" / "template.docx")
+    template = docx.Document()
+    template.styles.add_style(
+        "Future Blue table", WD_STYLE_TYPE.TABLE
+    ).base_style = template.styles["Table Grid"]
+    template.save(pack.root / "docx" / "template.docx")
     document = Document(title="Example")
     document.add_element(
         doc.Table(
