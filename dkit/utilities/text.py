@@ -27,6 +27,9 @@ class __MLStripper(HTMLParser):
 
 def strip_tags(html):
     """strip out all html tags"""
-    s = __MLStripper()
-    s.feed(html)
-    return s.get_data()
+    if html is not None:
+        s = __MLStripper()
+        s.feed(html)
+        return s.get_data()
+    else:
+        return html
