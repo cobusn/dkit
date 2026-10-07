@@ -43,13 +43,14 @@ from .line import Area, Band, Line, Stem  # noqa: F401
 from .matrix import HeatMap  # noqa: F401
 from .point import Scatter  # noqa: F401
 from .reference import HLine, Text, VLine  # noqa: F401
-from .standalone import Slope, TreeMap  # noqa: F401
+from .standalone import CalendarHeatmap, Slope, TreeMap  # noqa: F401
 
 
 __all__ = [
     "Area",
     "Band",
     "Bar",
+    "CalendarHeatmap",
     "Geom",
     "HLine",
     "HeatMap",
