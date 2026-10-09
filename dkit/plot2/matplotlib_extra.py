@@ -627,6 +627,17 @@ class CalendarHeatmap(_ExtraPlot):
         month_grid_kws: keyword arguments for that box, passed to
             ``matplotlib.patches.PathPatch``, e.g. ``{"edgecolor": "grey"}``.
             Ignored when ``month_grid`` is False.
+        day_x_margin: ``dayplot``'s day-of-week label offset, as a fraction
+            of the axes width.  ``dayplot`` positions this label in
+            axes-fraction units while locking the grid to a fixed aspect
+            ratio, so a panel that is narrow relative to its week count (as
+            happens when :meth:`~dkit.plot2.plot.Plot.facet` sizes every
+            panel the same regardless of how many weeks it spans) can leave
+            too little pixel width for the label, which then overlaps the
+            first column of day cells.  Raise this for such panels; None
+            takes ``dayplot``'s own default.
+        day_kws: keyword arguments for the day-of-week label text, passed to
+            ``ax.text``, e.g. ``{"fontsize": 8}``.
         theme: default theme, overridable per :meth:`draw`
         figsize: ``(width, height)`` in centimetres for a figure this object
             creates.  None takes the size from the theme.
@@ -642,6 +653,8 @@ class CalendarHeatmap(_ExtraPlot):
                  boxstyle: str = "square", legend: bool = False,
                  month_grid: bool = False,
                  month_grid_kws: Union[dict, None] = None,
+                 day_x_margin: Union[float, None] = None,
+                 day_kws: Union[dict, None] = None,
                  theme: Union[Theme, str, None] = None,
                  figsize: Union[tuple, None] = None):
         super().__init__(theme, figsize)
@@ -658,6 +671,8 @@ class CalendarHeatmap(_ExtraPlot):
         self.legend = legend
         self.month_grid = month_grid
         self.month_grid_kws = month_grid_kws
+        self.day_x_margin = day_x_margin
+        self.day_kws = day_kws
 
     def __repr__(self) -> str:
         return f"CalendarHeatmap(cmap={self.cmap!r}, vcenter={self.vcenter!r})"
@@ -731,6 +746,9 @@ class CalendarHeatmap(_ExtraPlot):
             cmap=self._colormap(theme), vmin=self.vmin, vmax=self.vmax,
             vcenter=self.vcenter,
         )
+        margin = {} if self.day_x_margin is None else dict(
+            day_x_margin=self.day_x_margin,
+        )
         dayplot.calendar(
             frame.values(date_field), frame.values(value_field),
             start_date=start_date, end_date=end_date, colors=self.color_map,
@@ -738,7 +756,7 @@ class CalendarHeatmap(_ExtraPlot):
             edgewidth=self.edgewidth, week_starts_on=self.week_starts_on,
             boxstyle=self.boxstyle, legend=self.legend,
             month_grid=self.month_grid, month_grid_kws=self.month_grid_kws or {},
-            ax=ax, **numeric,
+            day_kws=self.day_kws, ax=ax, **margin, **numeric,
         )
         ax.axis("off")
         if title is not None:
