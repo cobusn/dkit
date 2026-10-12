@@ -13,6 +13,7 @@ plot2
    quick
    canned
    extensions
+   howto_custom_geom
 
 .. automodule:: dkit.plot2
 

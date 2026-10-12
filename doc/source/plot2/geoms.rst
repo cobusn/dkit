@@ -8,7 +8,7 @@ Every geom below documents only what it adds: the arguments they all share --
 ``label``, ``x``, ``y``, ``color``, ``alpha``, ``where`` and ``axis`` -- are
 on ``Geom``. TreeMap, Slope and CalendarHeatmap, which own their whole Axes
 rather than drawing onto a pair of scales, are documented under
-:doc:`extensions`.
+:doc:`extensions`. For writing a new one, see :doc:`howto_custom_geom`.
 
 .. autoclass:: dkit.plot2.geom.base.Geom
    :members:

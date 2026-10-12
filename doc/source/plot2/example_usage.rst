@@ -505,3 +505,19 @@ to each other -- one calendar per year, here -- come from
 
 .. image:: ../../../examples/plots/plot2_extensions_calendar_heatmap_facet.png
    :align: center
+
+.. _example-usage-custom-geom:
+
+A project-specific geom
+=========================
+
+Dumbbell is not a geom dkit ships. Subclassing
+:class:`~dkit.plot2.geom.base.Geom` and implementing ``draw()`` is enough
+for it to compose with a scale and a theme the same way a built-in geom
+does. See :doc:`howto_custom_geom` for the walk-through.
+
+.. literalinclude:: ../../../examples/plot2_howto_custom_geom.py
+   :language: python
+
+.. image:: ../../../examples/plots/plot2_howto_custom_geom.png
+   :align: center
