@@ -90,6 +90,45 @@ Images can also be embedded directly from a Markdown template using the
 ``image`` Jinja helper that every ``Document`` exposes to
 ``add_template``: ``{{ image("path/to/file.png", title="...") }}``.
 
+Adding math notation
+======================
+
+LaTeX-style math is supported directly in Markdown templates added via
+``add_template``: inline math with ``$...$`` and display (block) math
+with ``$$...$$``:
+
+.. code-block:: text
+
+   Energy and mass are related by $E=mc^2$.
+
+   $$
+   I = \int \rho R^{2} dV
+   $$
+
+A :class:`Math <dkit.doc2.document.Math>` element can also be added
+directly, the same way as any other element:
+
+.. code-block:: python
+
+   from dkit.doc2.document import Math
+
+   doc.add_element(Math("E=mc^2", display=False))
+
+Display math is centered by default; pass ``align="left"`` or
+``align="right"`` to override (inline math always stays inline and
+ignores ``align``):
+
+.. code-block:: python
+
+   doc.add_element(Math("I = \\int \\rho R^{2} dV", display=True, align="left"))
+
+Math renders natively (real TeX) only in ``LatexRenderer`` output. The
+other three renderers (``HtmlRenderer``, ``RLRenderer``, ``DocxRenderer``)
+rasterise each math span with matplotlib's ``mathtext`` — as SVG, PDF,
+and PNG respectively — which supports a useful subset of LaTeX math, not
+the full TeX math engine (for example, no ``\begin{align}`` and limited
+macro support).
+
 Rendering
 ===========
 

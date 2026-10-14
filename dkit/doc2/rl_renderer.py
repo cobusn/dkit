@@ -29,6 +29,7 @@ from reportlab.platypus import (
 )
 
 from . import document as doc
+from . import math_helper
 from .rl_styles import DefaultStyler
 from .rl_stylepack import StylePackStyler
 from .rl_helper import is_pdf, TableHelper, PdfImage
@@ -111,6 +112,39 @@ class RLRenderer:
         img.hAlign = align
         yield img
 
+    @make.register(doc.Math)
+    def make_math(self, element: doc.Math):
+        if element.display:
+            # its own block, vector, via the existing PdfImage flowable
+            # also used for vector doc.Image content
+            path = math_helper.render_math_file(element, "pdf")
+            img = PdfImage(path)
+            img.hAlign = element.align.upper()
+            yield img
+        else:
+            # inline: a flowable breaks the surrounding paragraph onto
+            # its own line, so this stays within the running text as a
+            # Paragraph <img> tag instead -- which only supports raster
+            # images, not the vector PdfImage path used for display math.
+            # Width/height must be explicit: unlike PdfImage/Image, the
+            # <img> tag ignores the PNG's own DPI metadata and falls
+            # back to 72dpi, rendering far too large otherwise.
+            path = math_helper.render_math_file(element, "png")
+            width, height = math_helper.png_size_pt(path)
+            # a numeric valign is a precise point offset from baseline to
+            # the image's bottom edge (see imgVRange in reportlab's own
+            # paragraph.py) -- needed because the image is cropped tight
+            # to each formula's own ink, so the bottom-to-baseline
+            # distance varies per formula (e.g. phi's descender loop)
+            # and is not the fixed fraction of font size that keywords
+            # like "bottom"/"middle" assume, which floated formulas
+            # visibly above the surrounding text's baseline
+            valign = -math_helper.inline_descent_pt(element)
+            yield (
+                f'<img src="{path}" width="{width}" height="{height}" '
+                f'valign="{valign}"/>'
+            )
+
     @make.register(doc.Emph)
     def make_emph(self, element):
         body = self.make_text(element.text)
@@ -139,10 +173,15 @@ class RLRenderer:
         # the paragraph's own content, unlike the {{ image(...) }} jinja
         # helper's Image, which is always its own top-level element --
         # make_text can only stringify inline text, so any embedded Image
-        # is split out into its own flowable instead
+        # is split out into its own flowable instead. Display math is
+        # split out for the same reason (it renders to a PdfImage
+        # flowable); inline math stays in the inline run since make_math
+        # yields a plain <img> string for it, not a flowable.
         inlines = []
         for item in element.content:
-            if isinstance(item, doc.Image):
+            if isinstance(item, doc.Image) or (
+                isinstance(item, doc.Math) and item.display
+            ):
                 if inlines:
                     yield Paragraph(
                         self.make_text(inlines), self.styler[self.paragraph_style]

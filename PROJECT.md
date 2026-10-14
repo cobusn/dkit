@@ -105,6 +105,15 @@ by passing the document to a renderer.
 | `RlRenderer`      | PDF (ReportLab)     | `render()`              |
 | `DocxRenderer`    | DOCX                | `render()`              |
 
+### Math notation
+
+LaTeX-style inline (`$...$`) and display (`$$...$$`) math is supported in
+Markdown templates and as a `Math` element, across all four renderers.
+`LatexRenderer` emits native TeX; the other three rasterise each math span
+with matplotlib's `mathtext` (SVG for HTML, PDF for ReportLab, PNG for
+DOCX) — a useful subset of LaTeX math, not the full TeX math engine. See
+`_specs/math.md` for the design.
+
 ### Email pipeline
 
 `HtmlRenderer` accepts a `css` parameter (file path or raw string) and

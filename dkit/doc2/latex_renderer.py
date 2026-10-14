@@ -167,7 +167,13 @@ class LatexRenderer:
             return str(tex.Href(element.target, self._make_text(element.content)))
         if isinstance(element, doc.SoftBreak):
             return " "
+        if isinstance(element, doc.Math):
+            return self._math_tex(element)
         return tex.encode(str(element))
+
+    def _math_tex(self, element: doc.Math) -> str:
+        """Render a Math node as native LaTeX math (no escaping)."""
+        return f"$${element.content}$$" if element.display else f"${element.content}$"
 
     # ------------------------------------------------------------------
     # Dispatch
@@ -294,6 +300,20 @@ class LatexRenderer:
                 alignment=element.align,
             )
         )
+
+    @make.register(doc.Math)
+    def make_math(self, element: doc.Math):
+        # standalone (block-level) math node, outside any Paragraph.
+        # $$...$$ is centered by TeX itself, so only left/right need an
+        # explicit environment -- same alignment names tex.Image uses
+        tex_str = self._math_tex(element)
+        env = {"left": "flushleft", "right": "flushright"}.get(element.align.lower())
+        if env is None:
+            self._tex_doc.append(tex.Paragraph(tex_str))
+        else:
+            self._tex_doc.append(
+                tex.Latex(f"\\begin{{{env}}}\n{tex_str}\n\\end{{{env}}}")
+            )
 
     @make.register(doc.Code)
     def make_code(self, element: doc.Code):

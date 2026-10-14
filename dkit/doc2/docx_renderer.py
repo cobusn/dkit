@@ -21,10 +21,13 @@
 Render dkit doc cannonical format to Micosoft Word docx format using docx
 """
 from . import document as doc
+from . import math_helper
 import docx
 from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml.shared import OxmlElement
 from docx.shared import Cm
 from .docx_helper import add_hyperlink, create_codeblock_style, DocxConfig
 from dkit.stylepack.errors import StylePackError
@@ -264,6 +267,45 @@ class DocxRenderer:
             height=Cm(element.height) if element.height else None
         )
         para.alignment = self._translate_alignment(element.align)
+
+    @make.register(doc.Math)
+    def make_math(self, element: doc.Math):
+        # rendered raster (PNG): docx has no clean vector math path
+        # (OMML conversion and SVG dual-rendition embedding are both
+        # out of scope -- see _specs/math.md)
+        path = math_helper.render_math_file(element, "png")
+        if element.display:
+            para = self._add_paragraph()
+            run = para.add_run()
+            run.add_picture(path)
+            para.alignment = self._translate_alignment(element.align)
+        else:
+            # stays in the current paragraph's run sequence, same as
+            # make_str/make_bold -- a new paragraph breaks inline math
+            # onto its own line (same bug class fixed for ReportLab,
+            # see _specs/math.md)
+            run = self.current_paragraph.add_run()
+            run.add_picture(path)
+            self._raise_run(run, math_helper.inline_descent_pt(element))
+
+    def _raise_run(self, run, descent_pt: float):
+        """Lower a run by descent_pt points, via raw w:position XML.
+
+        Word positions an inline picture's bottom edge on the text
+        baseline (same convention as HTML's default inline <img>
+        vertical-align) -- but render_math_file crops each formula
+        tightly to its own ink, so a formula with a descender (e.g.
+        \\phi's loop) has its own content baseline sitting above the
+        image's bottom edge by descent_pt, which otherwise floats the
+        formula above the surrounding text (same symptom fixed for
+        ReportLab -- see _specs/math.md). python-docx exposes no
+        property for this, hence the raw w:position element.
+        """
+        r_pr = run._element.get_or_add_rPr()
+        position = OxmlElement("w:position")
+        # w:position is in half-points; negative lowers the run
+        position.set(qn("w:val"), str(-round(descent_pt * 2)))
+        r_pr.append(position)
 
     def _translate_alignment(self, align: str):
         _align = align.lower()

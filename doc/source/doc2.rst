@@ -62,6 +62,9 @@ Content elements
    :members:
    :exclude-members: from_dict, to_dict
 
+.. autoclass:: dkit.doc2.document.Math
+   :members:
+
 Renderers
 ==========
 

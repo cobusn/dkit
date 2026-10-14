@@ -153,6 +153,12 @@ class DocRenderer(BaseRenderer):
     def thematic_break(self, token: Dict[str, Any], state: BlockState) -> str:
         return doc.HorizontalLine()
 
+    def inline_math(self, token: Dict[str, Any], state: BlockState) -> str:
+        return doc.Math(cast(str, token["raw"]), display=False)
+
+    def block_math(self, token: Dict[str, Any], state: BlockState) -> str:
+        return doc.Math(cast(str, token["raw"]), display=True)
+
     def block_html(self, token: Dict[str, Any], state: BlockState) -> str:
         raise Exception(f"Inline HTML not supported: {token['raw']}")
 
@@ -167,4 +173,4 @@ class DocRenderer(BaseRenderer):
 def render_doc_format(markdown):
     """Render mardown to Doc format"""
     renderer = DocRenderer()
-    return mistune.create_markdown(renderer=renderer)(markdown)
+    return mistune.create_markdown(renderer=renderer, plugins=['math'])(markdown)

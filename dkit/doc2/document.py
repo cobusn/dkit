@@ -202,6 +202,22 @@ class Image:
     height: float | None = None
 
 
+@dataclass
+class Math:
+    """Math notation (LaTeX-style), inline or display.
+
+    Args:
+        content: raw math source, without surrounding $ / $$ delimiters.
+        display: True for display/block math ($$...$$), False for
+            inline math ($...$).
+        align: horizontal alignment of display math (center, left, or
+            right). Ignored for inline math, which stays inline.
+    """
+    content: str
+    display: bool = False
+    align: str = "center"
+
+
 class Str(Inline):
     """strings"""
 

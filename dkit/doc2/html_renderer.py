@@ -46,6 +46,7 @@ import os
 from pathlib import Path
 
 from . import document as doc
+from . import math_helper
 from dkit.stylepack.model import StylePack
 
 CM_TO_PX = 96 / 2.54
@@ -428,6 +429,23 @@ class HtmlRenderer:
             f'<img {attrs}>\n'
             f'{caption}'
             f'</figure>\n'
+        )
+
+    @make.register(doc.Math)
+    def make_math(self, element: doc.Math) -> str:
+        path = math_helper.render_math_file(element, "svg")
+        if self._inline_images:
+            src = self._to_data_uri(path)
+        else:
+            src = self._relative_image_path(path)
+        alt = _html.escape(element.content)
+        if not element.display:
+            return f'<img class="math-inline" src="{src}" alt="{alt}">'
+        align = _html.escape(element.align or "center")
+        return (
+            f'<div class="math-display math-display-{align}">\n'
+            f'<img src="{src}" alt="{alt}">\n'
+            f'</div>\n'
         )
 
     def _relative_image_path(self, source: str) -> str:

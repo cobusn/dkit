@@ -137,6 +137,12 @@ class MarkdownRenderer:
         inner = self._make_elements(element.content)
         return f"{inner}\n\n"
 
+    @make.register(doc.Math)
+    def make_math(self, element: doc.Math) -> str:
+        if element.display:
+            return f"$${element.content}$$\n\n"
+        return f"${element.content}$"
+
     @make.register(doc.Block)
     def make_block(self, element: doc.Block) -> str:
         inner = self._make_elements(element.content)
