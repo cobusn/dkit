@@ -21,6 +21,9 @@ typography:
   heading: Source Sans Pro
   body: Source Sans Pro
   mono: DejaVu Sans Mono
+  heading1_size: 12
+  heading2_size: 10
+  heading3_size: 10
 
 fonts:
   - family: Source Sans Pro

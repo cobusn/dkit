@@ -66,11 +66,12 @@ class StylePackStyler(DefaultStyler):
             "text_color": manifest.colors.text,
             "title_color": manifest.colors.primary,
         })
-        local_style["reportlab"]["styles"].update(
-            self._style_updates(
-                manifest.colors, manifest.typography, self._font_names
+        for name, updates in self._style_updates(
+            manifest.colors, manifest.typography, self._font_names
+        ).items():
+            local_style["reportlab"]["styles"].setdefault(name, {}).update(
+                updates
             )
-        )
         local_style["table"].update({
             "heading_color": manifest.colors.table_heading_text,
             "heading_background": manifest.colors.table_heading_background,
@@ -146,14 +147,17 @@ class StylePackStyler(DefaultStyler):
             "Heading1": {
                 "textColor": colors.primary,
                 "fontName": heading_font,
+                "fontSize": typography.heading1_size,
             },
             "Heading2": {
                 "textColor": colors.primary,
                 "fontName": heading_font,
+                "fontSize": typography.heading2_size,
             },
             "Heading3": {
                 "textColor": colors.accent,
                 "fontName": body_font,
+                "fontSize": typography.heading3_size,
             },
             "Normal": {
                 "textColor": colors.text,

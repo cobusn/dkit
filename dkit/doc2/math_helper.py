@@ -62,6 +62,19 @@ def _fontsize(element: "doc.Math") -> int:
     return _DISPLAY_FONT_SIZE if element.display else _INLINE_FONT_SIZE
 
 
+def _tex(element: "doc.Math") -> str:
+    """Build the mathtext source for ``element``.
+
+    mathtext parses ``$...$`` per line, not across the whole string, so
+    a multi-line display formula (e.g. from a ``$$\\n...\\n$$`` markdown
+    block) would have unbalanced ``$`` on every line but the first and
+    last -- mathtext then silently falls back to rendering the literal
+    source as plain text instead of typeset math. Collapsing internal
+    whitespace keeps the formula on one line so it parses as intended.
+    """
+    return f"${' '.join(element.content.split())}$"
+
+
 def render_math_file(element: "doc.Math", fmt: str) -> str:
     """Render a Math node to a temporary image file.
 
@@ -72,7 +85,7 @@ def render_math_file(element: "doc.Math", fmt: str) -> str:
     Returns:
         Path to the rendered temporary file. Caller owns cleanup.
     """
-    tex = f"${element.content}$"
+    tex = _tex(element)
     fig = Figure()
     fig.text(0, 0, tex, fontsize=_fontsize(element), math_fontfamily=_MATH_FONTFAMILY)
     path = tempfile.mktemp(suffix=f".{fmt}")
@@ -105,7 +118,7 @@ def inline_descent_pt(element: "doc.Math") -> float:
     Returns:
         Positive distance, in points, from image bottom to baseline.
     """
-    tex = f"${element.content}$"
+    tex = _tex(element)
     fig = Figure(dpi=_DPI)
     FigureCanvasAgg(fig)
     text = fig.text(

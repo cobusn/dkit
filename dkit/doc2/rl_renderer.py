@@ -23,9 +23,10 @@ Render dkit doc cannonical format to pdf using ReportLab
 import functools
 
 from reportlab.lib.units import cm
+from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
-    Image, ListFlowable, Paragraph, SimpleDocTemplate, Spacer,
-    Table, Preformatted, PageBreak, ListItem
+    BaseDocTemplate, Frame, Image, ListFlowable, PageTemplate, Paragraph,
+    SimpleDocTemplate, Spacer, Table, Preformatted, PageBreak, ListItem
 )
 
 from . import document as doc
@@ -36,6 +37,36 @@ from .rl_helper import is_pdf, TableHelper, PdfImage
 from dkit.stylepack.model import StylePack
 
 HEADING_COUNTER = 0
+
+
+class _FlushMarginDocTemplate(SimpleDocTemplate):
+    """SimpleDocTemplate whose body frame has no implicit padding.
+
+    ReportLab's own Frame defaults to a 6pt padding on every side, which
+    offsets body text from the page margin while header/footer text (drawn
+    directly at the margin coordinate) is not. Zeroing the padding keeps
+    body text aligned with the header/footer.
+    """
+
+    def build(self, flowables, onFirstPage=None, onLaterPages=None,
+              canvasmaker=Canvas):
+        self._calc()
+        frame = Frame(
+            self.leftMargin, self.bottomMargin, self.width, self.height,
+            id="normal",
+            leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0,
+        )
+        self.addPageTemplates([
+            PageTemplate(
+                id="First", frames=frame, onPage=onFirstPage,
+                pagesize=self.pagesize,
+            ),
+            PageTemplate(
+                id="Later", frames=frame, onPage=onLaterPages,
+                pagesize=self.pagesize,
+            ),
+        ])
+        BaseDocTemplate.build(self, flowables, canvasmaker=canvasmaker)
 
 
 class RLRenderer:
@@ -239,13 +270,13 @@ class RLRenderer:
     def make_code_block(self, element: doc.CodeBlock):
         yield Preformatted(
             element.content,
-            self.styler["Code"]
+            self.styler["Verbatim"]
         )
 
     @make.register(doc.Code)
     def make_code(self, element: doc.Code):
         font = self.styler["Verbatim"].fontName
-        size = self.styler["Verbatim"].fontSize
+        size = self.styler["Normal"].fontSize
         color = self.styler["Verbatim"].textColor
         yield f"<font color='{color}' fontsize='{size}' face='{font}'>{element.content}</font>"
 
@@ -268,7 +299,7 @@ class RLRenderer:
 
     def render(self, file_name: str):
         self.content.extend(self.iter_make_elements(self.document.elements))
-        renderer = SimpleDocTemplate(
+        renderer = _FlushMarginDocTemplate(
             file_name,
             pagesize=self.styler.page_size,
             rightMargin=self.styler.right_margin,

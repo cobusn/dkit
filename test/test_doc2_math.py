@@ -9,7 +9,7 @@ import unittest
 
 sys.path.insert(0, "..")  # noqa
 
-from dkit.doc2 import document as doc
+from dkit.doc2 import document as doc, math_helper
 from dkit.doc2.latex_renderer import LatexRenderer
 from dkit.doc2.md_to_doc import render_doc_format
 
@@ -74,6 +74,28 @@ class TestLatexMathRendering(unittest.TestCase):
         document.add_element(doc.Math("x = y", display=True))
         tex = self._render_str(document)
         self.assertIn("$$x = y$$", tex)
+
+
+class TestMathHelperTex(unittest.TestCase):
+    """mathtext parses $...$ per line, so a multi-line formula (e.g. a
+    $$\\n...\\n$$ markdown block, which keeps its internal newlines as
+    doc.Math.content) needs its whitespace collapsed to one line before
+    being wrapped in $...$, or every line but the first/last has an
+    unbalanced $ and mathtext silently renders the literal source as
+    plain text instead of typeset math."""
+
+    def test_multiline_content_collapses_to_one_line(self):
+        element = doc.Math("x = y\n+ z", display=True)
+        tex = math_helper._tex(element)
+        self.assertEqual(tex, "$x = y + z$")
+
+    def test_render_math_file_accepts_multiline_display_formula(self):
+        element = doc.Math(
+            "\\text{Loss} = \\frac{a - b}{a}\n\\times 100", display=True
+        )
+        path = math_helper.render_math_file(element, "png")
+        with open(path, "rb") as fh:
+            self.assertTrue(fh.read(8).startswith(b"\x89PNG"))
 
 
 if __name__ == "__main__":

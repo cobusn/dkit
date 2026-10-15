@@ -209,7 +209,10 @@ class DefaultStyler(object):
                 if "Color" in k:
                     setattr(this, k, colors.HexColor(v))
                 elif k == "fontSize":
-                    setattr(this, k, fontsize_map[v])
+                    setattr(
+                        this, k,
+                        fontsize_map[v] if isinstance(v, str) else v
+                    )
                 else:
                     setattr(this, k,  v)
 

@@ -100,6 +100,16 @@ def test_fingerprint_ignores_transient_python_bytecode(tmp_path):
     assert fingerprint_root(root) == original
 
 
+def test_fingerprint_ignores_editor_artifacts(tmp_path):
+    """Stray editor swap/backup files do not invalidate a registration."""
+    _, root = copy_fixture(tmp_path)
+    original = fingerprint_root(root)
+    (root / "html" / ".document.css.swp").write_text("swap contents")
+    (root / "html" / "document.css~").write_text("backup contents")
+
+    assert fingerprint_root(root) == original
+
+
 def test_loader_rejects_a_stale_fingerprint(tmp_path):
     """A registered digest cannot be reused after a resource changes."""
     fixture_root, style_root = copy_fixture(tmp_path)

@@ -34,6 +34,7 @@ reportlab:
       textColor: "#5A5A5A"
       fontName: SourceSansPro-Bold
       fontSize: large
+      spaceBefore: 16
       spaceAfter: 5
       leading: 10
     Heading2:

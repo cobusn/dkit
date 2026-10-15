@@ -52,11 +52,14 @@ class ColourTokens(StrictModel):
 
 
 class TypographyTokens(StrictModel):
-    """Font-family roles shared by renderers."""
+    """Font-family roles and heading sizes shared by renderers."""
 
     heading: str
     body: str
     mono: str
+    heading1_size: int
+    heading2_size: int
+    heading3_size: int
 
 
 class FontTokens(StrictModel):

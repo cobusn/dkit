@@ -24,13 +24,24 @@ from pathlib import Path
 
 from .errors import StylePackResourceError
 
+_EDITOR_ARTIFACT_SUFFIXES = (".swp", ".swo", "~")
+
+
+def _is_editor_artifact(name: str) -> bool:
+    """Return True if ``name`` looks like a transient editor artifact."""
+    return name.startswith(".#") or name.endswith(_EDITOR_ARTIFACT_SUFFIXES)
+
 
 def fingerprint_root(root: Path) -> str:
     """Return a deterministic SHA-256 fingerprint for a style root.
 
     Transient Python bytecode below ``__pycache__`` is excluded.  Pip may
     create it while installing a style distribution, but it is not a style
-    resource and must not invalidate a registration.
+    resource and must not invalidate a registration.  Editor swap, backup,
+    and lock files (e.g. vim's ``.swp``, emacs's ``~`` backups and ``.#``
+    locks) are excluded for the same reason: they can appear or change
+    inside an installed style distribution without being a real style
+    resource.
 
     Args:
         root: directory containing one style manifest and its resources.
@@ -49,7 +60,7 @@ def fingerprint_root(root: Path) -> str:
     digest = sha256()
     for path in sorted(root.rglob("*"), key=lambda value: value.as_posix()):
         relative_path = path.relative_to(root)
-        if "__pycache__" in relative_path.parts:
+        if "__pycache__" in relative_path.parts or _is_editor_artifact(path.name):
             continue
         if not path.is_file():
             continue
