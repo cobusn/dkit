@@ -88,7 +88,52 @@ file path or a remote URL:
 
 Images can also be embedded directly from a Markdown template using the
 ``image`` Jinja helper that every ``Document`` exposes to
-``add_template``: ``{{ image("path/to/file.png", title="...") }}``.
+``add_template``: ``{{ image("path/to/file.png", title="...") }}``. The
+helper accepts the same options as the ``Image`` element itself —
+``title``, ``width``, ``height`` (both in cm), and ``align`` (``"left"``,
+``"center"``, or ``"right"``, defaulting to ``"center"``):
+
+.. code-block:: text
+
+   {{ image("examples/python-logo.png", title="logo", width=4, align="left") }}
+
+Forcing a page break
+=======================
+
+The ``page_break`` Jinja helper inserts a :class:`PageBreak
+<dkit.doc2.document.PageBreak>` element directly from a Markdown
+template:
+
+.. code-block:: text
+
+   First page content.
+
+   {{ page_break() }}
+
+   Second page content.
+
+.. note::
+   ``threshold`` (in cm) makes the break conditional: ``{{
+   page_break(threshold=2.5) }}`` only starts a new page if less than
+   ``2.5`` cm of vertical space remains on the current page, instead of
+   always breaking. This is only honoured by ``RLRenderer`` (PDF
+   output) — the other three renderers ignore ``threshold`` and always
+   break.
+
+Including file contents as a code block
+===========================================
+
+The ``include`` Jinja helper reads a file's contents and inserts them
+as a :class:`CodeBlock <dkit.doc2.document.CodeBlock>` — useful for
+embedding a source listing without pasting it into the Markdown
+template by hand:
+
+.. code-block:: text
+
+   {{ include("examples/report.py", language="python") }}
+
+``language`` is optional and is used by renderers that support syntax
+highlighting for the code block.
 
 Adding math notation
 ======================
