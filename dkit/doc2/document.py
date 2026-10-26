@@ -100,7 +100,13 @@ class Document:
 
     def _jinja_include_page_break(self, threshold=None):
         """
-        include images using jinja templates
+        include a page break using jinja templates
+
+        arguments:
+            - threshold: in cm. If given, only breaks to a new page when
+              less than this much vertical space remains on the current
+              page (ReportLab renderer only; other renderers ignore it
+              and always break).
         """
         return _jsonise(
             PageBreak(threshold)
@@ -169,8 +175,13 @@ class LineBreak:
 
 @dataclass
 class PageBreak:
-    "Line break"
-    threshold: int | None = None
+    """Page break.
+
+    threshold: in cm. If set, only breaks to a new page when less than
+    this much vertical space remains on the current page (ReportLab
+    renderer only; other renderers ignore it and always break).
+    """
+    threshold: float | None = None
 
 
 @dataclass

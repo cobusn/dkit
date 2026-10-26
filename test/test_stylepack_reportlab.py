@@ -124,6 +124,18 @@ def test_reportlab_page_break_produces_a_flowable():
     assert isinstance(flowable, RLPageBreak)
 
 
+def test_reportlab_page_break_with_threshold_is_conditional():
+    """A threshold (in cm) produces a conditional break, not a hard one."""
+    from reportlab.lib.units import cm
+    from reportlab.platypus import CondPageBreak
+
+    renderer = RLRenderer(Document(title="Example"))
+    flowable = next(renderer.make(doc.PageBreak(threshold=2.5)))
+
+    assert isinstance(flowable, CondPageBreak)
+    assert flowable.height == 2.5 * cm
+
+
 def test_style_pack_renders_all_supported_page_sizes_and_orientations(tmp_path):
     """Physical output dimensions follow the manifest page tokens."""
     expected = {

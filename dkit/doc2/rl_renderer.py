@@ -25,8 +25,9 @@ import functools
 from reportlab.lib.units import cm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
-    BaseDocTemplate, Frame, Image, ListFlowable, PageTemplate, Paragraph,
-    SimpleDocTemplate, Spacer, Table, Preformatted, PageBreak, ListItem
+    BaseDocTemplate, CondPageBreak, Frame, Image, ListFlowable, PageTemplate,
+    Paragraph, SimpleDocTemplate, Spacer, Table, Preformatted, PageBreak,
+    ListItem
 )
 
 from . import document as doc
@@ -122,7 +123,10 @@ class RLRenderer:
 
     @make.register(doc.PageBreak)
     def make_page_break(self, element: doc.PageBreak):
-        yield PageBreak()
+        if element.threshold is None:
+            yield PageBreak()
+        else:
+            yield CondPageBreak(element.threshold * cm)
 
     @make.register(doc.Str)
     def make_str(self, element: doc.Str):
