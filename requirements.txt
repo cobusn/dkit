@@ -1,3 +1,4 @@
+build
 cffi>=1.4.0
 collections_extended
 cryptography
