@@ -26,8 +26,12 @@ reportlab:
     author_font_size: 14
     date_font_size: 10
   later_pages:
-    top_line: True 
-    bottom_line: True 
+    top_line: True
+    bottom_line: True
+    header_left: "{{ title }}\n{{ sub_title }}"
+    header_right: "{{ date }}"
+    footer_left: "{{ author }}"
+    footer_right: "Page: {{ page }}"
   styles:
     Heading1:
       #textColor: "#05386E"

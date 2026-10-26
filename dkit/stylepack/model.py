@@ -97,6 +97,21 @@ class ChartTokens(StrictModel):
     height_cm: float = Field(gt=0)
 
 
+class HeaderFooterTokens(StrictModel):
+    """Jinja2-templated, markdown-formattable header/footer zones.
+
+    Each field is a Jinja2 template string rendered with the document's
+    title/author/date/page/year context; ``\\n`` renders as a second line
+    and inline markdown (``*bold*``, ``_emph_``, `` `code` ``) is honoured.
+    Unset fields fall back to the renderer's own default for that zone.
+    """
+
+    header_left: str | None = None
+    header_right: str | None = None
+    footer_left: str | None = None
+    footer_right: str | None = None
+
+
 class ReportLabFormat(StrictModel):
     """ReportLab resource references."""
 
@@ -160,6 +175,7 @@ class StyleManifest(StrictModel):
     page: PageTokens
     charts: ChartTokens
     formats: FormatTokens
+    header_footer: HeaderFooterTokens | None = None
 
 
 class StylePackReference(StrictModel):

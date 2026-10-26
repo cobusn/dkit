@@ -10,6 +10,7 @@ from dkit.doc2 import document as doc
 from dkit.doc2.document import Document
 from dkit.doc2.rl_renderer import RLRenderer
 from dkit.doc2.rl_helper import TableHelper
+from dkit.doc2.rl_styles import DefaultStyler, markdown_to_rl_markup
 from dkit.doc2.rl_stylepack import StylePackStyler
 from dkit.stylepack.loader import StylePackLoader
 from dkit.stylepack.model import StylePackReference
@@ -33,7 +34,8 @@ class FixtureDistribution:
 
 
 def load_pack(
-    tmp_path, size="a4", orientation="portrait", table_style=None
+    tmp_path, size="a4", orientation="portrait", table_style=None,
+    extra_manifest=None,
 ):
     """Copy the fixture, make its cover renderable, and load it."""
     tmp_path.mkdir(parents=True, exist_ok=True)
@@ -54,6 +56,8 @@ def load_pack(
             "    template: docx/template.docx\n"
             f"    table_style: {table_style}",
         )
+    if extra_manifest is not None:
+        manifest += f"\n{extra_manifest}\n"
     manifest_path.write_text(manifest, encoding="utf-8")
 
     reference = StylePackReference(
@@ -130,6 +134,59 @@ def test_style_pack_renders_all_supported_page_sizes_and_orientations(tmp_path):
             if orientation == "landscape":
                 wanted = (dimensions[1], dimensions[0])
             assert actual == wanted
+
+
+def test_markdown_to_rl_markup_formats_header_footer_text():
+    """Header/footer zones support inline markdown and explicit line breaks."""
+    markup = markdown_to_rl_markup("**bold** and `code`\nsecond line")
+
+    assert markup == (
+        "<b>bold</b> and <font face='Courier'>code</font>"
+        "<br/>second line"
+    )
+
+
+def test_style_pack_overrides_header_footer_zones(tmp_path):
+    """A manifest's header_footer tokens override the renderer defaults."""
+    pack = load_pack(
+        tmp_path,
+        extra_manifest=(
+            "header_footer:\n"
+            '  footer_left: "Copyright {{ year }} Company Name"'
+        ),
+    )
+    styler = StylePackStyler(Document(title="Example"), pack)
+
+    later_pages = styler.local_style["reportlab"]["later_pages"]
+    assert later_pages["footer_left"] == "Copyright {{ year }} Company Name"
+    # unset zones keep the renderer's own default
+    assert later_pages["header_left"] == "{{ title }}\n{{ sub_title }}"
+
+
+def test_style_pack_without_header_footer_keeps_renderer_defaults(tmp_path):
+    """A style with no header_footer section falls back to the defaults."""
+    pack = load_pack(tmp_path)
+    styler = StylePackStyler(Document(title="Example"), pack)
+
+    later_pages = styler.local_style["reportlab"]["later_pages"]
+    assert later_pages["footer_left"] == "{{ author }}"
+
+
+def test_default_styler_falls_back_without_header_footer_override():
+    """A style with no header_footer section keeps the renderer defaults."""
+    styler = DefaultStyler(Document(title="Example"))
+
+    later_pages = styler.local_style["reportlab"]["later_pages"]
+    assert later_pages["footer_left"] == "{{ author }}"
+
+
+def test_renderer_accepts_extra_template_context():
+    """Caller-supplied template fields reach the styler for header/footer use."""
+    renderer = RLRenderer(
+        Document(title="Example"), template_context={"company": "Acme Inc"}
+    )
+
+    assert renderer.styler.template_context == {"company": "Acme Inc"}
 
 
 def test_custom_styler_remains_supported_with_deprecation_warning():

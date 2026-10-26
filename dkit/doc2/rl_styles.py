@@ -26,15 +26,58 @@ from pathlib import Path
 
 import yaml
 from reportlab.lib import colors, pagesizes
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
+from reportlab.platypus import Paragraph
 from pydantic import BaseModel
+from dkit.utilities.jinja2 import render as render_template
 from . import fontsize_map, document as doc
+from .md_to_doc import render_doc_format
 from .rl_helper import PdfImage
+
+
+def _inline_markup(elements) -> str:
+    """Convert canonical inline doc elements to ReportLab paragraph markup."""
+    parts = []
+    for item in elements:
+        if isinstance(item, doc.Bold):
+            parts.append(f"<b>{_inline_markup(item.text)}</b>")
+        elif isinstance(item, doc.Emph):
+            parts.append(f"<i>{_inline_markup(item.text)}</i>")
+        elif isinstance(item, doc.Code):
+            parts.append(f"<font face='Courier'>{item.content}</font>")
+        elif isinstance(item, doc.Str):
+            parts.append(item.text)
+        elif isinstance(item, (doc.SoftBreak, doc.LineBreak)):
+            # a header/footer zone's "text\ntext" is an explicit second
+            # line, not running prose, so unlike body text a soft break
+            # here always becomes a line break rather than a space.
+            parts.append("<br/>")
+        else:
+            raise TypeError(
+                f"unsupported header/footer markup element: {type(item)}"
+            )
+    return "".join(parts)
+
+
+def markdown_to_rl_markup(text: str) -> str:
+    """Render a short markdown string to ReportLab paragraph markup.
+
+    Header/footer zones only need inline formatting (bold/italic/code)
+    and explicit line breaks, not the full block grammar, so each
+    top-level block is joined with ``<br/>``.
+    """
+    blocks = render_doc_format(text)
+    parts = [
+        _inline_markup(block.content)
+        for block in blocks
+        if isinstance(block, doc.Paragraph)
+    ]
+    return "<br/>".join(parts)
 
 
 class DefaultStyler(object):
@@ -50,6 +93,7 @@ class DefaultStyler(object):
         document: doc.Document,
         local_style: dict = None,
         background_path: str | Path | None = None,
+        template_context: dict | None = None,
     ):
         if local_style:
             self.local_style = local_style
@@ -58,6 +102,7 @@ class DefaultStyler(object):
                 "dkit.resources", "rl_stylesheet.yaml"
             )
         self.doc = document
+        self.template_context = template_context or {}
         self.background_path = (
             Path(background_path) if background_path is not None else None
         )
@@ -295,9 +340,10 @@ class DefaultStyler(object):
         class LaterPage(BaseModel):
             top_line: bool
             bottom_line: bool
-            add_title: bool = True
-            add_sub_title: bool = True
-            add_date: bool = True
+            header_left: str | None = None
+            header_right: str | None = None
+            footer_left: str | None = None
+            footer_right: str | None = None
 
         conf = LaterPage(**self.local_style["reportlab"]["later_pages"])
         canvas.saveState()
@@ -315,30 +361,59 @@ class DefaultStyler(object):
         if conf.bottom_line:
             canvas.line(tl, by, tr, by)   # bottom line
 
-        # title
-        if conf.add_title:
-            canvas.setFont(self.title_font_name, 8)
-            canvas.drawString(tl, ty + 12, self.doc.title or "")
+        context = {
+            "title": self.doc.title or "",
+            "sub_title": self.doc.sub_title or "",
+            "author": self.doc.author or "",
+            "contact": self.doc.contact or "",
+            "version": self.doc.version or "",
+            "date": self.title_date,
+            "page": canvas.getPageNumber(),
+            "year": datetime.now().year,
+            **self.template_context,
+        }
+        gap = 4
+        zone_width = (tr - tl) / 2 - gap
+        left_style = ParagraphStyle(
+            "HeaderFooterLeft",
+            fontName=self.author_font_name,
+            fontSize=8,
+            leading=9,
+            textColor=self.text_color,
+            alignment=TA_LEFT,
+        )
+        right_style = ParagraphStyle(
+            "HeaderFooterRight", parent=left_style, alignment=TA_RIGHT,
+        )
 
-        # subtitle
-        if conf.add_sub_title:
-            canvas.setFont(self.author_font_name, 8)
-            canvas.drawString(tl, ty + 2, self.doc.sub_title or "")
+        def draw_zone(template, x, anchor_y, grows_down, para_style):
+            if not template:
+                return
+            markup = markdown_to_rl_markup(render_template(template, **context))
+            if not markup:
+                return
+            paragraph = Paragraph(markup, para_style)
+            _, height = paragraph.wrapOn(canvas, zone_width, self.page_height)
+            y = anchor_y - height if grows_down else anchor_y
+            paragraph.drawOn(canvas, x, y)
 
-        # date
-        if conf.add_date:
-            canvas.setFont(self.author_font_name, 8)
-            tw = stringWidth(self.title_date, self.author_font_name, 8)
-            canvas.drawString(tr - tw, ty + 6, self.title_date)
-
-        # author
-        canvas.drawString(tl, by - 10, self.doc.author or "")
-        tw = stringWidth(self.title_date, self.author_font_name, 8)
-
-        # page number
-        n = canvas.getPageNumber()
-        page_num = str(f"Page: {n}")
-        tw = stringWidth(page_num, self.author_font_name, 8)
-        canvas.drawString(tr - tw, by - 10, page_num)
+        # headers grow downward from the top margin; footers grow upward
+        # from the bottom margin, so a second line extends away from the
+        # body text in both cases rather than into it. The anchors sit
+        # inside the page's own margin whitespace (above ty / below by),
+        # not at the frame edge itself, so a two-line zone never overlaps
+        # the body frame.
+        header_anchor = ty + 20
+        footer_anchor = by - 20
+        draw_zone(conf.header_left, tl, header_anchor, True, left_style)
+        draw_zone(
+            conf.header_right, tr - zone_width, header_anchor, True,
+            right_style
+        )
+        draw_zone(conf.footer_left, tl, footer_anchor, False, left_style)
+        draw_zone(
+            conf.footer_right, tr - zone_width, footer_anchor, False,
+            right_style
+        )
 
         canvas.restoreState()

@@ -40,6 +40,9 @@ page:
   top_margin_cm: 2.2
   bottom_margin_cm: 2.0
 
+header_footer:
+  footer_left: "Copyright {{ year }} Company Name"
+
 charts:
   categorical:
     - "#2569A9"

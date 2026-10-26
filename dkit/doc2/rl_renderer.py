@@ -78,14 +78,17 @@ class RLRenderer:
         allow_soft_breaks=False,
         styler=DefaultStyler,
         style_pack: StylePack | None = None,
+        template_context: dict | None = None,
     ):
         self.allow_soft_breaks = allow_soft_breaks  # allow breaks in a paragraph
         self.spacer_height = 0.0 * cm       # used by soft breaks
         self.paragraph_style = "BodyText"   # can change depending on type of block
         self.styler = (
-            StylePackStyler(document, style_pack)
+            StylePackStyler(
+                document, style_pack, template_context=template_context
+            )
             if style_pack is not None and styler is DefaultStyler
-            else styler(document)
+            else styler(document, template_context=template_context)
         )
         self.content = [PageBreak()]
         self.document = document

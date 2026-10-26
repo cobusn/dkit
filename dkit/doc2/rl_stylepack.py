@@ -40,7 +40,12 @@ class StylePackStyler(DefaultStyler):
         style_pack: validated style pack selected by the registry.
     """
 
-    def __init__(self, document: doc.Document, style_pack: StylePack):
+    def __init__(
+        self,
+        document: doc.Document,
+        style_pack: StylePack,
+        template_context: dict | None = None,
+    ):
         local_style = deepcopy(self.load_local_style(
             "dkit.resources", "rl_stylesheet.yaml"
         ))
@@ -77,10 +82,15 @@ class StylePackStyler(DefaultStyler):
             "heading_background": manifest.colors.table_heading_background,
             "font_color": manifest.colors.text,
         })
+        if manifest.header_footer is not None:
+            local_style["reportlab"]["later_pages"].update(
+                manifest.header_footer.model_dump(exclude_none=True)
+            )
         super().__init__(
             document,
             local_style=local_style,
             background_path=style_pack.resource(reportlab.cover),
+            template_context=template_context,
         )
 
     @staticmethod
