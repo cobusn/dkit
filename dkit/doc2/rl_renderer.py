@@ -120,6 +120,10 @@ class RLRenderer:
     def make_line_break(self, element: doc.LineBreak):
         yield Spacer(width=0, height=self.spacer_height)
 
+    @make.register(doc.PageBreak)
+    def make_page_break(self, element: doc.PageBreak):
+        yield PageBreak()
+
     @make.register(doc.Str)
     def make_str(self, element: doc.Str):
         yield element.text

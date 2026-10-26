@@ -109,6 +109,21 @@ def test_reportlab_headings_stay_with_the_next_flowable():
     assert heading.keepWithNext == 1
 
 
+def test_reportlab_page_break_produces_a_flowable():
+    """A canonical PageBreak element renders instead of raising TypeError.
+
+    Regression test: rl_renderer had no make.register(doc.PageBreak)
+    handler, unlike the other three renderers, so a document using the
+    {{ page_break() }} jinja helper crashed when rendered to PDF.
+    """
+    from reportlab.platypus import PageBreak as RLPageBreak
+
+    renderer = RLRenderer(Document(title="Example"))
+    flowable = next(renderer.make(doc.PageBreak()))
+
+    assert isinstance(flowable, RLPageBreak)
+
+
 def test_style_pack_renders_all_supported_page_sizes_and_orientations(tmp_path):
     """Physical output dimensions follow the manifest page tokens."""
     expected = {
