@@ -31,6 +31,7 @@ Usage::
     md = renderer.render_string()       # return as string
 """
 import functools
+import re
 
 from . import document as doc
 
@@ -39,6 +40,9 @@ _ALIGN_SEPARATOR = {
     "right": "---:",
     "center": ":---:",
 }
+
+#: characters that change meaning if left unescaped in literal text
+_MD_SPECIAL = re.compile(r"([\\`*_\[\]|<])")
 
 
 class MarkdownRenderer:
@@ -72,8 +76,43 @@ class MarkdownRenderer:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _escape(self, text: str) -> str:
+        """escape characters markdown would otherwise reinterpret"""
+        return _MD_SPECIAL.sub(r"\\\1", text)
+
+    def _escape_table_cell(self, text: str) -> str:
+        """neutralise the only characters that break a GFM table row
+
+        Deliberately narrower than :meth:`_escape`: a cell is still allowed
+        to carry e.g. ``**bold**`` formatting, it just cannot carry a raw
+        ``|`` without being torn into extra columns.
+        """
+        return text.replace("\\", "\\\\").replace("|", "\\|")
+
+    def _fence_for(self, content: str) -> str:
+        """backtick fence longer than any backtick run already in content
+
+        A fenced code block's own fence must out-run every backtick run in
+        its content, or the content's first run of equal-or-longer length
+        closes the block early (CommonMark fenced code block rule).
+        """
+        longest = run = 0
+        for char in content:
+            if char == "`":
+                run += 1
+                longest = max(longest, run)
+            else:
+                run = 0
+        return "`" * max(3, longest + 1)
+
     def _make_elements(self, elements) -> str:
-        return "".join(self.make(e) for e in elements)
+        text = ""
+        for e in elements:
+            rendered = self.make(e)
+            if isinstance(e, doc.List) and text and not text.endswith("\n"):
+                rendered = "\n" + rendered
+            text += rendered
+        return text
 
     # ------------------------------------------------------------------
     # Dispatch
@@ -85,7 +124,7 @@ class MarkdownRenderer:
 
     @make.register(doc.Str)
     def make_str(self, element: doc.Str) -> str:
-        return element.text
+        return self._escape(element.text)
 
     @make.register(doc.Bold)
     def make_bold(self, element: doc.Bold) -> str:
@@ -129,7 +168,7 @@ class MarkdownRenderer:
         if isinstance(element.content, list):
             text = self._make_elements(element.content)
         else:
-            text = element.content
+            text = self._escape(element.content)
         return f"{prefix} {text}\n\n"
 
     @make.register(doc.Paragraph)
@@ -157,7 +196,8 @@ class MarkdownRenderer:
     @make.register(doc.CodeBlock)
     def make_code_block(self, element: doc.CodeBlock) -> str:
         lang = element.language or ""
-        return f"```{lang}\n{element.content}\n```\n\n"
+        fence = self._fence_for(element.content)
+        return f"{fence}{lang}\n{element.content}\n{fence}\n\n"
 
     @make.register(doc.List)
     def make_list(self, element: doc.List) -> str:
@@ -195,7 +235,9 @@ class MarkdownRenderer:
         columns = element.columns
 
         # Header row
-        headers = " | ".join(col.title for col in columns)
+        headers = " | ".join(
+            self._escape_table_cell(col.title) for col in columns
+        )
         header_row = f"| {headers} |"
 
         # Separator row with alignment markers
@@ -207,7 +249,9 @@ class MarkdownRenderer:
         # Data rows
         data_rows = []
         for row in element.data:
-            cells = " | ".join(col.formatter(row) for col in columns)
+            cells = " | ".join(
+                self._escape_table_cell(col.formatter(row)) for col in columns
+            )
             data_rows.append(f"| {cells} |")
 
         return "\n".join([header_row, sep_row] + data_rows) + "\n\n"

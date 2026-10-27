@@ -192,5 +192,52 @@ def test_table_data_rows():
     assert "| beta | 20 |" in md
 
 
+def test_table_cell_pipe_is_escaped():
+    columns = [doc.Column(name="a", title="A"), doc.Column(name="b", title="B")]
+    data = [{"a": "x|y", "b": "z"}]
+    md = _render(doc.Table(data=data, columns=columns))
+    assert "| x\\|y | z |" in md
+
+
+# ------------------------------------------------------------------
+# Escaping of literal markdown-special characters
+# ------------------------------------------------------------------
+
+def test_str_escapes_markdown_special_chars():
+    md = _render(doc.Paragraph([doc.Str("file_name and *not bold* and a | pipe")]))
+    assert "file\\_name and \\*not bold\\* and a \\| pipe" in md
+
+
+def test_heading_plain_string_escapes_markdown_special_chars():
+    md = _render(doc.Heading("a_b", level=1))
+    assert md == "# a\\_b\n\n"
+
+
+# ------------------------------------------------------------------
+# Nested lists
+# ------------------------------------------------------------------
+
+def test_nested_list_inside_list_item():
+    inner = doc.List([doc.ListItem([doc.Str("child")])], ordered=False, depth=1)
+    outer = doc.List(
+        [doc.ListItem([doc.Str("parent"), inner])], ordered=False, depth=0
+    )
+    md = _render(outer)
+    assert "- parent\n  - child\n" in md
+
+
+# ------------------------------------------------------------------
+# Code block fence collisions
+# ------------------------------------------------------------------
+
+def test_code_block_with_embedded_fence_uses_longer_fence():
+    content = "nested fence:\n```\nhi\n```"
+    md = _render(doc.CodeBlock(content, "text"))
+    assert md.startswith("````text\n")
+    assert md.rstrip("\n").endswith("````")
+    # the embedded ``` must survive untouched, not terminate the block early
+    assert content in md
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

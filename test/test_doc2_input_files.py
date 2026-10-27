@@ -60,6 +60,11 @@ class TestInputFilesRenderers(unittest.TestCase):
         self.assertTrue(output.exists())
         self.assertGreater(output.stat().st_size, 0)
 
+    def test_markdown(self):
+        output = _build("markdown", ".md")
+        self.assertTrue(output.exists())
+        self.assertGreater(output.stat().st_size, 0)
+
     @unittest.skipUnless(HAS_PDFLATEX, "pdflatex is not installed")
     def test_latex(self):
         output = _build("latex", ".pdf")

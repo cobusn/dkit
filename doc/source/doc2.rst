@@ -68,6 +68,16 @@ Content elements
 Renderers
 ==========
 
+``dk build doc --format`` selects the renderer: ``reportlab`` (default),
+``docx``, ``html``, ``latex``, or ``markdown``. ``markdown`` has no styling
+of its own -- plain GitHub Flavored Markdown has nothing to style -- so
+``--style`` is ignored for it:
+
+.. code-block:: console
+
+   dk build doc --format markdown \
+      --title "Quarterly report" --output report.md report.md
+
 Style packs
 -----------
 

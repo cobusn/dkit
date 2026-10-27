@@ -45,6 +45,7 @@ from .rl_renderer import RLRenderer, DefaultStyler
 from .docx_renderer import DocxRenderer
 from .html_renderer import HtmlRenderer
 from .latex_renderer import LatexRenderer
+from .md_renderer import MarkdownRenderer
 from dkit.stylepack.model import StylePack
 from dkit.stylepack.registry import StyleRegistry
 from dkit.stylepack.matplotlib import matplotlib_theme
@@ -68,6 +69,7 @@ RENDERERS = {
     "docx": DocxRenderer,
     "html": HtmlRenderer,
     "latex": LatexRenderer,
+    "markdown": MarkdownRenderer,
 }
 
 
@@ -77,9 +79,10 @@ def get_renderer(document: doc.Document, renderer_name: str,
     """instantiate the named renderer, with the kwargs that one expects
 
     Not every renderer takes the same constructor arguments: only ``latex``
-    needs ``doc_type``, and ``html``/``docx`` take no styler at all.  This is
-    the one place that distinction is made, so :class:`Builder` and
-    :class:`SimpleDocRenderer` cannot drift apart on it.
+    needs ``doc_type``, ``html``/``docx`` take no styler at all, and
+    ``markdown`` takes neither styler nor style_pack (plain text has
+    nothing to style). This is the one place that distinction is made, so
+    :class:`Builder` and :class:`SimpleDocRenderer` cannot drift apart on it.
     """
     renderer_cls = RENDERERS[renderer_name]
     if renderer_name == "latex":
@@ -93,6 +96,8 @@ def get_renderer(document: doc.Document, renderer_name: str,
         return renderer_cls(document, style_pack=style_pack)
     if renderer_name == "docx":
         return renderer_cls(document, style_pack=style_pack)
+    if renderer_name == "markdown":
+        return renderer_cls(document)
     return renderer_cls(
         document,
         styler=styler_class,
@@ -242,7 +247,7 @@ def resolve_style(style: str | None, config_path: str = "~/.dk.ini"):
 class DocumentConfiguration(BaseModel):
     """report config"""
     output: str = "main.pdf"
-    renderer: Literal["reportlab", "latex", "docx", "html"]
+    renderer: Literal["reportlab", "latex", "docx", "html", "markdown"]
     styler: str = "default"
     style: str | None = None
     # latex only: \documentclass{}. Must already be installed and on
@@ -487,7 +492,8 @@ class SimpleDocRenderer:
         contact: contact details shown on the title page
         title_date: printed date. None uses today's date.
         version: document/report version
-        renderer: one of ``RENDERERS`` -- "reportlab", "docx", "html", "latex"
+        renderer: one of ``RENDERERS`` -- "reportlab", "docx", "html",
+            "latex", "markdown"
         doc_class: latex only: ``\\documentclass{}`` to use. Must already be
             installed and on LaTeX's own search path.
         styler: "default", or a dotted path to a styler class
