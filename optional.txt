@@ -1,17 +1,12 @@
-boltons
 collections-extended
 confluent_kafka
 fastavro
-flask
-ipython
-kaleido
 lxml
 matplotlib
 msgpack
 openpyxl
 pandas
 paramiko
-plotly
 posix_ipc
 python-levenshtein
 scipy
