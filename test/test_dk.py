@@ -4,7 +4,7 @@ import sys
 import unittest
 import os
 from unittest.mock import patch
-from dkit import exceptions
+from dkit import exceptions, __version__
 from lib_dk.dk import DataKit
 from lib_dk import (
     admin_module,
@@ -28,6 +28,15 @@ class TestDataKitDispatch(unittest.TestCase):
         self.assertEqual(
             DataKit(["dk", "S"]).get_method(), "do_Stylesheets"
         )
+
+    def test_version_prints_dkit_version_and_exits(self):
+        "dk --version reports dkit.__version__ and exits 0"
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            with self.assertRaises(SystemExit) as ctx:
+                DataKit(["dk", "--version"]).get_method()
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertIn(__version__, buf.getvalue())
 
 
 class TestDK(unittest.TestCase):

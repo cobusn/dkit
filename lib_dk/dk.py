@@ -135,6 +135,9 @@ class DataKit(object):
             description="data processing toolkit",
             usage=textwrap.dedent(self.__doc__)
         )
+        parser.add_argument(
+            "--version", action="version", version=f"%(prog)s {VERSION}"
+        )
         parser.add_argument("module", help="module to execute")
         args = parser.parse_args(self.arguments[1:2])
         candidates = [i for i in self.modules if i.startswith(args.module.strip())]
