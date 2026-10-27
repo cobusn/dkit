@@ -4,6 +4,7 @@
 * `dkit.etl`: fix float_32 and float_64 for explicit types
 
 # Medium priority (test coverage debt)
+* add a 'dk --version' command
 * improve test coverage (including for dk) -- split into concrete per-module
   items as they are tackled, rather than tracking as one open-ended item
 * `dkit.doc2`: unit test coverage for `md_to_doc.py`: direct tests asserting
@@ -51,6 +52,7 @@
   (also used in window functions)
 
 # Someday / Maybe 
+* add a database option for model.yml (e.g. sqlalchemy based)
 * AWS S3 integration (s3fs..) [e.g dk r etl s3://bucket/products.parquet -0 products.xlsx]
 * Handle Dicts and List data types 
 * type guesser guesses numpy ints as string (should it generate an error)
