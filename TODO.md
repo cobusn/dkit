@@ -2,7 +2,6 @@
 * `dkit.etl`: validations on parsing Decimal(precision=X, scale=Y), will
   currently parse without defaults or errors -- silent data corruption risk
 * `dkit.etl`: fix float_32 and float_64 for explicit types
-* `dkit.data`: file locking for JSONDB (concurrency / corruption risk)
 
 # Medium priority (test coverage debt)
 * improve test coverage (including for dk) -- split into concrete per-module
@@ -30,6 +29,9 @@
 * `dkit.doc2`:
   * support for autolink in Reportlab Renderer
   * table of contents for Reportlab, Latex and DocX
+  * implement doc.PageBreak's `threshold` (conditional page break) for
+    the LaTeX renderer via the `needspace` package (`\needspace{Ncm}`);
+    not feasible for DocX since python-docx has no layout engine
 
 # Low priority (build / packaging)
 * run tests for multiple python versions before build upload
@@ -55,10 +57,10 @@
 * data analyser feature (automated data analysis with report output)
 * review pandoc templates for anything useful: https://github.com/Wandmalfarbe/pandoc-latex-template/tree/master/examples
 * https://julien.danjou.info/finding-definitions-from-a-source-file-and-a-line-number-in-python/
-* pgfplotstable http://ftp.sun.ac.za/ftp/CTAN/graphics/pgf/contrib/pgfplots/doc/pgfplotstable.pdf
 * optimise mpak schema to use integers/floats for storing dates
 
 # Done
+* `dkit.data`: file locking for JSONDB (concurrency / corruption risk)
 * support for Python 3.14
 * properly integrate the CSS components and examples
 * Hierarchical treemap replacement using `squarify`
