@@ -24,10 +24,14 @@ Dict-like file database for JSON files where each JSON file is mapped to a key.
 import bz2
 import gzip
 import json
+import os
 import sys
-from collections.abc import Mapping
+import uuid
+from collections.abc import MutableMapping
 from datetime import datetime
 from pathlib import Path
+
+import filelock
 
 from ..utilities.file_helper import FileObjStub, sanitise_name
 
@@ -45,16 +49,32 @@ C_OPTIONS = {
 }
 
 
-class JSONDB(Mapping):
+class JSONDB(MutableMapping):
     """JSON file-based DB
 
     File-based database that maps keys to JSON files on disk.
 
     This class is useful for keeping track of work completed in a
-    multi-processing environment.
+    multi-processing environment, e.g. so a restarted ETL job can skip
+    keys that were already processed.
 
-    This version do not maintain an index and can be used in
-    multiple processes
+    This version does not maintain an index (keys are enumerated by
+    listing the folder) and can be used in multiple processes. Writes
+    are atomic (written to a temporary file then renamed) so readers
+    never observe a partially written file. Use `lock()` to make a
+    check-then-write sequence (e.g. "skip if already done") atomic
+    across processes.
+
+    Keys with characters not allowed in filenames are sanitised before
+    being stored. There is no index mapping the sanitised on-disk name
+    back to the original key, so iterating over the database (or
+    `len()`) yields the sanitised form, not the original key.
+
+    `lock()` leaves a `<key>.<suffix>.lock` file behind in a `.locks`
+    subdirectory after use (filelock does not delete it on release).
+    This is expected and does not affect `len()`/iteration, which only
+    look at the main directory. Call `purge_locks()` between batches
+    to remove lock files that are not currently held.
 
     args:
         - path: file path to folder used to store json files
@@ -65,14 +85,18 @@ class JSONDB(Mapping):
             - zstd
         - allow_null: will not store Null values if enabled.  Useful for
         processes where null means a failure (and raise a ValueError)
+        - created_after: only consider entries whose file was last
+          modified after this datetime (uses file mtime)
 
     throws:
         - TypeError if the key is not of type str
         - ValueError if value is None and allow_null is False
     """
-    def __init__(self, path: str, compress=None, allow_null: bool = True):
+    def __init__(self, path: str, compress=None, allow_null: bool = True,
+                 created_after: datetime = None):
         self.path: Path = Path(path)
         self.allow_null = allow_null
+        self.created_after = created_after
         if compress is None:
             self.file_io = FileObjStub
             self.suffix = "json"
@@ -81,6 +105,7 @@ class JSONDB(Mapping):
                 raise ValueError(f"compress should be one of {', '.join(C_OPTIONS.keys())}")
             self.file_io = C_OPTIONS[compress]
             self.suffix = f"json.{compress}"
+        self.path.mkdir(parents=True, exist_ok=True)
 
     def _file_path(self, key):
         return self.path / f"{key}.{self.suffix}"
@@ -96,290 +121,112 @@ class JSONDB(Mapping):
         """
         return sanitise_name(key)
 
-    def append(self, key, value):
-        if value is None and self.allow_null is False:
-            raise ValueError(
-                f"'{key}' has Null value and allow_null is False"
-            )
-        else:
-            fname = self._file_path(key)
-            with self.file_io.open(fname, "wt") as outfile:
-                json.dump(value, outfile)
-
-    def __setitem__(self, key, value):
-        if not isinstance(key, str):
-            raise TypeError("key should be of type str")
-        self.append(self._transform(key), value)
-
-    def __contains__(self, key):
-        fp = self._file_path(self._transform(key))
-        if fp.exists():
-            return True
-        else:
-            return False
-
-    def __len__(self):
-        return len(list(self.path.glob(f"*.{self.suffix}")))
-
-    def __iter__(self):
-        for item in self.path.glob(f"*.{self.suffix}"):
-            yield self._reverse_transform(str(item))
-
-    def __delitem__(self, key):
-        fp = self._file_path(self._transform(key))
-        fp.unlink()
-
-    def __getitem__(self, key):
-        fp = self._file_path(self._transform(key))
-        try:
-            with self.file_io.open(fp) as infile:
-                return json.load(infile)
-        except FileNotFoundError:
-            raise KeyError(key)
-
-
-class JSONDB2(Mapping):
-    """JSON file-based DB
-
-    File-based database that maps keys to JSON files on disk.
-
-    This class is useful for keeping track of work completed in a
-    multi-processing environment.
-
-    This version maintains an index that is not thread safe
-
-    args:
-        - path: file path to folder used to store json files
-        - suffix: file suffix for json files (e.g. json)
-        - compress: compress files. provide the compression library:
-            - bz2
-            - gz
-            - zstd
-        - created_after: only return values for files modified after this
-          datetime (uses file mtime)
-        - allow_null: will not store Null values if enabled. Useful for
-          processes where null means a failure (and raise a ValueError)
-
-    throws:
-        - TypeError if the key is not of type str
-        - ValueError if value is None and allow_null is False
-    """
-    def __init__(self, path: str, compress=None, allow_null: bool = True,
-                 created_after: datetime = None):
-        """create a JSONDB instance"""
-        self.path: Path = Path(path)
-        self.allow_null = allow_null
-        self.created_after = created_after
-        self.path.mkdir(parents=True, exist_ok=True)
-        self._index_path = self.path / ".index.json"
-        self._index_cache = None
-        self._index_mtime = None  # mtime used to validate index cache
-        self._mtime_cache = {}
-        if compress is None:
-            self.file_io = FileObjStub
-            self.suffix = "json"
-        else:
-            if compress not in C_OPTIONS:
-                raise ValueError(f"compress should be one of {', '.join(C_OPTIONS.keys())}")
-            self.file_io = C_OPTIONS[compress]
-            self.suffix = f"json.{compress}"
-        # Lazy rebuild: index is populated on key access, not by scanning files
-
-    def _file_path(self, key):
-        """build the file path for a transformed key"""
-        return self.path / f"{key}.{self.suffix}"
-
-    def _reverse_transform(self, filename: str):
-        """translate filename back to key"""
-        name = Path(filename).name
-        return name.removesuffix(f".{self.suffix}")
-
-    def _transform(self, key):
-        """override this if your keys have special characters that cannot be used
-        in filenames
-        """
-        return sanitise_name(key)
-
-    def _get_mtime(self, safe_key: str):
-        """get cached mtime for a safe key"""
-        cached = self._mtime_cache.get(safe_key)
-        if cached is not None:
-            return cached
-        fp = self._file_path(safe_key)
-        try:
-            mtime = fp.stat().st_mtime
-        except FileNotFoundError:
-            return None
-        self._mtime_cache[safe_key] = mtime
-        return mtime
-
     def _passes_created_after(self, fp: Path):
         """check if file mtime is after created_after"""
         if self.created_after is None:
             return True
-        safe_key = self._reverse_transform(str(fp))
-        mtime = self._get_mtime(safe_key)
-        if mtime is None:
+        try:
+            mtime = fp.stat().st_mtime
+        except FileNotFoundError:
             return False
         return mtime > self.created_after.timestamp()
 
-    def _load_index(self):
-        """load index from disk with mtime cache"""
-        if not self._index_path.exists():
-            self._index_cache = {}
-            self._index_mtime = None
-            return {}
-        try:
-            mtime = self._index_path.stat().st_mtime
-            if self._index_cache is not None and mtime == self._index_mtime:
-                return self._index_cache
-        except FileNotFoundError:
-            self._index_cache = {}
-            self._index_mtime = None
-            return {}
-        try:
-            with self._index_path.open("rt") as infile:
-                index = json.load(infile)
-                self._index_cache = index
-                self._index_mtime = mtime
-                return index
-        except (json.JSONDecodeError, OSError):
-            self._index_cache = {}
-            self._index_mtime = None
-            return {}
+    def _locks_dir(self) -> Path:
+        """directory holding filelock marker files"""
+        return self.path / ".locks"
 
-    def _save_index(self, index):
-        """atomically write index to disk and refresh cache"""
-        if not index:
+    def lock(self, key):
+        """return a filelock.FileLock for the given key
+
+        Hold this lock around a check-then-write sequence (e.g. "skip
+        if already done") to make it atomic across processes:
+
+            with db.lock(key):
+                if key not in db:
+                    db[key] = expensive_compute()
+        """
+        locks_dir = self._locks_dir()
+        locks_dir.mkdir(parents=True, exist_ok=True)
+        safe_key = self._transform(key)
+        return filelock.FileLock(str(locks_dir / f"{safe_key}.{self.suffix}.lock"))
+
+    def purge_locks(self):
+        """remove lock files that are not currently held
+
+        Only safe to call when no other process is expected to
+        request a new lock during the purge, e.g. between ETL
+        batches.
+        """
+        locks_dir = self._locks_dir()
+        if not locks_dir.exists():
+            return
+        for fp in locks_dir.glob("*.lock"):
+            lock = filelock.FileLock(str(fp))
             try:
-                self._index_path.unlink()
+                lock.acquire(timeout=0)
+            except filelock.Timeout:
+                continue
+            try:
+                fp.unlink()
             except FileNotFoundError:
                 pass
-            self._index_cache = {}
-            self._index_mtime = None
-            return
-        tmp_path = self._index_path.with_suffix(self._index_path.suffix + ".tmp")
-        with tmp_path.open("wt") as outfile:
-            json.dump(index, outfile)
-        tmp_path.replace(self._index_path)
-        self._index_cache = index
-        try:
-            self._index_mtime = self._index_path.stat().st_mtime
-        except FileNotFoundError:
-            self._index_mtime = None
-
-    def _has_index(self):
-        """return True if the index file exists"""
-        return self._index_path.exists()
-
-    def _rebuild_index(self):
-        """rebuild index from existing data files"""
-        index = {}
-        for item in self.path.glob(f"*.{self.suffix}"):
-            if item == self._index_path:
-                continue
-            safe_key = self._reverse_transform(str(item))
-            index[safe_key] = safe_key
-        self._save_index(index)
-        return index
-
-    def refresh(self):
-        """refresh cached index and mtimes from disk"""
-        self._index_cache = None
-        self._index_mtime = None
-        self._mtime_cache = {}
-        self._load_index()
+            finally:
+                lock.release()
 
     def append(self, key, value):
-        """store a value under key"""
+        if value is None and self.allow_null is False:
+            raise ValueError(
+                f"'{key}' has Null value and allow_null is False"
+            )
+        fname = self._file_path(key)
+        tmp_name = fname.with_name(f"{fname.name}.{uuid.uuid4().hex}.tmp")
+        with self.file_io.open(tmp_name, "wt") as outfile:
+            json.dump(value, outfile)
+        os.replace(tmp_name, fname)
+
+    def __setitem__(self, key, value):
         if not isinstance(key, str):
             raise TypeError("key should be of type str")
         if value is None and self.allow_null is False:
             raise ValueError(
                 f"'{key}' has Null value and allow_null is False"
             )
-        else:
-            safe_key = self._transform(key)
-            fname = self._file_path(safe_key)
-            if fname == self._index_path:
-                raise ValueError(f"'{key}' is a reserved key")
-            with self.file_io.open(fname, "wt") as outfile:
-                json.dump(value, outfile)
-            index = self._load_index()
-            index[key] = safe_key
-            self._save_index(index)
-            mtime = self._get_mtime(safe_key)
-            if mtime is not None:
-                self._mtime_cache[safe_key] = mtime
-
-    def __setitem__(self, key, value):
-        """set a value by key"""
-        self.append(key, value)
+        self.append(self._transform(key), value)
 
     def __contains__(self, key):
-        """return True if key exists and passes created_after"""
-        index = self._load_index()
-        safe_key = index.get(key)
-        if safe_key is None:
-            safe_key = self._transform(key)
-        fp = self._file_path(safe_key)
-        if fp == self._index_path:
+        fp = self._file_path(self._transform(key))
+        try:
+            mtime = fp.stat().st_mtime
+        except FileNotFoundError:
             return False
-        if fp.exists():
-            if key not in index:
-                index[key] = safe_key
-                self._save_index(index)
-            return self._passes_created_after(fp)
-        return False
+        if self.created_after is None:
+            return True
+        return mtime > self.created_after.timestamp()
 
     def __len__(self):
-        """return count of stored items (respects created_after)"""
-        index = self._load_index()
-        if self.created_after is None:
-            return len(index)
         return sum(
-            1 for safe_key in index.values()
-            if self._passes_created_after(self._file_path(safe_key))
+            1 for item in self.path.glob(f"*.{self.suffix}")
+            if self._passes_created_after(item)
         )
 
     def __iter__(self):
-        """iterate over keys (respects created_after)"""
-        index = self._load_index()
-        for key, safe_key in index.items():
-            if self._passes_created_after(self._file_path(safe_key)):
-                yield key
+        for item in self.path.glob(f"*.{self.suffix}"):
+            if self._passes_created_after(item):
+                yield self._reverse_transform(str(item))
 
     def __delitem__(self, key):
-        """delete an item by key"""
-        index = self._load_index()
-        safe_key = index.get(key, self._transform(key))
-        fp = self._file_path(safe_key)
+        fp = self._file_path(self._transform(key))
         try:
             fp.unlink()
         except FileNotFoundError:
             raise KeyError(key)
-        if key in index:
-            del index[key]
-            self._save_index(index)
-        if safe_key in self._mtime_cache:
-            del self._mtime_cache[safe_key]
 
     def __getitem__(self, key):
-        """get a value by key (respects created_after)"""
-        index = self._load_index()
-        safe_key = index.get(key)
-        if safe_key is None:
-            safe_key = self._transform(key)
-        fp = self._file_path(safe_key)
-        if fp == self._index_path:
+        fp = self._file_path(self._transform(key))
+        if not self._passes_created_after(fp):
             raise KeyError(key)
         try:
-            if key not in index and fp.exists():
-                index[key] = safe_key
-                self._save_index(index)
-            if not self._passes_created_after(fp):
-                raise KeyError(key)
-            with self.file_io.open(fp, "rt") as infile:
+            with self.file_io.open(fp) as infile:
                 return json.load(infile)
         except FileNotFoundError:
             raise KeyError(key)

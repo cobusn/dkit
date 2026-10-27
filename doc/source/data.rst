@@ -17,6 +17,7 @@ data generation for testing.
    data_fake.rst
    data_filters.rst
    data_histogram.rst
+   data_json_db.rst
    data_map_db.rst
    data_manipulate.rst
    data_iteration.rst

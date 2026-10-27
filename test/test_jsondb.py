@@ -8,8 +8,9 @@ import timeit
 from datetime import datetime, timedelta
 from pathlib import Path
 sys.path.insert(0, "..") # noqa
+import filelock
 # from dkit.utilities.cache import ObjectFileCache
-from dkit.data.json_db import JSONDB2
+from dkit.data.json_db import JSONDB
 # from datetime import datetime
 
 
@@ -32,7 +33,7 @@ class TestJSONDB(unittest.TestCase):
 
     def setUp(self):
         self._tmpdir = tempfile.mkdtemp(prefix="jsondb_")
-        self.db = JSONDB2(self._tmpdir)
+        self.db = JSONDB(self._tmpdir)
 
     def tearDown(self):
         shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -58,7 +59,7 @@ class TestJSONDB(unittest.TestCase):
     def test_4_compress(self):
         for c in ["gz", "bz2"]:
             with tempfile.TemporaryDirectory(prefix=f"jsondb_{c}_") as tmpdir:
-                dbz = JSONDB2(tmpdir, compress=c)
+                dbz = JSONDB(tmpdir, compress=c)
                 self._populate(dbz)
                 self.assertEqual(dict(dbz.items()), data)
                 self._delete_all(dbz)
@@ -72,7 +73,7 @@ class TestJSONDB(unittest.TestCase):
     def test_6_raises_wrong_compression(self):
         """test raise on wrong key type"""
         with self.assertRaises(ValueError):
-            _ = JSONDB2("data/jsondb", "wrong")
+            _ = JSONDB("data/jsondb", "wrong")
 
     def test_7_illegal_characters(self):
         """test with keys that have illegal characters"""
@@ -92,16 +93,17 @@ class TestJSONDB(unittest.TestCase):
 
     def test_9_disallow_null(self):
         """test disallowing null values"""
-        db = JSONDB2(self._tmpdir, allow_null=False)
+        db = JSONDB(self._tmpdir, allow_null=False)
         with self.assertRaises(ValueError):
             db["null"] = None
 
     def test_10_iter_keys_for_illegal_chars(self):
-        """test iteration keys for illegal characters"""
+        """test iteration yields the sanitised key (no index to
+        recover the original un-sanitised key from)"""
         bad = "bad!key&"
         self.db[bad] = True
         keys = list(self.db)
-        self.assertIn(bad, keys)
+        self.assertIn(self.db._transform(bad), keys)
 
     def test_11_created_after_filters(self):
         """test created_after filtering"""
@@ -109,27 +111,53 @@ class TestJSONDB(unittest.TestCase):
         self._populate(self.db)
         time.sleep(0.01)
         after = datetime.now()
-        filtered = JSONDB2(self._tmpdir, created_after=after)
+        filtered = JSONDB(self._tmpdir, created_after=after)
         self.assertEqual(dict(filtered.items()), {})
-        filtered2 = JSONDB2(self._tmpdir, created_after=before - timedelta(seconds=1))
+        filtered2 = JSONDB(self._tmpdir, created_after=before - timedelta(seconds=1))
         self.assertEqual(dict(filtered2.items()), data)
 
-    def test_12_missing_index_populates_on_access(self):
-        """test missing index is populated on access"""
-        self._populate(self.db)
-        index_path = Path(self._tmpdir) / ".index.json"
-        if index_path.exists():
-            index_path.unlink()
-        db2 = JSONDB2(self._tmpdir)
-        self.assertFalse(db2._has_index())
-        _ = db2["1"]
-        index = db2._load_index()
-        self.assertIn("1", index)
-        self.assertTrue(db2._has_index())
+    def test_12_lock_prevents_concurrent_check_then_write(self):
+        """test lock() blocks a second holder for the same key"""
+        key = "1"
+        with self.db.lock(key):
+            other = JSONDB(self._tmpdir)
+            other_lock = other.lock(key)
+            with self.assertRaises(filelock.Timeout):
+                other_lock.acquire(timeout=0.1)
 
-    def test_13_performance_1000(self):
+    def test_13_no_leftover_tmp_file_after_write(self):
+        """test atomic write leaves no temporary file behind"""
+        self.db["1"] = 1
+        tmp_files = list(Path(self._tmpdir).glob("*.tmp"))
+        self.assertEqual(tmp_files, [])
+
+    def test_14_lock_files_kept_out_of_main_directory(self):
+        """test lock files are written under a .locks subdirectory"""
+        with self.db.lock("1"):
+            pass
+        main_dir_locks = list(Path(self._tmpdir).glob("*.lock"))
+        self.assertEqual(main_dir_locks, [])
+        locks_subdir = list((Path(self._tmpdir) / ".locks").glob("*.lock"))
+        self.assertEqual(len(locks_subdir), 1)
+
+    def test_15_purge_locks_removes_unheld_locks(self):
+        """test purge_locks removes locks that are not held"""
+        with self.db.lock("1"):
+            pass
+        self.db.purge_locks()
+        locks_subdir = list((Path(self._tmpdir) / ".locks").glob("*.lock"))
+        self.assertEqual(locks_subdir, [])
+
+    def test_16_purge_locks_keeps_held_locks(self):
+        """test purge_locks does not remove a lock currently held"""
+        with self.db.lock("1"):
+            self.db.purge_locks()
+            locks_subdir = list((Path(self._tmpdir) / ".locks").glob("*.lock"))
+            self.assertEqual(len(locks_subdir), 1)
+
+    def test_17_performance_1000(self):
         """benchmark add/read 1000 entries (no assertions on timing)"""
-        db = JSONDB2(self._tmpdir)
+        db = JSONDB(self._tmpdir)
         entries = {str(i): i for i in range(1000)}
 
         start = timeit.default_timer()
