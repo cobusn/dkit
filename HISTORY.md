@@ -1,3 +1,24 @@
+# 26.10.2
+
+## Added
+- add markdown as a dk build doc output format
+- support conditional page breaks in the ReportLab renderer
+- configurable headers/footers for reportlab styles
+- added math rendering to plot2
+
+## Changed
+- replace JSONDB2 with a hardened, documented JSONDB
+
+## Fixed
+- handle PageBreak elements in the ReportLab renderer
+- heatmap overwriting day labels in Calendar Heatmap
+
+## Other
+- added --version option to dk main script
+- removed stale imports
+- bugfix to math renderer for reportlab renderer
+- updated documentation to reflect custom geoms
+
 # 26.10.1
 
 ## Added
